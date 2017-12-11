@@ -1,0 +1,334 @@
+import numpy as np
+import time
+import scipy.sparse as sps
+
+# Settings
+blockVal = -999999
+N = 120
+
+# Electron charge
+ee = 1.60217657e-19
+# Boltzmann constant
+kb = 1.3806488e-23
+
+# Helper function
+def minSparse(X):
+    if len(X.data) == 0:
+        return 0
+    m = X.data.min()
+    return m if X.getnnz() == X.size else min(m, 0)
+
+def tunAB(A,B,n1,n2,g):
+    if g == 0:
+        return 0
+    if A == "L":
+        if B == 1:
+            if n1 < N:
+                k = muL - mu1[n1+1,n2]
+            else:
+                k = blockVal
+        elif B == 2:
+            if n2 < N:
+                k = muL - mu2[n1,n2+1]
+            else:
+                k = blockVal
+    elif A == "R":
+        if B == 1:
+            if n1 < N:
+                k = muR - mu1[n1+1,n2]
+            else:
+                k = blockVal
+        elif B == 2:
+            if n2 < N:
+                k = muR - mu2[n1,n2+1]
+            else:
+                k = blockVal
+    elif A == 1:
+        if n1>0:
+            if B == "L":
+                k = mu1[n1,n2]-muL
+            elif B == "R":
+                k = mu1[n1,n2]-muR
+            elif B == 2:
+                if n2 < N:
+                    k = mu1[n1,n2]-mu2[n1-1,n2+1]
+                else:
+                    k = blockVal
+        else:
+            k = blockVal
+    elif A == 2:
+        if n2>0:
+            if B == "L":
+                k = mu2[n1,n2]-muL
+            elif B == "R":
+                k = mu2[n1,n2]-muR
+            elif B == 1:
+                if n1 < N:
+                    k = mu2[n1,n2]-mu1[n1+1,n2-1]
+                else:
+                    k = blockVal
+        else:
+            k = blockVal
+    if k/(kb*temperature) > -700:
+        return g*k/(ee**2*(1-np.exp(-k/(kb*temperature))))
+    else:
+        return 0
+    
+
+def tunnelling( DEBUG, vL, vR, vG1, vG2, T, c1L, c1R, c1G, c2L, c2R, c2G, cM, g1L, g1R, g2L, g2R, gM ):
+    global muL
+    global muR
+    global mu1
+    global mu2
+    global temperature
+    temperature = T
+    # KOUWENHOVEN Determines when transport is allowed through a arbitrarily connected double dot system
+    # Based on Rev. Mod. Phys. Vol. 75, No. 1
+    
+    if DEBUG:
+        print('Starting')
+        startTime = time.time()
+
+    # Calculator settings
+    #N = 120
+
+    # Cumulative capacitance
+    cSum1 = c1L + c1R + c1G + cM
+    cSum2 = c2L + c2R + c2G + cM
+
+    # Charging energies
+    eC1 = ee**2 * cSum2 / (cSum1*cSum2 - cM**2)
+    eC2 = ee**2 * cSum1 / (cSum1*cSum2 - cM**2)
+    # Coupling energy
+    eM = ee**2 * cM / (cSum1*cSum2 - cM**2)
+
+    # c*v coefficients
+    coeff1 = c1L*vL+c1R*vR+c1G*vG1
+    coeff2 = c2L*vL+c2R*vR+c2G*vG2
+
+    # lead energies
+    muL = -ee * vL
+    muR = -ee * vR
+
+    # Determine chemical potentials for all needed electron configurations
+    mu1 = np.zeros((N+1,N+1))
+    mu2 = np.zeros((N+1,N+1))
+    for n1 in range(N+1):
+        for n2 in range(N+1):
+            # Chemical potentials
+            mu1[n1,n2] = eC1*(n1-1/2) + eM*n2 - (1/ee)*(eC1*coeff1+eM*coeff2)
+            mu2[n1,n2] = eC2*(n2-1/2) + eM*n1 - (1/ee)*(eC2*coeff2+eM*coeff1)
+
+    # Build a "best guess" starting point by just grabbing n1 and n2 values
+    # which put the mu1 and mu2 inside the bias window
+    if muR > muL:
+        satisfy = np.where(np.logical_and(mu1>muL, mu2>muL))
+    else:
+        satisfy = np.where(np.logical_and(mu1>muR, mu2>muR))
+        
+    # It was noticed in the MATLAB version that the fastest route to solution was that with the minimal n2 (probably due to size mismatch)
+    # So as a guess, take that element from satisfy. To just take the first element we could use:
+    # n1Start = satisfy[0][0]
+    # n2Start = satisfy[1][0]
+
+    if satisfy[0].size > 0:
+        n1List = satisfy[0]
+        n2List = satisfy[1]
+        minN2 = np.where(n2List == min(n2List))
+        n1Start = n1List[minN2[0][0]]
+        n2Start = n2List[minN2[0][0]]
+        
+    else:
+        n1Start = 0
+        n2Start = 0
+        
+    if DEBUG:
+        print "n1Start = "+str(n1Start)
+        print "n2Start = "+str(n2Start)
+
+    # Determine energy decreases for all transitions
+    # kML(n1,n2) means energy decrease when electron tunnels from M to L with 
+    # initial electron configuration of (n1,n2)
+    #blockVal = -999999 # Used to block a tunneling path (eg, to n1=-1)
+    
+    if DEBUG:
+        print('Done energy level calculation: '+str(time.time()-startTime))
+    
+    # Build an index list of all n1,n2 pairs that are relevant for transport
+    # (ie, near levels where conduction happens)
+    index = np.zeros((N+3,N+3),dtype=np.int32) # Use index(1,1) as a catch for n1=-1,n2=-1
+    count = 0
+    mu1Step = 1.5*(mu1[0,1]-mu1[0,0])
+    mu2Step = 1.5*(mu2[0,1]-mu2[0,0])
+    for n1 in range(N+1):
+        for n2 in range(N+1):
+            # Check if dot energy levels are near lead energy levels
+            dot1 = mu1[n1,n2]
+            dot2 = mu2[n1,n2]
+            if (muL-mu1Step <= dot1 and dot1 <= muR+mu1Step) or (muR-mu1Step <= dot1 and dot1 <= muL+mu1Step) or (muL-mu2Step <= dot2 and dot2 <= muR+mu2Step) or (muR-mu2Step <= dot2 and dot2 <= muL+mu2Step):
+                count += 1
+                index[n1+1,n2+1] = count-1
+
+    # Check that something was found
+    if count == 0:
+        # This case means no states are near the lead energy levels (eg, N=0)
+        # In this case, no current will occur so we can just end the calc here
+        current = 0
+        return current # End the function
+
+    # If there are states near lead levels, continue
+    pVecSize = count
+
+    if DEBUG:
+        print('Done indexing: '+str(time.time()-startTime))
+
+    # Now solve for p(n1,n2) which is stationary
+    # pVec format: element 0:N is n1=0, n2 = 0:N, N+1:2*N+1 is n1=1,
+    # n2=0:N,...
+    # Coeff matrix is the coeffs from equation (4.3)
+    coeff = np.zeros((pVecSize,pVecSize))
+    #coeff = sps.dok_matrix((pVecSize,pVecSize), dtype=float)
+    for n1 in range(N+1):
+        for n2 in range(N+1):
+            currIndex = index[n1+1,n2+1]
+            if currIndex != 0:
+                # All tunneling routes out of this state
+                coeff[currIndex,currIndex] = -(tunAB(1,"L",n1,n2,g1L)+tunAB(1,"R",n1,n2,g1R)+tunAB(2,"L",n1,n2,g2L)+tunAB(2,"R",n1,n2,g2R)+tunAB(2,1,n1,n2,gM)+tunAB(1,2,n1,n2,gM)+tunAB("L",1,n1,n2,g1L)+tunAB("L",2,n1,n2,g2L)+tunAB("R",1,n1,n2,g1R)+tunAB("R",2,n1,n2,g2R))
+                if index[n1,n2+1] != 0:
+                    # Tunneling into n1
+                    coeff[currIndex, index[n1,n2+1]] = tunAB("L",1,n1-1,n2,g1L)+tunAB("R",1,n1-1,n2,g1R)
+                    if index[n1,n2+2] != 0:
+                        # tunneling from 2 to 1
+                        coeff[currIndex,index[n1,n2+2]] = tunAB(2,1,n1-1,n2+1,gM)
+                if index[n1+1,n2] != 0:
+                    # Tunneling into n2
+                    coeff[currIndex, index[n1+1,n2]] = tunAB("L",2,n1,n2-1,g2L)+tunAB("R",2,n1,n2-1,g2R)
+                    if index[n1+2,n2] != 0:
+                        # tunneling from 1 to 2
+                        coeff[currIndex, index[n1+2,n2]] = tunAB(1,2,n1+1,n2-1,gM)
+                if index[n1+2,n2+1] != 0:
+                    # Tunnel out of n1 to a lead
+                    coeff[currIndex, index[n1+2,n2+1]] = tunAB(1,"L",n1+1,n2,g1L)+tunAB(1,"R",n1+1,n2,g1R)
+                if index[n1+1,n2+2] != 0:
+                    # Tunnel out of n2 to a lead
+                    coeff[currIndex, index[n1+1,n2+2]] = tunAB(2,"L",n1,n2+1,g2L)+tunAB(2,"R",n1,n2+1,g2R)
+
+
+    if DEBUG:
+        print('Done coeff matrix building: '+str(time.time()-startTime))
+
+    # Now build an initial pVec estimate and iterate it to a stationary
+    # solution
+    pVec = np.zeros((pVecSize,1))
+    try:
+        pVec[index[n1Start+1,n2Start+1]] = 1
+    except:
+        pVec[1] = 1
+
+
+    # Scaling is done by multiplying previous solution by (I - t*C) where I is
+    # identiy, C is the coeff matrix, and t is some scaled timestep
+    # ##unity = np.eye(pVecSize)
+    #unity = sps.identity(pVecSize, dtype='int8', format='dia')
+    
+    # Convert pVec and coeff to sparse format
+    coeff = sps.csc_matrix(coeff,dtype=np.float64)
+    pVec = sps.csc_matrix(pVec,dtype=np.float64)
+
+    # The coeff matrix is pretty sparse, so it's faster to store it as such
+    #coeff = sparse(coeff)
+    #unity = sparse(unity)
+    #pVec = sparse(pVec)
+
+    if DEBUG:
+        print('Starting calibration loop: '+str(time.time()-startTime))
+
+    # Calibrate tStep
+    tStepScale = 50000
+    # From Danilov et. al., it's best if tStep is scaled by inverse of max eigenval, which
+    # is roughly approx by scaling by trace
+    #tStep = tStepScale / -(np.trace(coeff))
+    tStep = tStepScale / -(sum(coeff.diagonal()))
+    notCalibrated = 1 # Calibrate the tStep to not np.explode the prob dist (NB: It's somewhat redundant to have this here as well as in the time step loop, but this keeps the counter abortion low in the time step case)
+    counter = 0
+    while notCalibrated:
+        pVecDelta = tStep*coeff.dot(pVec)
+        tempVec = pVec + pVecDelta
+        # tempVec = np.dot((unity + tStep*coeff),pVec)
+        if minSparse(tempVec)<0: # If any of the elements are less than zero
+            tStep = tStep / 1.4
+        else:
+            notCalibrated = 0
+        counter += 1
+        if counter > 100:
+            notCalibrated =0
+
+    numTSteps = 500
+    
+    if DEBUG:
+        print('Starting time loop: '+str(time.time()-startTime))
+        print "tStep = " + str(tStep)
+        
+    # Need to catch if the stepping is "too fast" by watching for negative
+    # probabilities and restarting if this occurs
+    finished = 0
+    restartCounter = 0
+    pVecStart = pVec
+    while not(finished):
+        finished = 1 # If nothing goes wrong then this we will be finished after the for loop
+        debug1 = sps.csc_matrix((pVecSize,1),dtype=np.float64)
+        for count in range(numTSteps):
+            debug1 = sps.hstack([debug1,pVec])
+            # Determine the increment to pVec
+            pVecDelta = tStep*coeff.dot(pVec)
+            pVec = pVec + pVecDelta
+            # Check for negative pValue
+            if minSparse(pVec) < 0: #ie, if any elements are less than zero
+                tStep = tStep / 1.4
+                restartCounter = restartCounter + 1
+                finished = 0 # Mark not finished
+                # Re-initialize pVec
+                pVec = pVecStart
+                # If restart is looping hard, abort
+                if restartCounter > 10:
+                    print('Warning: exceeded restart counter. Aborting.')
+                    finished = 1
+                break # Restart for loop
+            # renormalize the pVec
+            pVec = pVec / pVec.sum()
+            # If convergence criteria is met, end loop
+            #print (pVecDelta.multiply(pVecDelta.sign())).sum()/pVecSize
+            if count > 20 and (pVecDelta.multiply(pVecDelta.sign())).sum()/pVecSize < 1e-9:
+                break
+
+    if DEBUG:
+        print('Done time stepping: '+str(time.time()-startTime))
+        maxPVec = pVec == pVec.max()
+        maxPVec = maxPVec.nonzero()
+        indexAtMax = maxPVec[0][0]
+        n1AtMax = -1
+        n2AtMax = -1
+        for n1 in range(N+1):
+            for n2 in range(N+1):
+                if index[n1+1,n2+1] == indexAtMax:
+                    n1AtMax = n1
+                    n2AtMax = n2
+        print("Maximum occupation at n1 = " + str(n1AtMax) + " and n2 = " + str(n2AtMax))
+
+    # Once we have equilibrium distribution, determine current using tunneling
+    # rates. Note we only need to count current to/from on lead as it is by
+    # necessity matched on the other
+    current = 0
+    pVec = pVec.toarray()
+    for n1 in range(N+1):
+        for n2 in range(N+1):
+            # Tunnelling through left lead will give current through system
+            if index[n1+1,n2+1] != 0:
+                current = current + ee * ( tunAB("L",1,n1,n2,g1L) - tunAB(1,"L",n1,n2,g1L) + tunAB("L",2,n1,n2,g2L) - tunAB(2,"L",n1,n2,g2L)) *pVec[index[n1+1,n2+1]]
+
+    if DEBUG:
+        print('Done all: '+str(time.time()-startTime))
+        print "tStep count is "+str(count)
+        print "Calculated current is: " + str(current)
+        
+    return [ current, debug1.toarray() ]

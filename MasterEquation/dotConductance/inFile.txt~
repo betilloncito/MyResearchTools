@@ -1,0 +1,20 @@
+biasMin = -0.02
+biasMax = 0.02
+biasRes = 101
+gateMin = 0.2
+gateMax = 0.5
+gateRes = 151
+temperature = 0.1
+
+c1L = 70.57e-18
+c1R = 22.77e-18
+c1G = 22.89e-18
+c2L = 4.26e-18
+c2R = 21.03e-18
+c2G = 0.358e-18
+cM = 10e-18
+g1L = 30e-9
+g1R = 0
+g2L = 0
+g2R = 1e-9
+gM = 30e-9
