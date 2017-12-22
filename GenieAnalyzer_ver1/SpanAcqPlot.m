@@ -139,15 +139,11 @@ FileType = get(handles.FileTypePopupmenu,'Value');
 %Extraction Scripts are scripts used to extract data from files depending
 %on their file type
 cd([NowDir,'\Scripts\ExtractData_Scripts'])
-if(FileType==1 || FileType==2)
+if(FileType==1 || FileType==2 || FileType==3)
     %feval - executes script (name is string variable) given the filename, the
     %path where the file is stored and the file type. Outputs are the
     %headers of all variables and the variable data. 
     [Data,header] = feval('ExtractData_FileType_1_2',handles.Filename,handles.FilePath,FileType);
-elseif(FileType==3)
-    %TO DO: Need to fix script to be able to upload a file with 3-D scans Spanish
-    %Aquis (.csv)
-    [Data,header] = feval('ExtractData_FileType_3',handles.Filename,handles.FilePath,FileType);
 end
 %NOTE Should implement a way to catch an error during the extraction of
 %data due to an erroneous selection of file type of another unknown error.
