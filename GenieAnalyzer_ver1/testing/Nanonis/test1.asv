@@ -4,10 +4,10 @@ fid = fopen(file);
 data = textscan(fid, '%s', 'Delimiter', '\n', 'CollectOutput', true);
 fclose(fid);
 
-D = data{1,1};
+Data = data{1,1};
 
-for i=1:length(D)
-    str = D{i,1};
+for i=1:length(Data)
+    str = Data{i,1};
     strSearch1 = strfind(str,'Sweep channel: Name');
     strSearch2 = strfind(str,'Step channel 1: Name');
     strSearch2_1 = strfind(str,'Step channel 1: Start');
@@ -46,8 +46,8 @@ cnt = 1;
 I = [];
 Vsweep = [];
 Vstep = [];
-for i=index+2:length(D)
-    temp = str2double(strsplit(D{i,1},'\t'));
+for i=index+2:length(Data)
+    temp = str2double(strsplit(Data{i,1},'\t'));
     I_temp(cnt,:) = temp(2:end);
     Vsweep_temp(cnt,1) = temp(1)
 %     
@@ -62,8 +62,8 @@ end
 
 for i=1:size(I_temp,2)
    I = [I;I_temp(:,i)];
-   Vsweep = [Vsweep;Vsweep_temp(:,1)];
-   Vstep = [Vstep;Vstep_temp(i)*ones(size(I_temp,1),1)];
+   Vsweep = [Vsweep,Vsweep_temp(:,1)];
+   Vstep = [Vstep,Vstep_temp(i)*ones(size(I_temp,1),1)];
 end
 size(I)
 size(Vsweep)
