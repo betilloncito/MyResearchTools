@@ -288,7 +288,8 @@ else
     %variables. Then it compares the correct order with the order given by user
     %and output a warning in case there is a difference
     index = index_input;
-    index_temp = [];cnt=1;index_array_str=[];
+    index_temp = [];    
+    cnt=1;index_array_str=[];
     for i=1:size(Data,1)-1
         for p=1:length(index)
 %             Data(i,index(p))
