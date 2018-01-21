@@ -23,7 +23,7 @@ else
     %CURRENT
     name{1} = 'Current';
     %GATE
-    name{2} = 'Vg';
+    name{2} = 'VBIAS';
     
     %Initializes MatrixData and Variables from the input varargin
     MatrixData_All = varargin{1};
@@ -89,9 +89,10 @@ else
             plot(Vg,I);grid on;hold on;
             xlabel('Gate Voltage [V]');
             ylabel('Current [A]');
-            title(['Transconductance Curve: ',filename(1:end),' dataset#: ',num2str(kk)]);
-            CustomizeFigures(HandleFig);
-            close(HandleFig);hold off;
+%             title(['Transconductance Curve: ',filename(1:end),' dataset#: ',num2str(kk)]);
+%             CustomizeFigures(HandleFig);
+%             close(HandleFig);
+            hold off;
             
             [Vg_new,der_I] = Derivative(Vg,log10(I));
             
@@ -100,9 +101,9 @@ else
             plot(Vg_new,der_I);hold on;grid on;
             xlabel('Gate Voltage [V]');
             ylabel('Derivative of Log(I) [arb.]');            
-            title(['Estimation of Turn On Voltage: ',filename(1:end),' dataset#: ',num2str(kk)])            
-            CustomizeFigures(HandleFig);
-            close(HandleFig);
+%             title(['Estimation of Turn On Voltage: ',filename(1:end),' dataset#: ',num2str(kk)])            
+%             CustomizeFigures(HandleFig);
+%             close(HandleFig);
         end
         
         %------------------STOP CODE HERE---------------------------------%

@@ -273,14 +273,10 @@ if(isempty(IndicesStr))
 else
     handles.Header_Vector{length(handles.Header_Vector)+1} = {handles.Header_Vector_temp};
     IndicesStr = strtrim(IndicesStr);
-    u = findstr(strtrim(IndicesStr),',');
-    index_input = str2double(IndicesStr(1:u(1)-1));
+    u = findstr(strtrim(IndicesStr),',')
+    index_input = str2double(IndicesStr(1:u-1))
     for i=1:length(u)
-        if(i==length(u))
-            index_input = [index_input,str2double(IndicesStr(u(i)+1:end))];
-        else
-            index_input = [index_input,str2double(IndicesStr(u(i)+1:u(i+1)-1))];
-        end
+        index_input = [index_input,str2double(IndicesStr(u(i)+1))]
     end
     
     %Figures out the correct order of the indices based on the change in the
