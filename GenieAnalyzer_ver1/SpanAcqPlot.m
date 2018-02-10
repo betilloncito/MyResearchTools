@@ -274,12 +274,19 @@ else
     handles.Header_Vector{length(handles.Header_Vector)+1} = {handles.Header_Vector_temp};
     IndicesStr = strtrim(IndicesStr);
     u = findstr(strtrim(IndicesStr),',');
-    index_input = str2double(IndicesStr(1:u(1)-1));
-    for i=1:length(u)
-        if(i==length(u))
-            index_input = [index_input,str2double(IndicesStr(u(i)+1:end))];
-        else
-            index_input = [index_input,str2double(IndicesStr(u(i)+1:u(i+1)-1))];
+    
+    %In case only one index is input by user
+    if(isempty(u))
+        index_input = str2double(IndicesStr);
+    %In case the user has input more than one index (seperated by commas)
+    else     
+        index_input = str2double(IndicesStr(1:u(1)-1));
+        for i=1:length(u)
+            if(i==length(u))
+                index_input = [index_input,str2double(IndicesStr(u(i)+1:end))];
+            else
+                index_input = [index_input,str2double(IndicesStr(u(i)+1:u(i+1)-1))];
+            end
         end
     end
     
@@ -1036,9 +1043,14 @@ elseif(isempty(axs_line)==0)
         markersize{k} = get(axs_line(k),'MarkerSize');
     end
     
-%     delete(axs_children);
     for k=1:size(XData,2)
-        line(XData{k},YData{k},'Color',plot_color{k},'LineStyle',linestyle{k},'LineWidth',linewidth{k},...
+%          XData{k}
+% %          YData{k}
+%         line(XData{k},YData{k})
+        XData
+        X = XData{k};
+        Y = YData{k}
+        line(X,Y,'Color',plot_color{k},'LineStyle',linestyle{k},'LineWidth',linewidth{k},...
             'Marker',marker{k},'MarkerEdgeColor',markeredgecolor{k},'MarkerFaceColor',markerfacecolor{k},...
             'MarkerSize',markersize{k});
     end    
