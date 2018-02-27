@@ -1047,10 +1047,11 @@ elseif(isempty(axs_line)==0)
 %          XData{k}
 % %          YData{k}
 %         line(XData{k},YData{k})
-        XData
-        X = XData{k};
-        Y = YData{k}
-        line(X,Y,'Color',plot_color{k},'LineStyle',linestyle{k},'LineWidth',linewidth{k},...
+%         XData
+%         X = XData{k};
+%         Y = YData{k}
+
+        line(XData{k},YData{k},'Color',plot_color{k},'LineStyle',linestyle{k},'LineWidth',linewidth{k},...
             'Marker',marker{k},'MarkerEdgeColor',markeredgecolor{k},'MarkerFaceColor',markerfacecolor{k},...
             'MarkerSize',markersize{k});
     end    

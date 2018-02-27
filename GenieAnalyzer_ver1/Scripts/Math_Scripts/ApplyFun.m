@@ -54,13 +54,15 @@ else
         
         varargout = {XData_new,YData_new,ZData_new};
     else
-        if(strcmp(Plot2D_Der,'log'))
-            YData = cell2mat(YData);
-            YData_new = {log(abs(YData))};
-            XData_new = {XData};
-        elseif(strcmp(Plot2D_Der,'abs'))
-            YData = cell2mat(YData);
-            YData_new = abs(YData);
+        for i=1:size(XData,2)
+            if(strcmp(Plot2D_Der,'log'))
+%                 YData = cell2mat(YData);
+                YData_new{i} = log(abs(YData{i}));
+                XData_new{i} = XData{i};
+            elseif(strcmp(Plot2D_Der,'abs'))
+                YData = cell2mat(YData);
+                YData_new = abs(YData);
+            end
         end
         varargout = {XData_new,YData_new};
     end
