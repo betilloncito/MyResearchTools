@@ -22,7 +22,7 @@ function varargout = SpanAcqPlot(varargin)
 
 % Edit the above text to modify the response to help SpanAcqPlot
 
-% Last Modified by GUIDE v2.5 24-Nov-2016 14:52:47
+% Last Modified by GUIDE v2.5 04-Mar-2018 21:45:56
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -145,6 +145,7 @@ if(FileType==1 || FileType==2 || FileType==3)
     %headers of all variables and the variable data. 
     [Data,header] = feval('ExtractData_FileType_1_2',handles.Filename,handles.FilePath,FileType);
 end
+size(Data.data)
 %NOTE Should implement a way to catch an error during the extraction of
 %data due to an erroneous selection of file type of another unknown error.
 %In which case, the organize button should not be enabled and function
@@ -260,6 +261,39 @@ hold off;
 
 guidata(hObject, handles);
 
+
+% --- Executes on button press in NanonisFileMergerPushbutton.
+function NanonisFileMergerPushbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to NanonisFileMergerPushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%Saves current directory
+NowDir = cd;
+
+%Goes to directory where the Extraction Scripts are saved
+%Extraction Scripts are scripts used to extract data from files depending
+%on their file type
+cd([NowDir,'\Scripts\ExtractData_Scripts'])
+
+% if(FileType==1 || FileType==2 || FileType==3)
+    %feval - executes script (name is string variable) given the filename, the
+    %path where the file is stored and the file type. Outputs are the
+    %headers of all variables and the variable data. 
+    
+% feval('NanonisFileMerger',handles.SpanAcqPlotFigure);
+
+NanonisFileMerger(handles.SpanAcqPlotFigure);
+
+% uiwait(handles.SpanAcqPlotFigure);
+
+% end
+% if temp==1
+% uiresume;
+% end
+
+guidata(hObject, handles);
+
 % --- Executes on button press in OrganizePushbutton.
 function OrganizePushbutton_Callback(hObject, eventdata, handles)
 handles.MatrixData = {};
@@ -325,6 +359,7 @@ else
     end
     %Stores the sweep variable indices in a global var.
     handles.SweepVar_Index{length(handles.SweepVar_Index)+1} = {index_array};
+    index_array
     
     %Determines the number of points swept for each sweep variable. It creates
     %a variable with the dimensions of sweeping. The first two dimensions are
@@ -545,52 +580,112 @@ set(handles.Plot3D_ValuePopupmenu,'Enable','off');
 guidata(hObject, handles);
 
 
+% --- Executes on selection change in GUIPopupmenu.
+function GUIPopupmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to GUIPopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+%If the user selected a GUI then enable the Analysis button, o.w. the
+%button is disabled
+if(get(handles.GUIPopupmenu,'Value')>1)
+    set(handles.ApplyAnalysisScriptPushbutton,'Enable','on');
+else
+    set(handles.ApplyAnalysisScriptPushbutton,'Enable','off');
+end
+
+guidata(hObject, handles);
+
+
 % --- Executes on button press in ApplyAnalysisScriptPushbutton.
 function ApplyAnalysisScriptPushbutton_Callback(hObject, eventdata, handles)
 
-NumFiles = size(get(handles.ListFilesOrganizedPopupmenu,'String'),1);
-
-if(get(handles.ApplyAllFilesCheckbox,'Value')==0 || (get(handles.ApplyAllFilesCheckbox,'Value')==1 && NumFiles==1))
-    %Index for the file that should be consider for ploting. This INDEX will be
-    %used to recall the correct data, variables, sweep variable indices, etc.
-    INDEX = get(handles.ListFilesOrganizedPopupmenu,'Value');
+%If user selects none on the GUI popup menu then the analysis button will
+%execute whatever script files has been uploaded
+if(get(handles.GUIPopupmenu,'Value')==1)
     
-    %Variable Headers
-    Header_Vector = handles.Header_Vector{INDEX};
-    %Uploads the data for the selected file
-    OrgMatrixData = handles.Stored_OrgMatrixData{INDEX};
+    NumFiles = size(get(handles.ListFilesOrganizedPopupmenu,'String'),1);
     
-    % %Sweep variable indices
-    % SweepVar_Index = handles.SweepVar_Index{INDEX};
-    % %Sweep variable size
-    % SweepVar_Size = handles.SweepVar_Size{INDEX};
-    % SweepVar_Size_correct = [SweepVar_Size(1),SweepVar_Size(3:end)];        
-else    
-    %Variable Headers
-    Header_Vector = handles.Header_Vector;
-    %Uploads the data for the selected file
-    OrgMatrixData = handles.Stored_OrgMatrixData;
-end
-
-filename = get(handles.AnalysisScriptText,'String');
-TableData = get(handles.VariableListTable,'Data');
-UserInputVaribles = (TableData(:,2));
-Filenames_String = get(handles.ListFilesOrganizedPopupmenu,'String');
-
-%Saves Main directory
-NowDir = cd;
-% cd([NowDir,'\Scripts\Analysis_Scripts']);
-cd(handles.ScriptPath_Analysis);
-%Applies a script which was uploaded given the filename of the script and
-%the global variable with the organized data from all files opened
-[a] = feval(filename(1:end-2),OrgMatrixData,UserInputVaribles,Header_Vector,Filenames_String);
-
-if(a==999)
-    cd(handles.ScriptPath_Analysis)
-%     set(handles.SpanAcqPlotFigure,'WindowStyle','docked');
+    if(get(handles.ApplyAllFilesCheckbox,'Value')==0 || (get(handles.ApplyAllFilesCheckbox,'Value')==1 && NumFiles==1))
+        %Index for the file that should be consider for ploting. This INDEX will be
+        %used to recall the correct data, variables, sweep variable indices, etc.
+        INDEX = get(handles.ListFilesOrganizedPopupmenu,'Value');
+        
+        %Variable Headers
+        Header_Vector = handles.Header_Vector{INDEX};
+        %Uploads the data for the selected file
+        OrgMatrixData = handles.Stored_OrgMatrixData{INDEX};
+        
+        % %Sweep variable indices
+        % SweepVar_Index = handles.SweepVar_Index{INDEX};
+        % %Sweep variable size
+        % SweepVar_Size = handles.SweepVar_Size{INDEX};
+        % SweepVar_Size_correct = [SweepVar_Size(1),SweepVar_Size(3:end)];
+    else
+        %Variable Headers
+        Header_Vector = handles.Header_Vector;
+        %Uploads the data for the selected file
+        OrgMatrixData = handles.Stored_OrgMatrixData;
+    end
+    
+    filename = get(handles.AnalysisScriptText,'String');
+    TableData = get(handles.VariableListTable,'Data');
+    UserInputVaribles = (TableData(:,2));
+    Filenames_String = get(handles.ListFilesOrganizedPopupmenu,'String');
+    
+    %Saves Main directory
+    NowDir = cd;
+    % cd([NowDir,'\Scripts\Analysis_Scripts']);
+    cd(handles.ScriptPath_Analysis);
+    %Applies a script which was uploaded given the filename of the script and
+    %the global variable with the organized data from all files opened
+    [a] = feval(filename(1:end-2),OrgMatrixData,UserInputVaribles,Header_Vector,Filenames_String);
+    
+    if(a==999)
+        cd(handles.ScriptPath_Analysis)
+        %     set(handles.SpanAcqPlotFigure,'WindowStyle','docked');
+    else
+        %returns to Main directory
+        cd(NowDir);
+    end
+    
+    %If the user selects a GUI to execute then the Analysis button will
+    %open the GUI
 else
-    %returns to Main directory
-    cd(NowDir);
+    
+    %Working directory
+    NowDir = cd;
+    %Index that determines which GUI will be open
+    ChosenGUI = get(handles.GUIPopupmenu, 'Value');
+    
+    %This is the data that will be given to the chosen GUI for further analysis
+    %Structure that contains all the above variables to be sent to the GUI
+    GUI_Data.OrgMatrixData = handles.Stored_OrgMatrixData;
+    GUI_Data.Header_Vector = handles.Header_Vector;
+    GUI_Data.Filenames_String = get(handles.ListFilesOrganizedPopupmenu,'String');
+    GUI_Data.NowDir = NowDir;
+    
+    setappdata(handles.SpanAcqPlotFigure,'GUI_Data',GUI_Data);
+    
+    %directory where all GUIs are saved
+    cd([NowDir,'\Scripts\Analysis_Scripts\GUI']);
+    
+    % Absorbance_FolderSelectionWindow(handles.AbsorbanceDataAnalysisWindow_Figure);
+    
+    %Selects GUI and opens it. The -1 is to take into account that the 1st
+    %item is the NONE option
+    switch ChosenGUI-1
+        
+        case 1
+            disp('tunnel');
+            TunnelRateAnalysis_GUI(handles.SpanAcqPlotFigure);
+            
+        case 2
+            ElectronTemperature;
+            
+    end
+%     cd(NowDir);
+    
 end
 
 guidata(hObject, handles);
@@ -1949,8 +2044,6 @@ function ApplyAllFilesCheckbox_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hint: get(hObject,'Value') returns toggle state of ApplyAllFilesCheckbox
-
 
 % --- Executes on selection change in ColorMapPopupmenu.
 function ColorMapPopupmenu_Callback(hObject, eventdata, handles)
@@ -1958,13 +2051,21 @@ function ColorMapPopupmenu_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: contents = cellstr(get(hObject,'String')) returns ColorMapPopupmenu contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from ColorMapPopupmenu
-
-
 % --- Executes during object creation, after setting all properties.
 function ColorMapPopupmenu_CreateFcn(hObject, eventdata, handles)
 % hObject    handle to ColorMapPopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+% --- Executes during object creation, after setting all properties.
+function GUIPopupmenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to GUIPopupmenu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 

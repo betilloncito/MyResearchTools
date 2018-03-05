@@ -101,6 +101,11 @@ elseif(fileType==3)
         end
         Time = linspace(0,10,size(Vstep,1))';
         
+        size(Time)
+        size(Vsweep)
+        size(Vstep)
+        size(I)
+        
         header = [{'Time'} {SweepCH_Name} {StepCH_Name} {AcquiredCH_Name}];
         Data.data = [Time,Vsweep,Vstep,I];
         
