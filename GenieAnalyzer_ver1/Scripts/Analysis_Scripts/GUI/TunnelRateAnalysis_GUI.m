@@ -22,7 +22,7 @@ function varargout = TunnelRateAnalysis_GUI(varargin)
 
 % Edit the above text to modify the response to help TunnelRateAnalysis_GUI
 
-% Last Modified by GUIDE v2.5 05-Mar-2018 01:47:29
+% Last Modified by GUIDE v2.5 05-Mar-2018 02:30:25
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -67,6 +67,11 @@ handles.Received_GUI_Data = getappdata(handles.MainFigureHandle,'GUI_Data');
 
 set(handles.FilesAvailableListbox,'String',handles.Received_GUI_Data.Filenames_String);
 
+%Global Variables:
+handles.ChosenFiles_indeces = [];
+handles.AvailableFiles_indeces = [1:1:length(handles.Received_GUI_Data.OrgMatrixData)];
+
+
 % Update handles structure
 guidata(hObject, handles);
 
@@ -89,6 +94,22 @@ function AddAllPushbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to AddAllPushbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles.ChosenFiles_indeces = [1:1:length(handles.Received_GUI_Data.OrgMatrixData)];
+handles.AvailableFiles_indeces = [];
+
+set(handles.FilesChosenListbox,'String',handles.Received_GUI_Data.Filenames_String);
+set(handles.FilesAvailableListbox,'String','');
+set(handles.AddAllPushbutton,'enable','off');
+set(handles.AddPushbutton,'enable','off');
+set(handles.DeleteAllPushbutton,'enable','on');
+set(handles.DeletePushbutton,'enable','on');
+
+set(handles.FilesChosenListbox,'Value',1);
+set(handles.FilesAvailableListbox,'Value',1);
+
+handles
+
+guidata(hObject, handles);
 
 
 % --- Executes on button press in DeleteAllPushbutton.
@@ -96,21 +117,96 @@ function DeleteAllPushbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to DeleteAllPushbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+handles.ChosenFiles_indeces = [];
+handles.AvailableFiles_indeces = [1:1:length(handles.Received_GUI_Data.OrgMatrixData)];
 
+set(handles.FilesChosenListbox,'String','');
+set(handles.FilesAvailableListbox,'String',handles.Received_GUI_Data.Filenames_String);
+set(handles.DeleteAllPushbutton,'enable','off');
+set(handles.DeletePushbutton,'enable','off');
+set(handles.AddAllPushbutton,'enable','on');
+set(handles.AddPushbutton,'enable','on');
+
+set(handles.FilesChosenListbox,'Value',1);
+set(handles.FilesAvailableListbox,'Value',1);
+
+handles
+
+guidata(hObject, handles);
 
 % --- Executes on button press in AddPushbutton.
 function AddPushbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to AddPushbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+INDEX = get(handles.FilesAvailableListbox,'Value')
 
+handles.ChosenFiles_indeces = [handles.ChosenFiles_indeces,handles.AvailableFiles_indeces(INDEX)];
+handles.ChosenFiles_indeces = sort(handles.ChosenFiles_indeces,'ascend');
+handles.AvailableFiles_indeces(INDEX) = [];
+
+for i=1:length(handles.ChosenFiles_indeces)
+    str_fileschosen(i) = handles.Received_GUI_Data.Filenames_String(handles.ChosenFiles_indeces(i));
+end
+
+str_filesavailable = {};
+for i=1:length(handles.AvailableFiles_indeces)
+    str_filesavailable(i) = handles.Received_GUI_Data.Filenames_String(handles.AvailableFiles_indeces(i));
+end
+
+set(handles.FilesChosenListbox,'String',str_fileschosen);
+set(handles.FilesAvailableListbox,'String',str_filesavailable);
+set(handles.FilesChosenListbox,'Value',1);
+set(handles.FilesAvailableListbox,'Value',1);
+
+if(isempty(str_filesavailable)==1)
+    set(handles.AddAllPushbutton,'enable','off');
+    set(handles.AddPushbutton,'enable','off');
+    
+    set(handles.DeleteAllPushbutton,'enable','on');
+end
+set(handles.DeletePushbutton,'enable','on');
+
+handles
+
+guidata(hObject, handles);
 
 % --- Executes on button press in DeletePushbutton.
 function DeletePushbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to DeletePushbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+INDEX = get(handles.FilesChosenListbox,'Value')
 
+handles.AvailableFiles_indeces = [handles.AvailableFiles_indeces,handles.ChosenFiles_indeces(INDEX)];
+handles.AvailableFiles_indeces = sort(handles.AvailableFiles_indeces,'ascend');
+handles.ChosenFiles_indeces(INDEX) = [];
+
+str_fileschosen = {};
+for i=1:length(handles.ChosenFiles_indeces)
+    str_fileschosen(i) = handles.Received_GUI_Data.Filenames_String(handles.ChosenFiles_indeces(i));
+end
+
+for i=1:length(handles.AvailableFiles_indeces)
+    str_filesavailable(i) = handles.Received_GUI_Data.Filenames_String(handles.AvailableFiles_indeces(i));
+end
+
+set(handles.FilesChosenListbox,'String',str_fileschosen);
+set(handles.FilesAvailableListbox,'String',str_filesavailable);
+set(handles.FilesChosenListbox,'Value',1);
+set(handles.FilesAvailableListbox,'Value',1);
+
+if(isempty(str_fileschosen)==1)
+    set(handles.AddAllPushbutton,'enable','on');
+    
+    set(handles.DeleteAllPushbutton,'enable','off');
+    set(handles.DeletePushbutton,'enable','off');
+end
+set(handles.AddPushbutton,'enable','on');
+
+handles
+
+guidata(hObject, handles);
 
 %--------------------------------------------------------------------------
 
@@ -176,4 +272,3 @@ function figure1_CloseRequestFcn(hObject, eventdata, handles)
 cd(handles.Received_GUI_Data.NowDir);
 % Hint: delete(hObject) closes the figure
 delete(hObject);
-
