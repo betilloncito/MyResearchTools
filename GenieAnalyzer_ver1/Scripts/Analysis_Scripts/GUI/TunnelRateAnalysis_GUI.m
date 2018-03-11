@@ -22,7 +22,7 @@ function varargout = TunnelRateAnalysis_GUI(varargin)
 
 % Edit the above text to modify the response to help TunnelRateAnalysis_GUI
 
-% Last Modified by GUIDE v2.5 05-Mar-2018 02:30:25
+% Last Modified by GUIDE v2.5 09-Mar-2018 14:11:19
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -107,7 +107,7 @@ set(handles.DeletePushbutton,'enable','on');
 set(handles.FilesChosenListbox,'Value',1);
 set(handles.FilesAvailableListbox,'Value',1);
 
-handles
+% handles
 
 guidata(hObject, handles);
 
@@ -130,7 +130,7 @@ set(handles.AddPushbutton,'enable','on');
 set(handles.FilesChosenListbox,'Value',1);
 set(handles.FilesAvailableListbox,'Value',1);
 
-handles
+% handles
 
 guidata(hObject, handles);
 
@@ -167,7 +167,7 @@ if(isempty(str_filesavailable)==1)
 end
 set(handles.DeletePushbutton,'enable','on');
 
-handles
+% handles
 
 guidata(hObject, handles);
 
@@ -204,9 +204,71 @@ if(isempty(str_fileschosen)==1)
 end
 set(handles.AddPushbutton,'enable','on');
 
-handles
+% handles
 
 guidata(hObject, handles);
+
+
+% --- Executes on button press in ExtractPushbutton.
+function ExtractPushbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to ExtractPushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+chosenFile = get(handles.FilesChosenListbox,'Value');
+INDEX = handles.ChosenFiles_indeces(chosenFile);
+
+%List the names used for the variables header
+%CURRENT
+name{1} = 'current';    %name{1} = 'Current';
+%BIAS
+name{2} = 'bias';    %name{2} = 'Vbias';
+%GATE
+name{3} = 'g4';   %    name{3} = 'Vtun';
+%TIME
+name{4} = 'Time';
+
+% for INDEX=1:length(handles.ChosenFiles_indeces)
+    %Loops over each saved data set.
+%     for INDEX=1:length(MatrixData_All)
+        %Figuring out the correct index for each variable
+        if(size(handles.Received_GUI_Data.OrgMatrixData,2)==1)
+            Headers = handles.Received_GUI_Data.Header_Vector{INDEX};
+            MatrixData = handles.Received_GUI_Data.OrgMatrixData{INDEX};
+        end
+        if(size(handles.Received_GUI_Data.Header_Vector,2)>1)
+            temp = handles.Received_GUI_Data.Header_Vector{INDEX};
+            Headers = temp{1};
+            temp = handles.Received_GUI_Data.OrgMatrixData{INDEX};
+            MatrixData = temp{1};
+        end
+        for i=1:length(name)
+            for ii=1:length(Headers)
+                Current_Header = cell2mat(Headers(ii));
+                n = strfind(Current_Header,' (');
+                Headers_corrected = Current_Header(1:n-1);
+                if(strcmp(name(i),Headers_corrected))
+                    switch i
+                        case 1
+                            I_index = ii;
+                        case 2
+                            Vbias_index = ii;
+                        case 3
+                            Vtun_index = ii;
+                        case 4
+                            Time_index = ii;
+                    end
+                    break;
+                end
+            end
+        end
+        
+%     end
+% end
+
+guidata(hObject, handles);
+
+
 
 %--------------------------------------------------------------------------
 
@@ -272,3 +334,5 @@ function figure1_CloseRequestFcn(hObject, eventdata, handles)
 cd(handles.Received_GUI_Data.NowDir);
 % Hint: delete(hObject) closes the figure
 delete(hObject);
+
+
