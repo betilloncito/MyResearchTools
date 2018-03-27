@@ -442,7 +442,7 @@ function NanonisFileMergerFigure_CloseRequestFcn(hObject, eventdata, handles)
 % Hint: delete(hObject) closes the figure
 % uiresume(handles.SpanishAcqFig);
 % uiresume(handles.SpanishAcqFig);
-uiresume(handles.mainhandles.SpanAcqPlotFigure);
+% uiresume(handles.mainhandles.SpanAcqPlotFigure);
 
 % Hint: delete(hObject) closes the figure
 delete(hObject);

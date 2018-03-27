@@ -11,9 +11,9 @@ function varargout = TunnelRate_Analysis(varargin)
 %variables before cliking "analyse"
 if(nargin==0)
     DataTable{1,1} = 'Preamp Sens [A/V]:';
-    DataTable{1,2} = 1e-9;
+    DataTable{1,2} = 1e-8;
     DataTable{2,1} = 'Vbias [V]:';
-    DataTable{2,2} = 0.1;
+    DataTable{2,2} = -0.1;
     DataTable{3,1} = 'Bias VoltDiv:';
     DataTable{3,2} = 100;
     
@@ -22,12 +22,12 @@ else
     %List the names used for the variables header
     %CURRENT
     name{1} = 'Current';
-    %BIAS
-    name{2} = 'VdepL';
+    %LEFT BARRIER
+    name{2} = 'Acc_TL';
+    %RIGHT BARRIER
+    name{3} = 'Acc_TR';
     %GATE
-    name{3} = 'VdepR';
-    %GATE
-    name{4} = 'Vtun';
+    name{4} = 'Plg_T';
     %Time (optional)
     name{5} = 'Time';
     
@@ -109,29 +109,28 @@ else
         
         %VdepR was stepped last and VdepL was stepped first: Therefore the
         %index y and x correspond to VdepR and VdepL, respectively.
-        VdepR = MatrixData(1,VdepR_index,1,:);%y
-        VdepL = MatrixData(1,VdepL_index,:,1);%x  
+%         VdepR = MatrixData(1,VdepR_index,1,:);%y
+%         VdepL = MatrixData(1,VdepL_index,:,1);%x  
+        VdepR = MatrixData(1,VdepR_index,:,1);%x
+        VdepL = MatrixData(1,VdepL_index,1,:);%y
         VdepR = reshape(VdepR,length(VdepR),1,1,1);
         VdepL = reshape(VdepL,length(VdepL),1,1,1);
         
-<<<<<<< HEAD
-        VdepL_limit = 0.3;
-=======
-        VdepL_limit = 0.4;
->>>>>>> origin/Eddy2
-        index_depL_ascend = 0;
+%         VdepL_limit = 0.3;
+%         VdepL_limit = 0.4;
+%         index_depL_ascend = 0;
         index_depL_descend = 1;
-        for i=1:length(VdepL)-1
-            VdepL(i)
-            if(VdepL(i)<VdepL_limit && VdepL(i+1)>VdepL_limit)
-                index_depL_ascend = i
-                break;
-            elseif(VdepL(i)>VdepL_limit && VdepL(i+1)<VdepL_limit)
-                index_depL_descend = i
-                VdepL = VdepL(index_depL_descend:end);
-                break;
-            end                        
-        end        
+%         for i=1:length(VdepL)-1
+%             VdepL(i)
+%             if(VdepL(i)<VdepL_limit && VdepL(i+1)>VdepL_limit)
+%                 index_depL_ascend = i
+%                 break;
+%             elseif(VdepL(i)>VdepL_limit && VdepL(i+1)<VdepL_limit)
+%                 index_depL_descend = i
+%                 VdepL = VdepL(index_depL_descend:end);
+%                 break;
+%             end                        
+%         end        
         
         size(MatrixData,4)
         size(MatrixData,3)
@@ -161,6 +160,7 @@ else
             end
             cnt_x = 1;
             cnt_y = cnt_y+1;
+%             hold off;
         end      
 %         pause;
         
@@ -172,19 +172,22 @@ else
         
         figure(79);
 %         surf(VdepL,VdepR,log(abs(maxPeak_Current)),'EdgeAlpha',0)
-        surf(VdepL,VdepR,maxPeak_Current,'EdgeAlpha',0)
+        surf(VdepR,VdepL,maxPeak_Current,'EdgeAlpha',0)
         title('Experimental:');xlabel('Vdep1 [V]');ylabel('Vdep2 [V]')
         view(XY_plane);colormap('jet');
         colorbar;
             
+        
+     
+        
         %Initial values for fitting
         A1 = 1e-4;        
         A2 = 1e-4;    
         
-        a1 = 40;
-        b1 = 0.5;        
-        a2 = 20;
-        b2 = 0.5;
+        a1 = 1.9;
+        b1 = 5;        
+        a2 = 2.5;
+        b2 = 5;
         
 %       74.7624    0.0470   63.2273    0.4712
 %       99.9999   -0.0139   36.9187    0.6806
@@ -193,8 +196,8 @@ else
         par = [a1,b1,a2,b2];
         
         %lowerbound and upper bound (optional)
-        lb = [0.1,-50,0.1,-50];
-        ub = [100,50,100,50];
+        lb = [0.1,-10,0.1,-10];
+        ub = [10,10,10,10];
         
         options = optimset('MaxFunEvals',10000);
         
@@ -210,10 +213,10 @@ else
         %Fitting resultant values
 %         A1 = Opt_par(1)      
 %         A2 = Opt_par(2)      
-        a1 = Opt_par(1);
-        b1 = Opt_par(2);        
-        a2 = Opt_par(3);
-        b2 = Opt_par(4);
+        a1 = Opt_par(1)
+        b1 = Opt_par(2)        
+        a2 = Opt_par(3)
+        b2 = Opt_par(4)
         
         Gamma_R = exp(a1*(VdepR + b1));
         Gamma_L = exp(a2*(VdepL + b2));
@@ -232,8 +235,6 @@ else
 %             end
 %         end
         
-        
-            %{ %}
         figure(59)
         line(VdepR,Gamma_R,'Color','r')
         ax1 = gca; % current axes
@@ -253,9 +254,9 @@ else
         ylabel(ax2,'\Gamma_L [Hz]');
         grid on;
            
-            
+       
         
-        %
+        
         %------------------STOP CODE HERE---------------------------------%
     end
     
@@ -298,8 +299,8 @@ Gamma_L = exp(a2*(VdepL + b2));
 size(Gamma_R);
 size(Gamma_L);
 
-for y=1:length(Gamma_R)
-    for x=1:length(Gamma_L)
+for y=1:length(Gamma_L)
+    for x=1:length(Gamma_R)
         maxPeak_Current_sim(y,x) = e*Gamma_R(y)*Gamma_L(x)/(Gamma_R(y) + Gamma_L(x));
     end
 end    
@@ -308,3 +309,4 @@ diffSquares = sum(sum((maxPeak_Current - maxPeak_Current_sim).^2));
 fidelity = diffSquares*1e20
 % pause(1);
 end
+

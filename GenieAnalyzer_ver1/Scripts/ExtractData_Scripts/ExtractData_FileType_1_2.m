@@ -65,7 +65,7 @@ elseif(fileType==3)
                     StepCH_stop = str2double(strtrim(str(strSearch2_2+20:end)));
                 end
                 if(~isempty(strSearch2_3))
-                    StepCH_pts = str2double(strtrim(str(strSearch2_3+22:end)));
+                    StepCH_pts = str2double(strtrim(str(strSearch2_3+22:end)))
                 end
                 if(~isempty(strSearch3))
                     AcquiredCH_Name = strtrim(str(strSearch3+16:end));
@@ -87,14 +87,17 @@ elseif(fileType==3)
         Vstep_temp = linspace(StepCH_start,StepCH_stop,StepCH_pts);
         
         cnt = 1;      I = [];    Vsweep = [];    Vstep = [];
-        for i=index+2:length(D)
+        for i=index+2:size(D,1)
             temp = str2double(strsplit(D{i,1},'\t'));
             I_temp(cnt,:) = temp(2:end);
             Vsweep_temp(cnt,1) = temp(1);
             cnt = cnt+1;
         end
         
-        for i=1:size(I_temp,2)
+        size(Vstep_temp)
+        size(I_temp,2)
+        %for i=1:size(I_temp,2)
+        for i=1:StepCH_pts
             I = [I;I_temp(:,i)];
             Vsweep = [Vsweep;Vsweep_temp(:,1)];
             Vstep = [Vstep;Vstep_temp(i)*ones(size(I_temp,1),1)];

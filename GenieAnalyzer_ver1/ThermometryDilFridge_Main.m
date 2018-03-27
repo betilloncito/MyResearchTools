@@ -9,12 +9,18 @@ Y= get(child,'YData');
 Z= get(child,'ZData');
 
 % bias = -3.3e-6;
-bias = -1.95e-5;
-min_bias = -2e-5;
-max_bias = 1e-5;
+bias = 199.4e-6;
+bias = 197.5e-6;
 
-min_g = -0.459;
-max_g = -0.467;
+min_bias = 180e-6;
+max_bias = 190e-6;
+
+Inv = 1;
+
+min_g = -0.30395;
+max_g = -0.3045;
+min_g = -0.3036;
+max_g = -0.305;
 
 for i=1:length(X);
     if(i<length(X))
@@ -121,18 +127,21 @@ else
         G = -Z(index_y_max:index_y_min,index_x_max:index_x_min);
         Vbias = X(index_x_max:index_x_min);
     end
-    if(min(GG)<0)
-        GG = GG+min(GG);
-    end
+%     if(min(GG)<0)
+%         GG = GG+min(GG);
+%     end
 end
+
 figure(444);
-% surf(Vbias,V_g,G,'EdgeAlpha',0);view(2);
-plot(V_g,GG)
+surf(Vbias,V_g,G,'EdgeAlpha',0);view(2);
+figure(434)
+plot(V_g,GG*Inv);grid on;
 title(['bias:',num2str(X(index_x))]);
 
 
 % pause;
 G_avg = mean(G,2);
+figure(555);
 plot(V_g,G_avg);grid on;hold on;
 % G_avg_1 = [G(1:find(G_avg==max(G_avg))),fliplr(G(1:find(G_avg==max(G_avg))))]
 % V_g_1 = V_g(1:length(G_avg_1))
@@ -142,6 +151,8 @@ plot(V_g,G_avg);grid on;hold on;
 
 % plot(V_g_1,G_avg_1);
 
+
+%{
 G = G_avg;
 G = GG;
 
@@ -176,7 +187,7 @@ plot(myfit_G,V_g,G)
 % semilogy(myfit_G,V_g-Vo,G);grid on;
 
 title(['Fit: temperature=',num2str(T_fit),' and C2=',num2str(C2_fit)])
-
+%}
 
 
 

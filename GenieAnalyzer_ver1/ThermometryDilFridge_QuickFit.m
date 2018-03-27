@@ -6,9 +6,9 @@ child = get(gca,'Children');
 e = 1.60217662e-19; %C
 h = 6.62607004e-34; %J*s
 kB = 8.6173303e-5; %eV/K
-alpha = 0.04; % lever arm eV/V
+alpha = 0.053; % lever arm eV/V
 
-S = 1e-8;
+% S = 1e-8;
 Vac = 0.1/1e4;
 
 start = 130;
@@ -19,16 +19,17 @@ start = 1;
 
 figure(99)
 
-G_raw = [];Vgg = [];
+I_raw = [];Vgg = [];
 %averaging several traces
 for j=1:length(child)
     Vgg = get(child(j),'XData');
-    G_raw(j,:) = get(child(j),'YData');    
+    I_raw(j,:) = get(child(j),'YData');    
 end
-% GG = mean(G_raw,1);
-GG = G_raw;
+% II = mean(I_raw,1);
+II = I_raw;
 
-GG = GG*S/Vac;
+% GG = II*S/Vac;
+GG = II;
 
 % size(GG)
 % size(Vgg)
@@ -47,22 +48,31 @@ GG = GG*S/Vac;
  func = strcat(num2str(1/(2*kB)),'*C2*cosh((',num2str(alpha),'*(Vg - Vo))/(2*',num2str(kB),'*T))^(-2)/T');
  modelVariables = {'T','C2','Vo'};
  fmodel = fittype(func, 'ind', {'Vg'}, 'coeff', modelVariables);
+ 
+%{
+%  ConvLorenz(Gamma, T, C2, Vo, alpha, Vg)
+ modelVariables = {'Gamma', 'T','C2','Vo'};
+ fmodel = fittype('ConvLorenz(Gamma, T, C2, Vo, ',num2str(alpha),', Vg)', 'ind', {'Vg'}, 'coeff', modelVariables);
  size(Vg)
  size(G)
- 
+ %}
+
  T_start  = 50e-3;
  C2_start = 2*max(G)*kB*T_start;
  Vo_start = Vg(G==max(G)); %V
  
+ size(Vg)
+ size(G)
  myfit_G = fit(Vg', G', fmodel, 'Start', [T_start, C2_start, Vo_start]);
  
  vals = coeffvalues(myfit_G);
  T_fit = vals(1);C2_fit = vals(2);Vo_fit = vals(3);
  
- figure(998)
+ figure(999)
  plot(myfit_G,Vg,G)
  % plot(myfit_G,V_g-Vo,G);
  grid on;legend off;
+ xlabel('Vg [V]');ylabel('G [2e^2/h]')
  % figure(998)
  % semilogy(myfit_G,V_g-Vo,G);grid on;
  
@@ -84,11 +94,11 @@ GG = GG*S/Vac;
      
      G_calc = C2_myfit/(2*kB*T_myfit)*cosh((alpha*(Vg-Vo_myfit))/(2*kB*T_myfit)).^(-2);
      
-     figure(888)
-%      plot(Vg,G,'b.');hold on;
-%      plot(Vg,G_calc,'r');hold off;
-     semilogy(Vg,G,'b.');hold on;
-     semilogy(Vg,G_calc,'r');hold off;
+     figure(888) 
+     plot(Vg,G,'b.');hold on;
+     plot(Vg,G_calc,'r');hold off;
+%      semilogy(Vg,G,'b.');hold on;
+%      semilogy(Vg,G_calc,'r');hold off;
      grid on;
      
      pause;

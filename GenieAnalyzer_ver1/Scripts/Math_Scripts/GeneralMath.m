@@ -47,7 +47,11 @@ else
     if(isempty(axs_surf)==0)
         [XData,YData,ZData] = getDataFigure(HandleAxes,LineIndex);       
     else
-        [XData,YData] = getDataFigure(HandleAxes,LineIndex);
+        [XData,YData] = getDataFigure(HandleAxes,0);
+%         XData = fliplr(XData_unflipped);
+%         YData = fliplr(YData_unflipped);
+        size(XData);
+        size(YData);
     end
     %----------------------------------------------------------------------
     
@@ -59,8 +63,14 @@ else
         varargout = {XData_new,YData_new,ZData_new};
     else                
         for i=1:size(XData,2)
-            XData_new{i} = Gx*XData{i} + deltaX;
-            YData_new{i} = Gy*YData{i} + deltaY;
+            if(LineIndex==i || LineIndex==0)
+                XData_new{i} = Gx*XData{i} + deltaX;
+                YData_new{i} = Gy*YData{i} + deltaY;
+            else
+                XData_new{i} = XData{i};
+                YData_new{i} = YData{i};
+            end
+            
         end
         
         varargout = {XData_new,YData_new};

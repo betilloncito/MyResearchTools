@@ -57,7 +57,7 @@ else
         for i=1:size(XData,2)
             if(strcmp(Plot2D_Der,'log'))
 %                 YData = cell2mat(YData);
-                YData_new{i} = log(abs(YData{i}));
+                YData_new{i} = log10(abs(YData{i}));
                 XData_new{i} = XData{i};
             elseif(strcmp(Plot2D_Der,'abs'))
                 YData = cell2mat(YData);

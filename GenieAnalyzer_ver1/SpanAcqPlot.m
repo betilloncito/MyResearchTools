@@ -1093,7 +1093,7 @@ y_label = get(handles.YaxisEdit,'String');
 
 set(handles.SpanAcqPlotFigure,'CurrentAxes',handles.axes1);
 axs_children = get(handles.axes1,'Children');
-axs_line = findall(axs_children,'Type','Line');
+axs_line_unflipped = findall(axs_children,'Type','Line');
 axs_surf = findall(axs_children,'Type','Surface');
 
 %Saves Main directory
@@ -1104,8 +1104,10 @@ cd(handles.ScriptPath_Math);
 
 if(isempty(axs_surf)==0)
     [XData,YData,ZData] = feval(filename(1:end-2),handles.axes1,UserInputVaribles);
-elseif(isempty(axs_line)==0)
-    [XData,YData] = feval(filename(1:end-2),handles.axes1,UserInputVaribles);
+elseif(isempty(axs_line_unflipped)==0)
+    [XData_unflipped,YData_unflipped] = feval(filename(1:end-2),handles.axes1,UserInputVaribles);
+    XData = fliplr(XData_unflipped);
+    YData = fliplr(YData_unflipped);
 else
     [answer] = feval(filename(1:end-2),UserInputVaribles);    
 end
@@ -1127,8 +1129,11 @@ if(isempty(axs_surf)==0)
     set(handles.MaxValColorEdit,'String',max(max(ZData)));
     set(handles.MinValColorEdit,'String',min(min(ZData)));
     
-elseif(isempty(axs_line)==0)
-    for k=length(axs_line):-1:1
+elseif(isempty(axs_line_unflipped)==0)
+    axs_line = flipud(axs_line_unflipped);
+    disp('here');
+    size(axs_line_unflipped)
+    for k=1:length(axs_line)
         plot_color{k} = get(axs_line(k),'Color');
         linestyle{k} = get(axs_line(k),'LineStyle');
         linewidth{k} = get(axs_line(k),'LineWidth');
@@ -1137,6 +1142,7 @@ elseif(isempty(axs_line)==0)
         markerfacecolor{k} = get(axs_line(k),'MarkerFaceColor');
         markersize{k} = get(axs_line(k),'MarkerSize');
     end
+    delete(axs_children);
     
     for k=1:size(XData,2)
 %          XData{k}
@@ -1149,6 +1155,7 @@ elseif(isempty(axs_line)==0)
         line(XData{k},YData{k},'Color',plot_color{k},'LineStyle',linestyle{k},'LineWidth',linewidth{k},...
             'Marker',marker{k},'MarkerEdgeColor',markeredgecolor{k},'MarkerFaceColor',markerfacecolor{k},...
             'MarkerSize',markersize{k});
+%         pause;
     end    
     xlabel(x_label);ylabel(y_label);
     
