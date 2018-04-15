@@ -21,13 +21,13 @@ if(nargin==0)
 else
     %List the names used for the variables header
     %CURRENT
-    name{1} = 'Current';
+    name{1} = 'current';
     %LEFT BARRIER
-    name{2} = 'Acc_TL';
+    name{2} = 'Vacc_L_01';
     %RIGHT BARRIER
-    name{3} = 'Acc_TR';
+    name{3} = 'Vacc_R_01';
     %GATE
-    name{4} = 'Plg_T';
+    name{4} = 'Vplg_01';
     %Time (optional)
     name{5} = 'Time';
     
@@ -109,10 +109,11 @@ else
         
         %VdepR was stepped last and VdepL was stepped first: Therefore the
         %index y and x correspond to VdepR and VdepL, respectively.
-%         VdepR = MatrixData(1,VdepR_index,1,:);%y
-%         VdepL = MatrixData(1,VdepL_index,:,1);%x  
-        VdepR = MatrixData(1,VdepR_index,:,1);%x
-        VdepL = MatrixData(1,VdepL_index,1,:);%y
+        VdepR = MatrixData(1,VdepR_index,1,:);%y
+        VdepL = MatrixData(1,VdepL_index,:,1);%x  
+%         VdepR = MatrixData(1,VdepR_index,:,1);%x
+%         VdepL = MatrixData(1,VdepL_index,1,:);%y
+        
         VdepR = reshape(VdepR,length(VdepR),1,1,1);
         VdepL = reshape(VdepL,length(VdepL),1,1,1);
         
@@ -172,7 +173,8 @@ else
         
         figure(79);
 %         surf(VdepL,VdepR,log(abs(maxPeak_Current)),'EdgeAlpha',0)
-        surf(VdepR,VdepL,maxPeak_Current,'EdgeAlpha',0)
+        surf(VdepL,VdepR,maxPeak_Current,'EdgeAlpha',0)
+        %         surf(VdepR,VdepL,maxPeak_Current,'EdgeAlpha',0)
         title('Experimental:');xlabel('Vdep1 [V]');ylabel('Vdep2 [V]')
         view(XY_plane);colormap('jet');
         colorbar;
