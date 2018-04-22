@@ -662,7 +662,11 @@ else
     %Structure that contains all the above variables to be sent to the GUI
     GUI_Data.OrgMatrixData = handles.Stored_OrgMatrixData;
     GUI_Data.Header_Vector = handles.Header_Vector;
+    if(iscell(get(handles.ListFilesOrganizedPopupmenu,'String')))
     GUI_Data.Filenames_String = get(handles.ListFilesOrganizedPopupmenu,'String');
+    else
+        GUI_Data.Filenames_String = {get(handles.ListFilesOrganizedPopupmenu,'String')};
+    end
     GUI_Data.NowDir = NowDir;
     
     setappdata(handles.SpanAcqPlotFigure,'GUI_Data',GUI_Data);
@@ -682,6 +686,9 @@ else
             
         case 2
             ElectronTemperature;
+            
+        case 3
+            ZeemanSplitting_GUI(handles.SpanAcqPlotFigure);
             
     end
 %     cd(NowDir);
