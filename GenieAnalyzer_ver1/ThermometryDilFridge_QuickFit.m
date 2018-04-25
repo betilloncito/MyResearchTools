@@ -7,6 +7,7 @@ e = 1.60217662e-19; %C
 h = 6.62607004e-34; %J*s
 kB = 8.6173303e-5; %eV/K
 alpha = 0.053; % lever arm eV/V
+alpha = 0.047;
 
 % S = 1e-8;
 Vac = 0.1/1e4;
@@ -15,7 +16,7 @@ start = 130;
 start = 700; %138mK
 % start = 510; %168mK
 % start = 465;
-start = 1;
+start = 40;
 
 figure(99)
 

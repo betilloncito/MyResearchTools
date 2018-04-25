@@ -12,16 +12,17 @@ Z= get(child,'ZData');
 bias = 199.4e-6;
 bias = 197.5e-6;
 bias = 14.25e-6;
+bias = 7.5;
 
 min_bias = 180e-6;
 max_bias = 190e-6;
-min_bias = 0.01;
-max_bias = 0.02;
+min_bias = -5;
+max_bias = 15;
 
-Inv = 1;
+Inv = -1;
 
-min_g = 2.522;
-max_g = 2.536;
+min_g = -0.459;
+max_g = -0.467;
 
 for i=1:length(X);
     if(i<length(X))
@@ -134,7 +135,7 @@ else
 end
 
 figure(444);
-surf(Vbias,V_g,G,'EdgeAlpha',0);view(2);
+surf(Vbias,V_g,G*Inv,'EdgeAlpha',0);view(2);
 figure(434)
 plot(V_g,GG*Inv);grid on;
 title(['bias:',num2str(X(index_x))]);
@@ -143,7 +144,7 @@ title(['bias:',num2str(X(index_x))]);
 % pause;
 G_avg = mean(G,2);
 figure(555);
-plot(V_g,G_avg);grid on;hold on;
+plot(V_g,G_avg*Inv);grid on;hold on;
 % G_avg_1 = [G(1:find(G_avg==max(G_avg))),fliplr(G(1:find(G_avg==max(G_avg))))]
 % V_g_1 = V_g(1:length(G_avg_1))
 
