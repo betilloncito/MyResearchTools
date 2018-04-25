@@ -1,35 +1,35 @@
-function varargout = TunnelRateAnalysis_GUI(varargin)
-% TUNNELRATEANALYSIS_GUI MATLAB code for TunnelRateAnalysis_GUI.fig
-%      TUNNELRATEANALYSIS_GUI, by itself, creates a new TUNNELRATEANALYSIS_GUI or raises the existing
+function varargout = ElectronTemperatureAnalysis_GUI(varargin)
+% ELECTRONTEMPERATUREANALYSIS_GUI MATLAB code for ElectronTemperatureAnalysis_GUI.fig
+%      ELECTRONTEMPERATUREANALYSIS_GUI, by itself, creates a new ELECTRONTEMPERATUREANALYSIS_GUI or raises the existing
 %      singleton*.
 %
-%      H = TUNNELRATEANALYSIS_GUI returns the handle to a new TUNNELRATEANALYSIS_GUI or the handle to
+%      H = ELECTRONTEMPERATUREANALYSIS_GUI returns the handle to a new ELECTRONTEMPERATUREANALYSIS_GUI or the handle to
 %      the existing singleton*.
 %
-%      TUNNELRATEANALYSIS_GUI('CALLBACK',hObject,eventData,handles,...) calls the local
-%      function named CALLBACK in TUNNELRATEANALYSIS_GUI.M with the given input arguments.
+%      ELECTRONTEMPERATUREANALYSIS_GUI('CALLBACK',hObject,eventData,handles,...) calls the local
+%      function named CALLBACK in ELECTRONTEMPERATUREANALYSIS_GUI.M with the given input arguments.
 %
-%      TUNNELRATEANALYSIS_GUI('Property','Value',...) creates a new TUNNELRATEANALYSIS_GUI or raises the
+%      ELECTRONTEMPERATUREANALYSIS_GUI('Property','Value',...) creates a new ELECTRONTEMPERATUREANALYSIS_GUI or raises the
 %      existing singleton*.  Starting from the left, property value pairs are
-%      applied to the GUI before TunnelRateAnalysis_GUI_OpeningFcn gets called.  An
+%      applied to the GUI before ElectronTemperatureAnalysis_GUI_OpeningFcn gets called.  An
 %      unrecognized property name or invalid value makes property application
-%      stop.  All inputs are passed to TunnelRateAnalysis_GUI_OpeningFcn via varargin.
+%      stop.  All inputs are passed to ElectronTemperatureAnalysis_GUI_OpeningFcn via varargin.
 %
 %      *See GUI Options on GUIDE's Tools menu.  Choose "GUI allows only one
 %      instance to run (singleton)".
 %
 % See also: GUIDE, GUIDATA, GUIHANDLES
 
-% Edit the above text to modify the response to help TunnelRateAnalysis_GUI
+% Edit the above text to modify the response to help ElectronTemperatureAnalysis_GUI
 
-% Last Modified by GUIDE v2.5 19-Apr-2018 20:03:46
+% Last Modified by GUIDE v2.5 19-Apr-2018 20:37:28
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
 gui_State = struct('gui_Name',       mfilename, ...
                    'gui_Singleton',  gui_Singleton, ...
-                   'gui_OpeningFcn', @TunnelRateAnalysis_GUI_OpeningFcn, ...
-                   'gui_OutputFcn',  @TunnelRateAnalysis_GUI_OutputFcn, ...
+                   'gui_OpeningFcn', @ElectronTemperatureAnalysis_GUI_OpeningFcn, ...
+                   'gui_OutputFcn',  @ElectronTemperatureAnalysis_GUI_OutputFcn, ...
                    'gui_LayoutFcn',  [] , ...
                    'gui_Callback',   []);
 if nargin && ischar(varargin{1})
@@ -44,17 +44,18 @@ end
 % End initialization code - DO NOT EDIT
 
 
-% --- Executes just before TunnelRateAnalysis_GUI is made visible.
-function TunnelRateAnalysis_GUI_OpeningFcn(hObject, eventdata, handles, varargin)
+% --- Executes just before ElectronTemperatureAnalysis_GUI is made visible.
+function ElectronTemperatureAnalysis_GUI_OpeningFcn(hObject, eventdata, handles, varargin)
 % This function has no output args, see OutputFcn.
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-% varargin   command line arguments to TunnelRateAnalysis_GUI (see VARARGIN)
+% varargin   command line arguments to ElectronTemperatureAnalysis_GUI (see VARARGIN)
 
-% Choose default command line output for TunnelRateAnalysis_GUI
+% Choose default command line output for ElectronTemperatureAnalysis_GUI
 handles.output = hObject;
 
+%------------------------Do not Edit--------------------------------------%
 %Gets input which is the handle to the "calling" GUI (SpanAcpPlot)
 handles.MainFigureHandle = varargin{1};
 %Gets the data using the getappdata function
@@ -70,21 +71,24 @@ set(handles.FilesAvailableListbox,'String',handles.Received_GUI_Data.Filenames_S
 %Global Variables:
 handles.ChosenFiles_indeces = [];
 handles.AvailableFiles_indeces = [1:1:length(handles.Received_GUI_Data.OrgMatrixData)];
+%-------------------------------------------------------------------------%
 
-handles.VarDataTable = [{'Counter Variable [Y-axis]:'},{'Dummy'}; {'Current:'},{'Current'};...
-    {'Gate:'},{'Vplg'}; {'Sens. (V/A):'},{1e-8}; {'\alpha (eV/V):'},{0.139};...
-    {'Xmin:'},{2.0145}; {'Xmax'},{2.019}; {'Pause:'},{0}; {'Gaussian Num:'},{1}];
+handles.VarDataTable = [{'Counter Variable [Y-axis]:'},{'Dummy'}; {'Current:'},{'Current'};
+    {'Gate:'},{'Vplg'}; {'Sens. DL (V/A):'},{1e-8}; {'Sens. Lockin (V):'},{200e-6}; {'Lock-In Vac (V):'},{0.05};
+    {'Lock-In Volt Div.:'},{10000}; {'alpha (eV/V):'},{0.139}; {'Xmin:'},{2.0145}; {'Xmax'},{2.019}; 
+    {'Pause:'},{0}; {'Gaussian Num:'},{1}];
 set(handles.VariableListTable,'Data',handles.VarDataTable);
+
 
 % Update handles structure
 guidata(hObject, handles);
 
-% UIWAIT makes TunnelRateAnalysis_GUI wait for user response (see UIRESUME)
-% uiwait(handles.TunnelRateAnalysis_Figure);
+% UIWAIT makes ElectronTemperatureAnalysis_GUI wait for user response (see UIRESUME)
+% uiwait(handles.electrontemperatureanalysis_figure);
 
 
 % --- Outputs from this function are returned to the command line.
-function varargout = TunnelRateAnalysis_GUI_OutputFcn(hObject, eventdata, handles) 
+function varargout = ElectronTemperatureAnalysis_GUI_OutputFcn(hObject, eventdata, handles) 
 % varargout  cell array for returning output args (see VARARGOUT);
 % hObject    handle to figure
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -92,6 +96,8 @@ function varargout = TunnelRateAnalysis_GUI_OutputFcn(hObject, eventdata, handle
 
 % Get default command line output from handles structure
 varargout{1} = handles.output;
+
+
 
 % --- Executes on button press in AddAllPushbutton.
 function AddAllPushbutton_Callback(hObject, eventdata, handles)
@@ -290,11 +296,7 @@ name{4} = 'Time';
         %-----------------------------------------------------------------%
         
         %Extracting Data
-        
-        %Initializes input parameters: Example
-        S = cell2mat(VarTable(4,2));
-        alpha = cell2mat(VarTable(5,2));
-        
+                
         nx = size(MatrixData,1);
         ny = size(MatrixData,3);
         
@@ -330,7 +332,7 @@ name{4} = 'Time';
         else
             line(handles.Vplg,handles.Current,'Parent',handles.axes1,...
                 'LineStyle','-','LineWidth',2);%,'Marker','o','MarkerSize',4,'MarkerFace','r','MarkerEdge','k');
-            grid on;
+            grid(handles.axes1,'on');
         end
 
 guidata(hObject, handles);
@@ -345,7 +347,7 @@ UserInputVaribles = (TableData(:,2));
 % x_label = get(handles.XaxisEdit,'String');
 % y_label = get(handles.YaxisEdit,'String');
 
-set(handles.TunnelRateAnalysis_Figure,'CurrentAxes',handles.axes1);
+set(handles.ElectronTemperatureAnalysis_Figure,'CurrentAxes',handles.axes1);
 axs_children = get(handles.axes1,'Children');
 axs_line_unflipped = findall(axs_children,'Type','Line');
 axs_surf = findall(axs_children,'Type','Surface');
@@ -371,7 +373,7 @@ cd(NowDir);
 if(isempty(axs_surf)==0)
     delete(axs_children);
     
-    set(handles.TunnelRateAnalysis_Figure,'CurrentAxes',handles.axes1);
+    set(handles.ElectronTemperatureAnalysis_Figure,'CurrentAxes',handles.axes1);
     surf(XData,YData,ZData,'EdgeColor','none');
     XY_plane = [0 90];view(XY_plane);grid on;
 %     xlabel(x_label);ylabel(y_label);
@@ -460,6 +462,11 @@ function FindSplitPushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
+%Constants Physics
+e = 1.60217662e-19; %C
+h = 6.62607004e-34; %J*s
+kB = 8.6173303e-5; %eV/K
+
 child = get(handles.axes1,'Children');
 X = get(child,'XData');
 if(size(X,1)>1)
@@ -475,14 +482,25 @@ Iteration = 1;
 
 VarTable = get(handles.VariableListTable,'Data');
 
-xmin = cell2mat(VarTable(7,2));
-xmax = cell2mat(VarTable(8,2));
+Sens_preamp = cell2mat(VarTable(4,2));
+Sens_lockin = cell2mat(VarTable(5,2));
+LockIN_amp = cell2mat(VarTable(6,2));
+LockIN_voltDiv = cell2mat(VarTable(7,2));
 
-pauseOpt = cell2mat(VarTable(9,2));
-GaussNum = cell2mat(VarTable(10,2));
- 
+alpha = cell2mat(VarTable(8,2));
 
-for i=1:length(Y)
+xmin = cell2mat(VarTable(9,2));
+xmax = cell2mat(VarTable(10,2));
+
+pauseOpt = cell2mat(VarTable(11,2));
+GaussNum = cell2mat(VarTable(12,2));
+
+if(isempty(Z))
+    SweepNum=1;
+else
+    SweepNum = length(Y);
+end
+for i=1:SweepNum
     child_2 = get(handles.axes2,'Children');
     delete(child_2);
 %     disp(['Current line',num2str(i)]);
@@ -519,10 +537,18 @@ for i=1:length(Y)
     end
             
     if(index_xmin<index_xmax)
-        sig = Z(i,index_xmin:index_xmax);
+        if(isempty(Z)) 
+            sig = Y(1,index_xmin:index_xmax);
+        else
+            sig = Z(i,index_xmin:index_xmax);
+        end
         Xcrop = X(index_xmin:index_xmax);
     else
-        sig = Z(i,index_xmax:index_xmin);
+        if(isempty(Z))
+            sig = Y(1,index_xmax:index_xmin);
+        else
+            sig = Z(i,index_xmax:index_xmin);
+        end
         Xcrop = X(index_xmax:index_xmin);
     end
     sig = ReduceNoise(sig,3,Iteration,0);
@@ -540,171 +566,115 @@ for i=1:length(Y)
 %             cnt = cnt+1
 %         end
 %     end
-%     %----------------------------------------------------------------------
+%     %--------------------------------------------------------------------
 
     %Gaussian Fit----------------------------------------------------------
-    %normalize and remove offsets
-    if(min(sig)<0)
-        sig = sig+abs(min(sig));
-    else
-        sig = sig-min(sig);
+    
+    %Calculate correct value for G
+    if(~isempty(Sens_lockin))
+        sig_I = (sig/10)*Sens_lockin*Sens_preamp;
+        sig_G = sig_I/(LockIN_amp/LockIN_voltDiv);
     end
-    sig_fit = sig/max(sig);%normalize the y values
 
-    %code to add points to sig
-    temp_sig_fit = [];
-    temp_Xcrop = [];
-%     figure(900);plot(Xcrop,sig_fit,'r');hold on;
-%     size(Xcrop)
-%     pause;
-    for j=1:length(sig_fit)-1
-        numpts = round(sig_fit(j+1)*100);
-              
-        if(numpts<50)
-            numpts=2;
-        end
-        
-        if(numpts>2)
-            slope = diff(sig_fit(j:j+1))/diff(Xcrop(j:j+1));
-            y_int = sig_fit(j) - slope*Xcrop(j);
-            
-            newPts_Xcrop = linspace(Xcrop(j),Xcrop(j+1),numpts);
-            if(j==length(sig_fit)-1)
-                newPts_sig_fit = slope*newPts_Xcrop + y_int;
-                temp_Xcrop = [temp_Xcrop, newPts_Xcrop];
-            else
-                newPts_sig_fit = slope*newPts_Xcrop(1:end-1) + y_int;
-                temp_Xcrop = [temp_Xcrop, newPts_Xcrop(1:end-1)];
-            end
-            temp_sig_fit = [temp_sig_fit, newPts_sig_fit];
-            
-        else
-            if(j==length(sig_fit)-1)
-                temp_Xcrop = [temp_Xcrop, Xcrop(j:j+1)];
-                temp_sig_fit = [temp_sig_fit, sig_fit(j:j+1)'];
-            else
-                temp_Xcrop = [temp_Xcrop, Xcrop(j)];
-                temp_sig_fit = [temp_sig_fit, sig_fit(j)];
-            end
-        end
+    %code to add points to sig---------------------------------------------
+%     temp_sig_fit = [];
+%     temp_Xcrop = [];
+%     for j=1:length(sig_fit)-1
+%         numpts = round(sig_fit(j+1)*100);
+%               
+%         if(numpts<50)
+%             numpts=2;
+%         end
+%         
+%         if(numpts>2)
+%             slope = diff(sig_fit(j:j+1))/diff(Xcrop(j:j+1));
+%             y_int = sig_fit(j) - slope*Xcrop(j);
+%             
+%             newPts_Xcrop = linspace(Xcrop(j),Xcrop(j+1),numpts);
+%             if(j==length(sig_fit)-1)
+%                 newPts_sig_fit = slope*newPts_Xcrop + y_int;
+%                 temp_Xcrop = [temp_Xcrop, newPts_Xcrop];
+%             else
+%                 newPts_sig_fit = slope*newPts_Xcrop(1:end-1) + y_int;
+%                 temp_Xcrop = [temp_Xcrop, newPts_Xcrop(1:end-1)];
+%             end
+%             temp_sig_fit = [temp_sig_fit, newPts_sig_fit];
+%             
+%         else
+%             if(j==length(sig_fit)-1)
+%                 temp_Xcrop = [temp_Xcrop, Xcrop(j:j+1)];
+%                 temp_sig_fit = [temp_sig_fit, sig_fit(j:j+1)'];
+%             else
+%                 temp_Xcrop = [temp_Xcrop, Xcrop(j)];
+%                 temp_sig_fit = [temp_sig_fit, sig_fit(j)];
+%             end
+%         end
+%     end
+%     sig_fit = temp_sig_fit';
+%     Xcrop = temp_Xcrop;
+    %----------------------------------------------------------------------
+    
+    sig_fit = sig_G/(2*e^2/h);
+%     sig_fit = sig;
+    
+    func = strcat(num2str(1/(2*kB)),'*C2*cosh((',num2str(alpha),'*(Vg - Vo))/(2*',num2str(kB),'*T))^(-2)/T');
+    modelVariables = {'T','C2','Vo'};
+    fmodel = fittype(func, 'ind', {'Vg'}, 'coeff', modelVariables);
+    
+    %{
+%  ConvLorenz(Gamma, T, C2, Vo, alpha, Vg)
+ modelVariables = {'Gamma', 'T','C2','Vo'};
+ fmodel = fittype('ConvLorenz(Gamma, T, C2, Vo, ',num2str(alpha),', Vg)', 'ind', {'Vg'}, 'coeff', modelVariables);
+ size(Vg)
+ size(G)
+    %}
+    
+    T_start  = 40e-3;
+    C2_start = 2*max(sig_fit)*kB*T_start;
+    Vo_start = Xcrop(sig_fit==max(sig_fit)); %V
+    
+    myfit_G = fit(Xcrop', sig_fit, fmodel,...
+        'Start', [T_start, C2_start, Vo_start],...
+        'TolFun',1e-10,'TolX',1e-6,'MaxFunEvals',1000,'MaxIter',1000);
+    
+    vals = coeffvalues(myfit_G);
+    T_fit = vals(1);C2_fit = vals(2);Vo_fit = vals(3);
+
+    % figure(300);
+    child = get(handles.axes2,'Children');delete(child);
+    set(handles.ElectronTemperatureAnalysis_Figure,'CurrentAxes',handles.axes2);
+    plot(myfit_G,Xcrop,sig_fit);
+    title(['Counter: ',num2str(Y(i))])
+    if(i<SweepNum)
+        legend off;
     end
-    sig_fit = temp_sig_fit';
-    Xcrop = temp_Xcrop;
-    
-%     size(sig_fit)
-%     size(Xcrop)
-%     figure(900);line(Xcrop,sig_fit,'bo');hold off;
-%     pause;
-
-%     weights = 2.^(sig_fit*10);
-    weights = (sig_fit>0.3)*9 + 1;
-    
-%     figure(444);plot(Xcrop,weights,'b',Xcrop,sig_fit,'r.');
-%     pause;
-
-    if(GaussNum>1)
-        func = 'A1*exp(-(Vg - B1)^2/(2*C1^2)) + A2*exp(-(Vg - B2)^2/(2*C2^2))';
-        modelVariables = {'A1','B1','C1','A2','B2','C2'};
-        fmodel = fittype(func, 'ind', {'Vg'}, 'coeff', modelVariables);
-    else
-        func = 'A1*exp(-(Vg - B1)^2/(2*C1^2))';
-        modelVariables = {'A1','B1','C1'};
-        fmodel = fittype(func, 'ind', {'Vg'}, 'coeff', modelVariables);
-    end
-    
-%     lowerVal = [0,min(Xcrop),]
-%     myfit_G = fit(Xcrop', sig_fit', fmodel, 'lower', LowerVal,'upper',UpperVal);
-    A1_start = 0.02;    A2_start = 0.02;
-    B1_start = min(Xcrop);    B2_start = max(Xcrop);
-    C1_start = (max(Xcrop)-min(Xcrop))*0.01;    C2_start = (max(Xcrop)-min(Xcrop))*0.01;
-        
-    A_lower = 0.1;
-%     B_lower = 2.0160;
-    B_lower = min(Xcrop) + (max(Xcrop)-min(Xcrop))*0.2;
-    C_lower = (max(Xcrop)-min(Xcrop))*0.01;
-    
-    A_upper = 1;
-%     B_upper = 2.0185;
-    B_upper = max(Xcrop) - (max(Xcrop)-min(Xcrop))*0.2;
-    C_upper = (max(Xcrop)-min(Xcrop))*0.2;
-    
-    if(GaussNum>1)
-        StartVal = [A1_start, B1_start, C1_start, A2_start, B2_start, C2_start];
-        LowerVal = [A_lower, B_lower, C_lower, A_lower, B_lower, C_lower];
-        UpperVal = [A_upper, B_upper, C_upper, A_upper, B_upper, C_upper];
-    else
-        StartVal = [A1_start, B1_start, C1_start];
-        LowerVal = [A_lower, B_lower, C_lower];
-        UpperVal = [A_upper, B_upper, C_upper];
-    end
-%     exclude2 = sig_fit < 0.25;
-    
-    myfit = fit(Xcrop',sig_fit,fmodel,'Weights',weights,...
-        'Start',StartVal,'lower',LowerVal,'upper',UpperVal,...
-        'TolFun',1e-8,'TolX',1e-6,'MaxFunEvals',600,'MaxIter',400);
-    
-    vals = coeffvalues(myfit);
-    A1_fit = vals(1);   B1_fit = vals(2);   C1_fit = vals(3);
-    gauss1 = A1_fit*exp(-(Xcrop-B1_fit).^2./(2*C1_fit^2));
-% size(Xcrop)
-% size(sig_fit)
-%     myfit = fit(Xcrop', sig_fit, fmodel);
-%     A1_fit = A1_start;   B1_fit = B1_start;   C1_fit = C1_start;
-%     A2_fit = A1_start;   B2_fit = B1_start;   C2_fit = C1_start;    
-%     A1_fit = 1;
-%     A2_fit = 1;
-
-    child = get(handles.axes3,'Children');delete(child);
     grid on;legend off;
-    line(Xcrop,gauss1,'Parent',handles.axes3,'LineStyle','--','Color','k');
-    if(GaussNum>1)
-        A2_fit = vals(4);   B2_fit = vals(5);   C2_fit = vals(6);
-        Separation(i) = abs(B1_fit - B2_fit);    
-        gauss2 = A2_fit*exp(-(Xcrop-B2_fit).^2./(2*C2_fit^2));
-        line(Xcrop,gauss2,'Parent',handles.axes3,'LineStyle','-.','Color','g');
-    else
-        PeakPos(i) = B1_fit;
-    end
-    
-% figure(300);
-child = get(handles.axes2,'Children');delete(child);
-set(handles.TunnelRateAnalysis_Figure,'CurrentAxes',handles.axes2);
-plot(myfit,Xcrop,sig_fit);grid on;
-title(['B-field: ',num2str(Y(i))])
-if(i<length(Y))
-    legend off;
-end
+    xlabel('Vg [V]');ylabel('G [2e^2/h]')
+    title([{['Fit: temperature=',num2str(T_fit*1000),'mK']},{['C2=',num2str(C2_fit),' and Vo=',num2str(Vo_fit),'V']}],...
+        'FontSize',10);
+
 % plot(myfit,Xcrop,sig_fit);grid on;
 % plot(Xcrop,sig_fit);hold on;
 
 % figure(302);
 
     %----------------------------------------------------------------------
-    
-    
+      
 %     line(Xcrop,sig_fit,'Parent',handles.axes2,'LineStyle','-','Color','blue');
 %     line(pk_x,pk_y,'Parent',handles.axes2,'LineStyle','none','Color','red','Marker','o');
 %     grid on;
-    
-    if(length(pk_y)>1)
-        pk_yy = sort(pk_y,'descend');
-        n1 = find(pk_y==pk_yy(1));
-        n2 = find(pk_y==pk_yy(2));
-        
-        sep(i) = abs(pk_x(n1) - pk_x(n2));
-    end
     
     if(pauseOpt>0)
         pause(pauseOpt);
     end
 end
 
-child = get(handles.axes3,'Children');delete(child);
-if(GaussNum>1) 
-    line(Y,Separation,'Parent',handles.axes3,'LineStyle','--','Color','k','Marker','o');
-else
-    line(Y,PeakPos,'Parent',handles.axes3,'LineStyle','--','Color','k','Marker','o');
-end
+% child = get(handles.axes3,'Children');delete(child);
+% if(GaussNum>1) 
+%     line(Y,Separation,'Parent',handles.axes3,'LineStyle','--','Color','k','Marker','o');
+% else
+%     line(Y,PeakPos,'Parent',handles.axes3,'LineStyle','--','Color','k','Marker','o');
+% end
 % figure(231);plot(sep);grid on;
 
 % Update handles structure
@@ -717,17 +687,17 @@ function OpenFigureWindowPushbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to OpenFigureWindowPushbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-set(0,'CurrentFigure',handles.TunnelRateAnalysis_Figure);
+set(0,'CurrentFigure',handles.ElectronTemperatureAnalysis_Figure);
 set(0,'ShowHiddenHandles','on');
 
 if(get(handles.AxesNum1Radiobutton,'Value')==1)
-    set(handles.TunnelRateAnalysis_Figure,'CurrentAxes',handles.axes1);
+    set(handles.ElectronTemperatureAnalysis_Figure,'CurrentAxes',handles.axes1);
     
 elseif(get(handles.AxesNum2Radiobutton,'Value')==1)
-    set(handles.TunnelRateAnalysis_Figure,'CurrentAxes',handles.axes2);
+    set(handles.ElectronTemperatureAnalysis_Figure,'CurrentAxes',handles.axes2);
 
 elseif(get(handles.AxesNum3Radiobutton,'Value')==1)
-    set(handles.TunnelRateAnalysis_Figure,'CurrentAxes',handles.axes3);
+    set(handles.ElectronTemperatureAnalysis_Figure,'CurrentAxes',handles.axes3);
 end
 
 axs_children = get(gca,'Children');
@@ -820,7 +790,6 @@ guidata(hObject, handles);
 
 %--------------------------------------------------------------------------
 
-% --- Executes on selection change in FilesAvailableListbox.
 function FilesAvailableListbox_Callback(hObject, eventdata, handles)
 % hObject    handle to FilesAvailableListbox (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
@@ -842,7 +811,6 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
-
 % --- Executes on selection change in FilesChosenListbox.
 function FilesChosenListbox_Callback(hObject, eventdata, handles)
 % hObject    handle to FilesChosenListbox (see GCBO)
@@ -851,7 +819,6 @@ function FilesChosenListbox_Callback(hObject, eventdata, handles)
 
 % Hints: contents = cellstr(get(hObject,'String')) returns FilesChosenListbox contents as cell array
 %        contents{get(hObject,'Value')} returns selected item from FilesChosenListbox
-
 
 % --- Executes during object creation, after setting all properties.
 function FilesChosenListbox_CreateFcn(hObject, eventdata, handles)
@@ -867,19 +834,20 @@ end
 
 %--------------------------------------------------------------------------
 
-% --- Executes when TunnelRateAnalysis_Figure is resized.
-function TunnelRateAnalysis_Figure_SizeChangedFcn(hObject, eventdata, handles)
-% hObject    handle to TunnelRateAnalysis_Figure (see GCBO)
+
+% --- Executes when ElectronTemperatureAnalysis_Figure is resized.
+function ElectronTemperatureAnalysis_Figure_SizeChangedFcn(hObject, eventdata, handles)
+% hObject    handle to ElectronTemperatureAnalysis_Figure (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 
-% --- Executes when user attempts to close TunnelRateAnalysis_Figure.
-function TunnelRateAnalysis_Figure_CloseRequestFcn(hObject, eventdata, handles)
-% hObject    handle to TunnelRateAnalysis_Figure (see GCBO)
+% --- Executes when user attempts to close ElectronTemperatureAnalysis_Figure.
+function ElectronTemperatureAnalysis_Figure_CloseRequestFcn(hObject, eventdata, handles)
+% hObject    handle to ElectronTemperatureAnalysis_Figure (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
 cd(handles.Received_GUI_Data.NowDir);
-% Hint: delete(hObject) closes the figure
+% Hint: delete(hObject) closes the Figure
 delete(hObject);
