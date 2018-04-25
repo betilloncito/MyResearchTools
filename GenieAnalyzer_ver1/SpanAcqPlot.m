@@ -685,7 +685,7 @@ else
             TunnelRateAnalysis_GUI(handles.SpanAcqPlotFigure);
             
         case 2
-            ElectronTemperature;
+            ElectronTemperatureAnalysis_GUI(handles.SpanAcqPlotFigure);
             
         case 3
             ZeemanSplitting_GUI(handles.SpanAcqPlotFigure);

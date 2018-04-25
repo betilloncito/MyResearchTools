@@ -4,9 +4,13 @@ X = get(child,'XData');
 Y = get(child,'YData');
 Z = get(child,'ZData');
 
+shiftOPT = 1;
+SaveOPT = 0;
+
 if(shiftOPT ==1)
-    y_index = 54;
-    shift = -2;
+    y_index = 48;
+    %Positive shift moves the bottom region to the right
+    shift = -5;
     
     if(shift>0)
         Zshift_below = Z(1:y_index,1:end-shift+1);

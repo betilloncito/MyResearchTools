@@ -152,13 +152,14 @@ else
                 VdepR_temp = MatrixData(1,VdepR_index,x,y);
                 
                 %Maximum peak only-----------------------------------------
-                maxPeak_Current(cnt_y,cnt_x) = max(S*Peaks);
+%                 maxPeak_Current(cnt_y,cnt_x) = max(S*Peaks);
                 %----------------------------------------------------------
                 
                 %Average of all peaks--------------------------------------
                 %Simple peak search
 %                 height = abs(max(Y)-min(Y));
                 %     sig_noiseless = ReduceNoise(sig,3,Iteration,0);
+                [peaks_chosen,loc] = findpeaks(Peaks);
                 % cnt=1;pk_x = [];pk_y = [];
                 % for j=1:length(loc)
                 %     sig(loc(j))
@@ -168,10 +169,10 @@ else
                 %         cnt = cnt+1
                 %     end
                 % end
+                sortedPks = sort(peaks_chosen,'descend');
                 
-%                 [peaks_chosen,loc] = findpeaks(Peaks);
-%                 sortedPks = sort(peaks_chosen,'descend');
-%                 maxPeak_Current(cnt_y,cnt_x) = mean(sortedPks(1:7));
+%                 avePk_amp = mean(sortedPks(1:7))           
+                maxPeak_Current(cnt_y,cnt_x) = mean(sortedPks(1:7));
                 %----------------------------------------------------------
                 
 %                 maxPeak_Current(cnt_y,cnt_x) = mean(S*Peaks);
