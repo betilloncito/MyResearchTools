@@ -12,17 +12,17 @@ Z= get(child,'ZData');
 bias = 199.4e-6;
 bias = 197.5e-6;
 bias = 14.25e-6;
-bias = 7.5;
+bias = 0.18;
 
 min_bias = 180e-6;
 max_bias = 190e-6;
-min_bias = -5;
-max_bias = 15;
+min_bias = 0.16;
+max_bias = 0.18;
 
 Inv = -1;
 
-min_g = -0.459;
-max_g = -0.467;
+min_g = -0.416;
+max_g = -0.421;
 
 for i=1:length(X);
     if(i<length(X))
@@ -67,7 +67,7 @@ for i=1:length(X);
             break;
         end
     end
-    if(X(i)==bias)
+    if(X(i)==max_bias)
         index_x_max = i
     end
 end

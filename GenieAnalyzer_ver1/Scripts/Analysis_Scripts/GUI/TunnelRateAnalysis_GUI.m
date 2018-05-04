@@ -71,9 +71,9 @@ set(handles.FilesAvailableListbox,'String',handles.Received_GUI_Data.Filenames_S
 handles.ChosenFiles_indeces = [];
 handles.AvailableFiles_indeces = [1:1:length(handles.Received_GUI_Data.OrgMatrixData)];
 
-handles.VarDataTable = [{'Counter Variable [Y-axis]:'},{'Dummy'}; {'Current:'},{'Current'};...
-    {'Gate:'},{'Vplg'}; {'Sens. (V/A):'},{1e-8}; {'\alpha (eV/V):'},{0.139};...
-    {'Xmin:'},{2.0145}; {'Xmax'},{2.019}; {'Pause:'},{0}; {'Gaussian Num:'},{1}];
+handles.VarDataTable = [{'V_Sweep1 :'},{'Vacc_R'}; {'V_Sweep2 :'},{'Vacc_L'}; {'Gate:'},{'Vplg'};...
+    {'Current:'},{'Current'}; {'Sens. (V/A):'},{1e-8}; {'Pause:'},{0}; {'Smoothing Iter.'},{1};...
+    {'a1:'},{'0.1,100'}; {'b1:'},{'1,50'}; {'a2:'},{'0.1,100'}; {'b2:'},{'1,50'}; {'Fit Iter.:'},{3}];
 set(handles.VariableListTable,'Data',handles.VarDataTable);
 
 % Update handles structure
@@ -224,13 +224,15 @@ INDEX = handles.ChosenFiles_indeces(chosenFile);
 VarTable = get(handles.VariableListTable,'Data');
 %List the names used for the variables header
 %CURRENT
-name{1} = cell2mat(VarTable(2,2));    %name{1} = 'Current';
+name{1} = cell2mat(VarTable(4,2));    %name{1} = 'Current';
 %GATE
 name{2} = cell2mat(VarTable(3,2));   %    name{3} = 'Vtun';
-%Counter
+%V_sweep1
 name{3} = cell2mat(VarTable(1,2));   %    name{3} = 'Vtun';
+%V_sweep2
+name{4} = cell2mat(VarTable(2,2));   %    name{3} = 'Vtun';
 %TIME
-name{4} = 'Time';
+name{5} = 'Time';
 
 % for INDEX=1:length(handles.ChosenFiles_indeces)
     %Loops over each saved data set.
@@ -265,8 +267,10 @@ name{4} = 'Time';
                         case 2
                             Vtun_index = ii;
                         case 3
-                            Counter_index = ii;
+                            V_sweep1_index = ii;
                         case 4
+                            V_sweep2_index = ii;
+                        case 5
                             Time_index = ii;
                     end
                     break;
@@ -288,52 +292,270 @@ name{4} = 'Time';
         %  ...
         % *nth dim: is the number of data points taken during the nth sweep
         %-----------------------------------------------------------------%
+        global V_sweep1;
+        global V_sweep2;
+        global maxPeak_Current;
+        global maxPeak_Current_sim;
         
         %Extracting Data
         
         %Initializes input parameters: Example
-        S = cell2mat(VarTable(4,2));
-        alpha = cell2mat(VarTable(5,2));
+        Sens = cell2mat(VarTable(5,2));
+        SmoothIter = cell2mat(VarTable(7,2));
         
-        nx = size(MatrixData,1);
-        ny = size(MatrixData,3);
+        n_plg = size(MatrixData,1);
+        n_sweep1 = size(MatrixData,3);
+        n_sweep2 = size(MatrixData,4);
         
-        Current = MatrixData(:,I_index,:);
-        Current = reshape(Current,nx,ny);
-        handles.Current = (transpose(Current));
+        Current = MatrixData(:,I_index,:,:);
+        Current = reshape(Current,n_plg,n_sweep1,n_sweep2);
+                
+        Vplg = MatrixData(:,Vtun_index,1,1);
+        Vplg = reshape(Vplg,n_plg,1);
+        V_sweep1 = MatrixData(1,V_sweep1_index,:,1);
+        V_sweep1 = reshape(V_sweep1,n_sweep1,1);
+        V_sweep2 = MatrixData(1,V_sweep2_index,1,:);
+        V_sweep2 = reshape(V_sweep2,n_sweep2,1);        
+        handles.Vplg = Vplg;                
         
-        size(Current)
-        Vplg = MatrixData(:,Vtun_index,1);
-        Vplg = reshape(Vplg,nx,1);
-        handles.Vplg = Vplg;
-        
-        size(Vplg)
-        
-        Time = MatrixData(:,Time_index,:);
-        Time = reshape(Time,nx,ny);
-        handles.Time = (transpose(Time));
+        Time = MatrixData(:,Time_index,:,:);
+        Time = reshape(Time,n_plg,n_sweep1,n_sweep2);
         
         size(Time)
+        size(Current)
+        size(V_sweep1)
+        size(V_sweep2)
         
-        child = get(handles.axes1,'Children');delete(child);
-        if(~isempty(Counter_index))
-            CounterVar = MatrixData(1,Counter_index,:);
-            CounterVar = reshape(CounterVar,ny,1);
-            handles.CounterVar = CounterVar;
-            
-            size(CounterVar)
-            
-            %-----------------------------------------------------------------%
-            surf(handles.Vplg,handles.CounterVar,handles.Current,'EdgeAlpha',0,'Parent',handles.axes1);
-            XY_plane=[0 90];
-            view(handles.axes1,2);
-        else
-            line(handles.Vplg,handles.Current,'Parent',handles.axes1,...
-                'LineStyle','-','LineWidth',2);%,'Marker','o','MarkerSize',4,'MarkerFace','r','MarkerEdge','k');
-            grid on;
+        index_depL_descend = 1;
+               
+%         cnt_i = 1;cnt_j = 1;
+        maxPeak_Current = [];
+        for j=1:n_sweep2
+            for i=index_depL_descend:n_sweep1
+                
+                Peaks = Current(:,i,j);
+                %abs(MatrixData(:,I_index,x,y));
+                %                 Vtun = MatrixData(:,Vtun_index,x,y);
+                
+                %                 VdepL_temp = MatrixData(1,VdepL_index,x,y);
+                %                 VdepR_temp = MatrixData(1,VdepR_index,x,y);
+                
+                %                 V1(cnt_x) = V_sweep1(x);
+                %                 V2(cnt_y) = V_sweep2(y);
+                
+                %Maximum peak only-----------------------------------------
+                maxPeak_Current(j,i) = max(Sens*Peaks);
+                %----------------------------------------------------------
+                
+                %Average of all peaks--------------------------------------
+                % %                 %Simple peak search
+                % % %               %  height = abs(max(Y)-min(Y));
+                % %                 %     sig_noiseless = ReduceNoise(sig,3,Iteration,0);
+                % %                 % cnt=1;pk_x = [];pk_y = [];
+                % %                 % for j=1:length(loc)
+                % %                 %     sig(loc(j))
+                % %                 %     if(sig(loc(j)) > mag_per*height)
+                % %                 %         pk_x(cnt) = Xcrop(loc(j));
+                % %                 %         pk_y(cnt) = sig(loc(j));
+                % %                 %         cnt = cnt+1
+                % %                 %     end
+                % %                 % end
+                
+                %                 [peaks_chosen,loc] = findpeaks(Peaks);
+                %                 sortedPks = sort(peaks_chosen,'descend');
+                %                 maxPeak_Current(cnt_y,cnt_x) = mean(sortedPks(1:7));
+                %----------------------------------------------------------
+                
+                %                 maxPeak_Current(cnt_y,cnt_x) = mean(S*Peaks);
+                %                 VdepL(i,j) = MatrixData(1,VdepL_index,i,j);
+                %                 VdepR(i,j) = MatrixData(1,VdepR_index,i,j);
+                %                 figure(100);plot(Vtun,Peaks);grid on;hold on;
+                if(cell2mat(VarTable(6,2)) > 0)
+                    if(size(maxPeak_Current,1)>1)
+                        child = get(handles.axes1,'Children');delete(child);
+                        surf(maxPeak_Current,'EdgeAlpha',0,'Parent',handles.axes1)
+                        title(handles.axes1,'Experimental:');xlabel(handles.axes1,'Vsweep1 [V]');ylabel(handles.axes1,'Vsweep2 [V]')
+                        view(handles.axes1,2);colormap('jet');
+                    end
+                    
+                    child = get(handles.axes3,'Children');delete(child);
+                    line(Vplg,Peaks,'Parent',handles.axes3,'Color','k');
+                    line([Vplg(1),Vplg(end)],maxPeak_Current(j,i)*[1,1]/Sens,...
+                        'Parent',handles.axes3,'Color','r','LineStyle','--');
+                    title(handles.axes3,['Vsweep1: ',num2str(V_sweep1(i)),' and Vsweep2: ',num2str(V_sweep2(j))]);
+                    pause(cell2mat(VarTable(6,2)));
+                end
+                %                 cnt_i = cnt_i+1;
+            end
+            %             cnt_i = 1;
+            %             cnt_j = cnt_j+1;
         end
-
+        XY_plane=[0 90];
+        
+        for j=1:size(maxPeak_Current,1)
+            maxPeak_Current_smoothY(j,:) = ReduceNoise(maxPeak_Current(j,:),3,SmoothIter,0);            
+        end
+        for i=1:size(maxPeak_Current_smoothY,2)
+            maxPeak_Current_smoothYX(:,i) = ReduceNoise(maxPeak_Current_smoothY(:,i),3,SmoothIter,0);                
+        end
+        maxPeak_Current = maxPeak_Current_smoothYX;
+        
+        surf(V_sweep1,V_sweep2,maxPeak_Current,'EdgeAlpha',0,'Parent',handles.axes1)
+        title(handles.axes1,'Experimental');xlabel(handles.axes1,'Vsweep1 [V]');ylabel(handles.axes1,'Vsweep2 [V]')        
+        view(handles.axes1,2);colormap('jet');  
+        colorbar(handles.axes1);
+        
+        %{%}                   
+        
+        %Initial values for fitting
+        A1 = 1e-4;        
+        A2 = 1e-4;    
+        
+        a1_lim = cell2mat(VarTable(8,2));%0.1;
+        b1_lim = cell2mat(VarTable(9,2));%2;        
+        a2_lim = cell2mat(VarTable(10,2));%0.1;
+        b2_lim = cell2mat(VarTable(11,2));%2;
+        
+%       74.7624    0.0470   63.2273    0.4712
+%       99.9999   -0.0139   36.9187    0.6806
+               
+        n = strfind(a1_lim,',');
+        a1.lb = str2double(a1_lim(1:n-1));
+        a1.ub = str2double(a1_lim(n+1:end));
+        n = strfind(b1_lim,',');
+        b1.lb = str2double(b1_lim(1:n-1));
+        b1.ub = str2double(b1_lim(n+1:end));
+        n = strfind(a2_lim,',');
+        a2.lb = str2double(a2_lim(1:n-1));
+        a2.ub = str2double(a2_lim(n+1:end));
+        n = strfind(b2_lim,',');
+        b2.lb = str2double(b2_lim(1:n-1));
+        b2.ub = str2double(b2_lim(n+1:end));
+        
+        %lowerbound and upper bound (optional)
+        lb = [a1.lb, b1.lb, a2.lb, b2.lb];
+        ub = [a1.ub, b1.ub, a2.ub, b2.ub];
+        
+        searchIter = cell2mat(VarTable(12,2));
+        searchVec = [];
+        b1 = linspace(b1.lb,b1.ub,searchIter)';
+        a2 = linspace(a2.lb,a2.ub,searchIter)';
+        b2 = linspace(b2.lb,b2.ub,searchIter)';
+        
+        for iii=1:searchIter
+            for ii=1:searchIter
+                for i=1:searchIter
+                    newsearchIter = [linspace(a1.lb,a1.ub,searchIter)',...
+                        b1(i)*ones(searchIter,1),a2(ii)*ones(searchIter,1),b2(iii)*ones(searchIter,1)];
+                    searchVec = [searchVec; newsearchIter];
+                end
+            end
+        end
+        size(searchVec)
+        
+        options = optimset('TolFun',1e-5,'TolX',1e-5,'MaxFunEvals',100000,'MaxIter',10000);                
+        for i=1:size(searchVec,1)
+            par = searchVec(i,:);
+%             Opt_par = fminunc(@FidCalc,par,options);
+            Opt_par = fmincon(@FidCalc,par,[],[],[],[],lb,ub,[],options);
+            
+            Opt_par_vec(i,:) = Opt_par;
+            Final_Fidelity(i) = FidCalc(Opt_par_vec);
+            
+%             title(handles.axes2,['Simulation iteration: ',num2str(i),'/',num2str(size(searchVec,1))]);
+%             pause;
+        end
+        child = get(handles.axes3,'Children');delete(child);
+        line([1:1:size(searchVec,1)],Final_Fidelity,'Parent',handles.axes3,'Color','k','Marker','o');
+        title(handles.axes3,'Fidelities');        
+                    
+        [MIN_Final_Fidelity, MIN_index] = min(Final_Fidelity);
+        Fit_var = Opt_par_vec(MIN_index,:);        
+        FidCalc(Fit_var);
+        
+%         figure(69);
+        surf(V_sweep1,V_sweep2,maxPeak_Current_sim,'EdgeAlpha',0,'Parent',handles.axes2)
+        title(handles.axes2,['Simulation: ',num2str(MIN_Final_Fidelity)]);xlabel(handles.axes2,'Vsweep1 [V]');ylabel(handles.axes2,'Vsweep2 [V]')
+        view(handles.axes2,2);colormap('jet');              
+        ColorAxis_Min_Max = [min(min(maxPeak_Current)),max(max(maxPeak_Current))];
+        caxis(handles.axes2,ColorAxis_Min_Max);
+        colorbar(handles.axes2);
+        
+        %Fitting resultant values
+%         A1 = Opt_par(1)      
+%         A2 = Opt_par(2)      
+        a1 = Fit_var(1);
+        b1 = Fit_var(2);       
+        a2 = Fit_var(3);
+        b2 = Fit_var(4);
+        
+        VarTable = get(handles.VariableListTable,'Data');
+        VarTable(8,3) = {a1};
+        VarTable(9,3) = {b1};
+        VarTable(10,3) = {a2};
+        VarTable(11,3) = {b2};
+        set(handles.VariableListTable,'Data',VarTable);
+        
+        Gamma_1 = exp(a1*(V_sweep1 + b1));
+        Gamma_2 = exp(a2*(V_sweep2 + b2));
+        
+%         figure(200);
+        semilogy(V_sweep1,Gamma_1,'Color','r','Parent',handles.axes4);grid(handles.axes4,'on');
+        xlabel(handles.axes4,'Vsweep1 [V]');ylabel(handles.axes4,'\Gamma_1 [Hz]');
+%         figure(201);
+        semilogy(V_sweep2,Gamma_2,'Color','k','Parent',handles.axes5);grid(handles.axes5,'on');
+        xlabel(handles.axes5,'Vsweep2 [V]');ylabel(handles.axes5,'\Gamma_2 [Hz]');        
+        
+        figure(100);
+        line(V_sweep1,Gamma_1,'Color','r')
+        ax1 = gca; % current axes
+        xlabel(ax1,'Vsweep1 [V]');
+        ylabel(ax1,'\Gamma_1 [Hz]');
+        ax1.XColor = 'r';
+        ax1.YColor = 'r';
+        
+        ax1_pos = ax1.Position; % position of first axes
+        ax2 = axes('Position',ax1_pos,...
+            'XAxisLocation','top',...
+            'YAxisLocation','right',...
+            'Color','none');
+        
+        line(V_sweep2,Gamma_2,'Parent',ax2,'Color','k')
+        xlabel(ax2,'Vsweep2 [V]');
+        ylabel(ax2,'\Gamma_2 [Hz]');
+        grid on;                                                                                        
+        
 guidata(hObject, handles);
+
+function fidelity = FidCalc(par)
+global V_sweep1;
+global V_sweep2;
+global maxPeak_Current;
+global maxPeak_Current_sim;
+
+maxPeak_Current_sim = [];
+e = 1.602e-19;
+
+a1 = par(1);
+b1 = par(2);
+
+a2 = par(3);
+b2 = par(4);
+
+Gamma_1 = exp(a1*(V_sweep1 + b1));
+Gamma_2 = exp(a2*(V_sweep2 + b2));
+
+for y=1:length(Gamma_2)
+    for x=1:length(Gamma_1)
+        maxPeak_Current_sim(y,x) = e*Gamma_2(y)*Gamma_1(x)/(Gamma_2(y) + Gamma_1(x));
+    end
+end
+diffSquares = sum(sum((maxPeak_Current - maxPeak_Current_sim).^2));
+
+fidelity = diffSquares*1e17;
+% pause(1);
+
+
 
 % --- Executes on button press in ApplyMathScriptPushbutton.
 function ApplyMathScriptPushbutton_Callback(hObject, eventdata, handles)
@@ -710,8 +932,6 @@ end
 % Update handles structure
 guidata(hObject, handles);
 
-
-
 % --- Executes on button press in OpenFigureWindowPushbutton.
 function OpenFigureWindowPushbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to OpenFigureWindowPushbutton (see GCBO)
@@ -728,6 +948,13 @@ elseif(get(handles.AxesNum2Radiobutton,'Value')==1)
 
 elseif(get(handles.AxesNum3Radiobutton,'Value')==1)
     set(handles.TunnelRateAnalysis_Figure,'CurrentAxes',handles.axes3);
+    
+elseif(get(handles.AxesNum4Radiobutton,'Value')==1)
+    set(handles.TunnelRateAnalysis_Figure,'CurrentAxes',handles.axes4);
+    
+elseif(get(handles.AxesNum5Radiobutton,'Value')==1)
+    set(handles.TunnelRateAnalysis_Figure,'CurrentAxes',handles.axes5);
+    
 end
 
 axs_children = get(gca,'Children');
@@ -793,24 +1020,22 @@ if(isempty(axs_surf)==0)
     FaceAlpha = get(axs_surf,'FaceAlpha');
     CData = get(axs_surf,'CData');
     
-    figure('WindowStyle','normal','Name','Data Plot');
+    figure('WindowStyle','normal','Name','Data Plot');    
     surf(xdata,ydata,zdata,'EdgeColor',EdgeColor,...
         'FaceAlpha',FaceAlpha,'CData',CData)
-
-    xlabel(x_label);ylabel(y_label);
-    
     CustomizeFigures(gcf);
-
+    xlabel(x_label);ylabel(y_label);
+        
     XY_plane=[0 90];
     view(XY_plane);
     NumColors = 1000;
-    colormap_List = get(handles.ColorMapPopupmenu,'String');
-    colormap_index = get(handles.ColorMapPopupmenu,'Value');
-    colormap_choice = strtrim(cell2mat(colormap_List(colormap_index)));
-    colormap(colormap_choice);
-    handles.ColorAxis_Min_Max = [str2double(get(handles.MinValColorEdit,'String')),...
-        str2double(get(handles.MaxValColorEdit,'String'))];
-    caxis(handles.ColorAxis_Min_Max);
+%     colormap_List = get(handles.ColorMapPopupmenu,'String');
+%     colormap_index = get(handles.ColorMapPopupmenu,'Value');
+%     colormap_choice = strtrim(cell2mat(colormap_List(colormap_index)));
+    colormap('jet');
+%     handles.ColorAxis_Min_Max = [str2double(get(handles.MinValColorEdit,'String')),...
+%         str2double(get(handles.MaxValColorEdit,'String'))];
+%     caxis(handles.ColorAxis_Min_Max);
 
 end
 hold off;
