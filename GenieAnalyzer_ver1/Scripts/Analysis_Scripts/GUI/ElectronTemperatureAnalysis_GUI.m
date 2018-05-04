@@ -570,10 +570,10 @@ for i=1:SweepNum
 
     %Gaussian Fit----------------------------------------------------------
     
-    %Calculate correct value for G
-    if(~isempty(Sens_lockin))
+    %Calculate correct value for G  
+    if(~isnan(Sens_lockin))
         sig_I = (sig/10)*Sens_lockin*Sens_preamp;
-        sig_G = sig_I/(LockIN_amp/LockIN_voltDiv);
+        sig_G = sig_I/(LockIN_amp/LockIN_voltDiv);     
     end
 
     %code to add points to sig---------------------------------------------
@@ -614,8 +614,8 @@ for i=1:SweepNum
 %     Xcrop = temp_Xcrop;
     %----------------------------------------------------------------------
     
-    sig_fit = sig_G/(2*e^2/h);
-%     sig_fit = sig;
+%     sig_fit = sig_G/(2*e^2/h);
+    sig_fit = sig;
     
     func = strcat(num2str(1/(2*kB)),'*C2*cosh((',num2str(alpha),'*(Vg - Vo))/(2*',num2str(kB),'*T))^(-2)/T');
     modelVariables = {'T','C2','Vo'};
@@ -629,13 +629,15 @@ for i=1:SweepNum
  size(G)
     %}
     
-    T_start  = 40e-3;
+    T_start  = 500e-3;
     C2_start = 2*max(sig_fit)*kB*T_start;
     Vo_start = Xcrop(sig_fit==max(sig_fit)); %V
     
-    myfit_G = fit(Xcrop', sig_fit, fmodel,...
+    [myfit_G,gof] = fit(Xcrop', sig_fit, fmodel,...
         'Start', [T_start, C2_start, Vo_start],...
-        'TolFun',1e-10,'TolX',1e-6,'MaxFunEvals',1000,'MaxIter',1000);
+        'TolFun',1e-45,'TolX',1e-45,'MaxFunEvals',1000,'MaxIter',1000);
+    ci = confint(myfit_G,0.95);
+    T_fit_ebar = ci(:,1);
     
     vals = coeffvalues(myfit_G);
     T_fit = vals(1);C2_fit = vals(2);Vo_fit = vals(3);
@@ -650,7 +652,8 @@ for i=1:SweepNum
     end
     grid on;legend off;
     xlabel('Vg [V]');ylabel('G [2e^2/h]')
-    title([{['Fit: temperature=',num2str(T_fit*1000),'mK']},{['C2=',num2str(C2_fit),' and Vo=',num2str(Vo_fit),'V']}],...
+    title([{['Fit: T_e=',num2str(round(T_fit*1000,1)),' (',num2str(round((T_fit-T_fit_ebar(1))*1000,1)),', ',num2str(round((T_fit-T_fit_ebar(2))*1000,1)),' [95% CI]) mK']},...
+        {['C2=',num2str(C2_fit),' and Vo=',num2str(Vo_fit),'V']}],...
         'FontSize',10);
 
 % plot(myfit,Xcrop,sig_fit);grid on;

@@ -8,9 +8,9 @@ shiftOPT = 1;
 SaveOPT = 0;
 
 if(shiftOPT ==1)
-    y_index = 48;
+    y_index = 54;
     %Positive shift moves the bottom region to the right
-    shift = -5;
+    shift = 18;
     
     if(shift>0)
         Zshift_below = Z(1:y_index,1:end-shift+1);

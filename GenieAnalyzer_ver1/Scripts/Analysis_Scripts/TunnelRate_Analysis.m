@@ -156,18 +156,18 @@ else
                 %----------------------------------------------------------
                 
                 %Average of all peaks--------------------------------------
-                %Simple peak search
-%                 height = abs(max(Y)-min(Y));
-                %     sig_noiseless = ReduceNoise(sig,3,Iteration,0);
-                % cnt=1;pk_x = [];pk_y = [];
-                % for j=1:length(loc)
-                %     sig(loc(j))
-                %     if(sig(loc(j)) > mag_per*height)
-                %         pk_x(cnt) = Xcrop(loc(j));
-                %         pk_y(cnt) = sig(loc(j));
-                %         cnt = cnt+1
-                %     end
-                % end
+% %                 %Simple peak search
+% % %               %  height = abs(max(Y)-min(Y));
+% %                 %     sig_noiseless = ReduceNoise(sig,3,Iteration,0);
+% %                 % cnt=1;pk_x = [];pk_y = [];
+% %                 % for j=1:length(loc)
+% %                 %     sig(loc(j))
+% %                 %     if(sig(loc(j)) > mag_per*height)
+% %                 %         pk_x(cnt) = Xcrop(loc(j));
+% %                 %         pk_y(cnt) = sig(loc(j));
+% %                 %         cnt = cnt+1
+% %                 %     end
+% %                 % end
                 
 %                 [peaks_chosen,loc] = findpeaks(Peaks);
 %                 sortedPks = sort(peaks_chosen,'descend');
@@ -197,13 +197,10 @@ else
 %         surf(VdepL,VdepR,log(abs(maxPeak_Current)),'EdgeAlpha',0)
         surf(VdepL,VdepR,maxPeak_Current,'EdgeAlpha',0)
         %         surf(VdepR,VdepL,maxPeak_Current,'EdgeAlpha',0)
-        title('Experimental:');xlabel('Vdep1 [V]');ylabel('Vdep2 [V]')
+        title('Experimental:');xlabel('VdepL [V]');ylabel('VdepR [V]')
         view(XY_plane);colormap('jet');
         colorbar;
-            
-        
-     
-        
+                               
         %Initial values for fitting
         A1 = 1e-4;        
         A2 = 1e-4;    
@@ -220,17 +217,17 @@ else
         par = [a1,b1,a2,b2];
         
         %lowerbound and upper bound (optional)
-        lb = [0.1,-10,0.1,-10];
-        ub = [10,10,10,10];
+        lb = [0.01,-50,0.01,-50];
+        ub = [100,50,100,50];
         
-        options = optimset('MaxFunEvals',10000);
+        options = optimset('TolFun',1e-10,'TolX',1e-8,'MaxFunEvals',100000,'MaxIter',10000);        
         
 %         Opt_par = fminsearch(@FidCalc,par,options)
         Opt_par = fmincon(@FidCalc,par,[],[],[],[],lb,ub,[],options)
         
         figure(69);
         surf(VdepL,VdepR,maxPeak_Current_sim,'EdgeAlpha',0)
-        title('Simulation:');xlabel('Vdep1 [V]');ylabel('Vdep2 [V]')
+        title('Simulation:');xlabel('VdepL [V]');ylabel('VdepR [V]')
         view(XY_plane);colormap('jet');
         colorbar;          
         

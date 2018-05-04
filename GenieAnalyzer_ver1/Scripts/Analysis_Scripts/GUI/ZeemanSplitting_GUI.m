@@ -226,13 +226,13 @@ INDEX = handles.ChosenFiles_indeces(chosenFile);
 VarTable = get(handles.VariableListTable,'Data');
 %List the names used for the variables header
 %CURRENT
-name{1} = cell2mat(VarTable(2,2))    %name{1} = 'Current';
+name{1} = cell2mat(VarTable(2,2));    %name{1} = 'Current';
 %BIAS
-name{2} = cell2mat(VarTable(3,2))    %name{2} = 'Vbias';
+name{2} = cell2mat(VarTable(3,2));    %name{2} = 'Vbias';
 %GATE
-name{3} = cell2mat(VarTable(4,2))   %    name{3} = 'Vtun';
+name{3} = cell2mat(VarTable(4,2));   %    name{3} = 'Vtun';
 %B-field
-name{4} = cell2mat(VarTable(1,2))   %    name{3} = 'Vtun';
+name{4} = cell2mat(VarTable(1,2));   %    name{3} = 'Vtun';
 %TIME
 name{5} = 'Time';
 
@@ -297,8 +297,8 @@ name{5} = 'Time';
         %Extracting Data
         
         %Initializes input parameters: Example
-        S = cell2mat(VarTable(5,2))
-        alpha = cell2mat(VarTable(6,2))
+        S = cell2mat(VarTable(5,2));
+        alpha = cell2mat(VarTable(6,2));
         
         nx = size(MatrixData,1);
         ny = size(MatrixData,3);
