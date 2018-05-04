@@ -1,6 +1,6 @@
 clear all; clc;
 format short;
-fignum = 101;
+fignum = 102;
 figHandle = figure(fignum);
 % child = get(figHandle,'Children');delete(child);
 
@@ -112,11 +112,29 @@ end
 size(mu_all)
 mu_sorted = sort(mu_all,1,'ascend');
 
-N_chosen = 20;
-for index_B = 1:length(Bfield)
-    mu_chosen(1,index_B) = mu_sorted(N_chosen,index_B);
+figure(fignum+1)
+color = varycolor(size(mu_sorted,1));
+for N_chosen=1:size(mu_sorted,1)
+    
+    if(N_chosen>1)
+        offset = max(mu_chosen(N_chosen-1,:));
+    else
+        offset = 0;
+    end
+    
+    mu_chosen(N_chosen,:) = mu_sorted(N_chosen,:) - min(mu_sorted(N_chosen,:)) + offset;
+    
+%     line(Bfield,mu_chosen(N_chosen,:),'LineStyle','-','LineWidth',4);
+    line(Bfield,mu_chosen(N_chosen,:),'Color',color(N_chosen,:),'LineStyle','-','LineWidth',4);
 end
-line(Bfield,mu_chosen,'Color','g','LineStyle','-','LineWidth',4);
+
+
+
+% N_chosen = 19;
+% for index_B = 1:length(Bfield)
+%     mu_chosen(1,index_B) = mu_sorted(N_chosen,index_B);
+% end
+% line(Bfield,mu_chosen,'Color','m','LineStyle','-','LineWidth',4);
 
 
 % 

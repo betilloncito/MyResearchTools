@@ -1,6 +1,8 @@
 clear all; clc;
 format short;
-fignum = 101;
+fignum = 102;
+figHandle = figure(fignum);
+% child = get(figHandle,'Children');delete(child);
 
 g = 2;
 ee = 1.60217662e-19;%C
@@ -18,11 +20,11 @@ r = Cap/(8*er*eo);
 L = sqrt(pi*r^2);
 
 %Number of electrons
-N = 40;
+N = 20;
 e_pairs = round(N/2);
 
 %Vslley splitting energy
-E_VS = [0, 100]*1e-6; %eV
+E_VS = [0, 100, 230, 360]*1e-6; %eV
 % E_orb = 1.3e-3; %eV
 
 %In Tesla
@@ -45,7 +47,6 @@ for nx = 1:e_pairs
 end
 E_orb = sort(E_orb,'ascend')
 
-figure(fignum);
 color = varycolor(e_pairs)
 for index = 1:e_pairs
 % % %     line([Bfield(1),Bfield(end)],E_orb(index)*ones(1,2),'Color',color(index,:),'LineStyle','--');hold on;
@@ -83,7 +84,6 @@ for index_B = 1:length(Bfield)
 %     mu_orb_VS2(:,index_B) = mu(:,2);
 end
 
-figure(fignum);
 for ii=1:size(mu_orb_VS,3)
     for i=1:size(mu_orb_VS,1)
         mod(ii,2)
@@ -104,16 +104,29 @@ for ii=1:size(mu_orb_VS,3)
 end
 xlabel('B-field [T]');ylabel('Energy [eV]');grid on;
 
-% size(mu_orb_VS)
-mu_all = [mu_orb_VS(:,:,1);mu_orb_VS(:,:,2)];
-% size(mu_all)
+size(mu_orb_VS)
+mu_all = [];
+for j=1:size(mu_orb_VS,3)
+    mu_all = [mu_all;mu_orb_VS(:,:,j)];
+end
+size(mu_all)
 mu_sorted = sort(mu_all,1,'ascend');
 
-N_chosen = 2;
-for index_B = 1:length(Bfield)
-    mu_chosen(1,index_B) = mu_sorted(N_chosen,index_B);
+color = varycolor(size(mu_sorted,1));
+for N_chosen=1:size(mu_sorted,1)
+    offset = max(mu_chosen(N_chosen,:)) - min( mu_chosen(N_chosen,:));
+    mu_chosen(N_chosen,:) = mu_sorted(N_chosen,:) + offset;
+    
+    line(Bfield,mu_sorted(N_chosen,:),'Color',color(N_chosen,:),'LineStyle','-','LineWidth',4);
 end
-line(Bfield,mu_chosen,'Color','g','LineStyle','-','LineWidth',4);
+
+
+
+% N_chosen = 19;
+% for index_B = 1:length(Bfield)
+%     mu_chosen(1,index_B) = mu_sorted(N_chosen,index_B);
+% end
+% line(Bfield,mu_chosen,'Color','m','LineStyle','-','LineWidth',4);
 
 
 % 
