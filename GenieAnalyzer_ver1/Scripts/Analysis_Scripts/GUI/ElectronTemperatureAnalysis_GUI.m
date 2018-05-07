@@ -22,7 +22,7 @@ function varargout = ElectronTemperatureAnalysis_GUI(varargin)
 
 % Edit the above text to modify the response to help ElectronTemperatureAnalysis_GUI
 
-% Last Modified by GUIDE v2.5 19-Apr-2018 20:37:28
+% Last Modified by GUIDE v2.5 05-May-2018 03:12:06
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -78,7 +78,7 @@ handles.VarDataTable = [{'Counter Variable [Y-axis]:'},{'Dummy'}; {'Current:'},{
     {'Lock-In Volt Div.:'},{10000}; {'alpha (eV/V):'},{0.139}; {'Xmin:'},{2.0145}; {'Xmax'},{2.019}; 
     {'Pause:'},{0}; {'Gaussian Num:'},{1}];
 set(handles.VariableListTable,'Data',handles.VarDataTable);
-
+handles.PathName = [];
 
 % Update handles structure
 guidata(hObject, handles);
@@ -373,18 +373,21 @@ cd(NowDir);
 if(isempty(axs_surf)==0)
     delete(axs_children);
     
-    set(handles.ElectronTemperatureAnalysis_Figure,'CurrentAxes',handles.axes1);
-    surf(XData,YData,ZData,'EdgeColor','none');
-    XY_plane = [0 90];view(XY_plane);grid on;
-%     xlabel(x_label);ylabel(y_label);
-%     colormap_List = get(handles.ColorMapPopupmenu,'String');
-%     colormap_index = get(handles.ColorMapPopupmenu,'Value');
-%     colormap_choice = strtrim(cell2mat(colormap_List(colormap_index)));
-%     colormap(colormap_choice);
-    
-%     set(handles.MaxValColorEdit,'String',max(max(ZData)));
-%     set(handles.MinValColorEdit,'String',min(min(ZData)));
-    
+    if(isempty(ZData))
+        line(XData,YData,'Parent',handles.axes1);
+    else        
+        set(handles.ElectronTemperatureAnalysis_Figure,'CurrentAxes',handles.axes1);
+        surf(XData,YData,ZData,'EdgeColor','none');
+        XY_plane = [0 90];view(XY_plane);grid on;
+        %     xlabel(x_label);ylabel(y_label);
+        %     colormap_List = get(handles.ColorMapPopupmenu,'String');
+        %     colormap_index = get(handles.ColorMapPopupmenu,'Value');
+        %     colormap_choice = strtrim(cell2mat(colormap_List(colormap_index)));
+        %     colormap(colormap_choice);
+        
+        %     set(handles.MaxValColorEdit,'String',max(max(ZData)));
+        %     set(handles.MinValColorEdit,'String',min(min(ZData)));
+    end
 elseif(isempty(axs_line_unflipped)==0)
     axs_line = flipud(axs_line_unflipped);
     disp('here');
@@ -429,6 +432,7 @@ n = findstr(NowDir,'\Scripts\');
 cd([NowDir(1:n(1)-1),'\Scripts\Math_Scripts']);
 
 [handles.ScriptFilename, handles.ScriptPath_Math, Filterindex] = uigetfile('*.m', 'Choose a file');
+
 if(handles.ScriptPath_Math~=0)
     set(handles.ApplyMathScriptPushbutton,'Enable','on');
     set(handles.MathScriptText,'String',handles.ScriptFilename);
@@ -461,6 +465,8 @@ function FindSplitPushbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to FindSplitPushbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+handles.VarDataTable = get(handles.VariableListTable,'Data');
 
 %Constants Physics
 e = 1.60217662e-19; %C
@@ -505,35 +511,44 @@ for i=1:SweepNum
     delete(child_2);
 %     disp(['Current line',num2str(i)]);
     
-    for ii=1:length(X);
-        if(ii<length(X))
-            if(X(ii)<xmin && X(ii+1)>xmin)
-                index_xmin = ii;
-                break;
+    if(~isnan(xmin))
+        for ii=1:length(X);
+            if(ii<length(X))
+                if(X(ii)<xmin && X(ii+1)>xmin)
+                    index_xmin = ii;
+                    break;
+                end
+                if(X(ii)>xmin && X(ii+1)<xmin)
+                    index_xmin = ii;
+                    break;
+                end
             end
-            if(X(ii)>xmin && X(ii+1)<xmin)
+            if(X(ii)==xmin)
                 index_xmin = ii;
-                break;
             end
         end
-        if(X(ii)==xmin)
-            index_xmin = ii;
-        end
+    else
+        index_xmin = find(X == min(X));
     end
-    for ii=1:length(X);
-        if(ii<length(X))
-            if(X(ii)<xmax && X(ii+1)>xmax)
-                index_xmax = ii;
-                break;
+
+    if(~isnan(xmax))
+        for ii=1:length(X);
+            if(ii<length(X))
+                if(X(ii)<xmax && X(ii+1)>xmax)
+                    index_xmax = ii;
+                    break;
+                end
+                if(X(ii)>xmax && X(ii+1)<xmax)
+                    index_xmax = ii;
+                    break;
+                end
             end
-            if(X(ii)>xmax && X(ii+1)<xmax)
+            if(X(ii)==xmax)
                 index_xmax = ii;
-                break;
             end
         end
-        if(X(ii)==xmax)
-            index_xmax = ii;
-        end
+    else
+        index_xmax = find(X == max(X));
     end
             
     if(index_xmin<index_xmax)
@@ -551,7 +566,8 @@ for i=1:SweepNum
         end
         Xcrop = X(index_xmax:index_xmin);
     end
-    sig = ReduceNoise(sig,3,Iteration,0);
+%     sig = ReduceNoise(sig,3,Iteration,0);
+    sig = sig';
     
 %     %Simple peak search----------------------------------------------------
 %     height = abs(max(sig)-min(sig));
@@ -617,7 +633,7 @@ for i=1:SweepNum
 %     sig_fit = sig_G/(2*e^2/h);
     sig_fit = sig;
     
-    func = strcat(num2str(1/(2*kB*e)),'*C2*cosh((',num2str(alpha),'*(Vg - Vo))/(2*',num2str(kB),'*T))^(-2)/T');
+    func = strcat(num2str(1/(2*kB)),'*C2*cosh((',num2str(alpha),'*(Vg - Vo))/(2*',num2str(kB),'*T))^(-2)/T');
     modelVariables = {'T','C2','Vo'};
     fmodel = fittype(func, 'ind', {'Vg'}, 'coeff', modelVariables);
     
@@ -629,7 +645,7 @@ for i=1:SweepNum
  size(G)
     %}
     
-    T_start  = 500e-3;
+    T_start  = 100e-3;
     C2_start = 2*max(sig_fit)*kB*T_start;
     Vo_start = Xcrop(sig_fit==max(sig_fit)); %V
     
@@ -637,7 +653,8 @@ for i=1:SweepNum
         'Start', [T_start, C2_start, Vo_start],...
         'TolFun',1e-45,'TolX',1e-45,'MaxFunEvals',1000,'MaxIter',1000);
     ci = confint(myfit_G,0.95);
-    T_fit_ebar = ci(:,1);
+    T_fit_ebar = ci(:,1)
+    C2_fit_ebar = ci(:,2)
     
     vals = coeffvalues(myfit_G);
     T_fit = vals(1);C2_fit = vals(2);Vo_fit = vals(3);
@@ -682,8 +699,6 @@ end
 
 % Update handles structure
 guidata(hObject, handles);
-
-
 
 % --- Executes on button press in OpenFigureWindowPushbutton.
 function OpenFigureWindowPushbutton_Callback(hObject, eventdata, handles)
@@ -790,6 +805,42 @@ hold off;
 
 guidata(hObject, handles);
 
+function uipushtool1_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to uipushtool1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+NowDir = cd;
+if(~isempty(handles.PathName))
+   cd(handles.PathName);
+end
+[FileName,handles.PathName] = uigetfile('*.fig','Select the MATLAB figure file');
+cd(handles.PathName);
+FigHandle = openfig(FileName,'invisible');
+cd(NowDir);
+
+axes_handle = get(FigHandle,'Children');
+
+line_child = findobj(axes_handle,'Type','line');
+surf_child = findobj(axes_handle,'Type','surf');
+
+if(~isempty(surf_child))
+    X = get(surf_child,'XData');
+    Y = get(surf_child,'YData');
+    Z = get(surf_child,'ZData');
+    surf(X,Y,Z,'Parent',handles.axes1,'EdgeAlpha',0);
+    view(handles.axes1,2);
+elseif(~isempty(line_child))
+    for index = 1:length(line_child)        
+        X = get(line_child(index),'XData');
+        Y = get(line_child(index),'YData');
+        
+        line(X,Y,'Parent',handles.axes1)
+    end    
+end
+
+guidata(hObject, handles);
+
 
 %--------------------------------------------------------------------------
 
@@ -854,3 +905,6 @@ function ElectronTemperatureAnalysis_Figure_CloseRequestFcn(hObject, eventdata, 
 cd(handles.Received_GUI_Data.NowDir);
 % Hint: delete(hObject) closes the Figure
 delete(hObject);
+
+
+% --------------------------------------------------------------------
