@@ -1196,6 +1196,9 @@ set(handles.Plot2DAdjustPushbutton,'Enable','off');
 % handles.Waveforms.yData = [];
 % set(handles.DataListPopupmenu,'String','No Data');
 % set(handles.DeletePlotDataPushbutton,'Enable','off');
+set(handles.MaxValColorEdit,'String','');
+set(handles.MinValColorEdit,'String','');
+
 guidata(hObject, handles);
 
 % --- Executes on selection change in Z_VariablePlotPopupmenu.

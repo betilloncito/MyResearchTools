@@ -43,17 +43,20 @@ else
     %----------------------------------------------------------------------
     
     if(isempty(axs_surf)==0)
-        for i=1:length(ZData)
+        for i=1:size(ZData,1)
            Z_new(i,:) = ReduceNoise(ZData(i,:),3,10,0);
         end
         if(strcmp(Plot2D_Der,'log'))
             ZData_new = log(abs(Z_new));            
+        else
+            ZData_new = Z_new;
         end
         XData_new = XData;
         YData_new = YData;
         
         varargout = {XData_new,YData_new,ZData_new};
     else
+        YData = ReduceNoise(YData,3,Iteration,0);
         for i=1:size(XData,2)
             if(strcmp(Plot2D_Der,'log'))
 %                 YData = cell2mat(YData);
@@ -62,6 +65,10 @@ else
             elseif(strcmp(Plot2D_Der,'abs'))
                 YData = cell2mat(YData);
                 YData_new = abs(YData);
+                
+            else
+                YData_new{i} = YData{i};
+                XData_new{i} = XData{i};
             end
         end
         varargout = {XData_new,YData_new};

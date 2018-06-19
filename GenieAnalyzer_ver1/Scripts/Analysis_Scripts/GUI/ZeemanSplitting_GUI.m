@@ -22,7 +22,7 @@ function varargout = ZeemanSplitting_GUI(varargin)
 
 % Edit the above text to modify the response to help ZeemanSplitting_GUI
 
-% Last Modified by GUIDE v2.5 17-Apr-2018 22:46:58
+% Last Modified by GUIDE v2.5 17-Jun-2018 03:13:31
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -76,7 +76,10 @@ handles.AvailableFiles_indeces = [1:1:length(handles.Received_GUI_Data.OrgMatrix
 handles.VarDataTable = [{'B-field:'},{'Dummy'}; {'Current:'},{'Current'}; {'Bias:'},{''};...
     {'Gate:'},{'Vplg'}; {'Sens. (V/A):'},{1e-8}; {'\alpha (eV/V):'},{0.139};...
     {'Xmin:'},{2.0145}; {'Xmax'},{2.019}; {'Pause:'},{0}; {'Gaussian Num:'},{1}];
+handles.FitDataParamTable = [{'Xmin:'},{''}; {'Xmax:'},{''}; {'Alpha:'},{'0.1'}; {'G-factor:'},{'2'}];
+
 set(handles.VariableListTable,'Data',handles.VarDataTable);
+set(handles.FittingParamTable,'Data',handles.FitDataParamTable);
 
 % Update handles structure
 guidata(hObject, handles);
@@ -447,7 +450,14 @@ if(handles.ScriptPath_Math~=0)
 end
 %returns to Main directory
 cd(NowDir)
+guidata(hObject, handles);
 
+% --- Executes on button press in SaveParamPushbutton.
+function SaveParamPushbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to SaveParamPushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+handles.VarDataTable = get(handles.VariableListTable,'Data');
 guidata(hObject, handles);
 
 % --- Executes on button press in ExtractionSetupPushbutton.
@@ -547,9 +557,19 @@ for i=1:length(Y)
             cnt = cnt+1
         end
     end
+    
+    %Simple absolute maximum search ---------------------------------------
+    
+    if(get(handles.PeakSearchPopupmenu,'Value') == 1)
+        
+        [val,index_max] = max(abs(sig));
+        PeakPos(i) = Xcrop(index_max);
+    
     %----------------------------------------------------------------------
 
     %Gaussian Fit----------------------------------------------------------
+     elseif(get(handles.PeakSearchPopupmenu,'Value') == 2)
+    %{    
     %normalize and remove offsets
     if(min(sig)<0)
         sig = sig+abs(min(sig));
@@ -681,6 +701,10 @@ title(['B-field: ',num2str(Y(i))])
 if(i<length(Y))
     legend off;
 end
+
+%}
+    end
+
 % plot(myfit,Xcrop,sig_fit);grid on;
 % plot(Xcrop,sig_fit);hold on;
 
@@ -717,6 +741,80 @@ end
 % Update handles structure
 guidata(hObject, handles);
 
+
+% --- Executes on button press in FitDataPushbutton.
+function FitDataPushbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to FitDataPushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+FitVarTable = get(handles.FittingParamTable,'Data');
+
+xmin = str2double(cell2mat(FitVarTable(1,2)));
+xmax = str2double(cell2mat(FitVarTable(2,2)));
+
+G_FACTOR = str2double(cell2mat(FitVarTable(4,2)));
+ALPHA = str2double(cell2mat(FitVarTable(3,2)));
+uB = 5.788381e-5;
+
+child2 = get(handles.axes2,'Children');
+delete(child2);
+
+child = get(handles.axes3,'Children');
+X = get(child,'XData');
+Y = get(child,'YData');
+
+for ii=1:length(X);
+    if(ii<length(X))
+        if(X(ii)<xmin && X(ii+1)>xmin)
+            index_xmin = ii;
+            break;
+        end
+        if(X(ii)>xmin && X(ii+1)<xmin)
+            index_xmin = ii;
+            break;
+        end
+    end
+    if(X(ii)==xmin)
+        index_xmin = ii;
+    end
+end
+for ii=1:length(X);
+    if(ii<length(X))
+        if(X(ii)<xmax && X(ii+1)>xmax)
+            index_xmax = ii;
+            break;
+        end
+        if(X(ii)>xmax && X(ii+1)<xmax)
+            index_xmax = ii;
+            break;
+        end
+    end
+    if(X(ii)==xmax)
+        index_xmax = ii;
+    end
+end
+
+if(index_xmin<index_xmax)
+    pk_B = X(index_xmin:index_xmax);
+    pk_E = Y(index_xmin:index_xmax);
+else
+    pk_B = X(index_xmax:index_xmin);
+    pk_E = Y(index_xmax:index_xmin);
+end
+
+coeff = polyfit(pk_B,pk_E,1);
+slope = coeff(1);%m = g*uB/(2*alpha)
+
+alpha = G_FACTOR*uB/(2*slope);
+g_factor = slope*2*ALPHA/(uB);
+
+line(X,Y,'Marker','o','Color','b','LineStyle','none','Parent',handles.axes2);hold on;
+line(pk_B,pk_E,'Marker','o','Color','r','LineStyle','none','Parent',handles.axes2);
+line(pk_B,pk_B*slope+coeff(2),'Marker','none','Color','k','LineStyle','-','Parent',handles.axes2);
+title(handles.axes2,{['alpha = ',num2str(alpha)], ['g-factor = ',num2str(g_factor)]},'FontSize',8);
+grid(handles.axes2,'on')
+
+guidata(hObject, handles);
 
 
 % --- Executes on button press in OpenFigureWindowPushbutton.
@@ -871,6 +969,12 @@ end
 
 %--------------------------------------------------------------------------
 
+function VariableListTable_CellSelectionCallback(hObject,eventdata,handles)
+guidata(hObject, handles);
+
+function VariableListTable_CellEditCallback(hObject,eventdata,handles)
+guidata(hObject, handles);
+
 % --- Executes when ZeemanSplitting_Figure is resized.
 function ZeemanSplitting_Figure_SizeChangedFcn(hObject, eventdata, handles)
 % hObject    handle to ZeemanSplitting_Figure (see GCBO)
@@ -887,4 +991,33 @@ function ZeemanSplitting_Figure_CloseRequestFcn(hObject, eventdata, handles)
 cd(handles.Received_GUI_Data.NowDir);
 % Hint: delete(hObject) closes the ZeemanSplitting_Figure
 delete(hObject);
+
+
+
+
+
+
+
+
+% --- Executes on selection change in PeakSearchPopupmenu.
+function PeakSearchPopupmenu_Callback(hObject, eventdata, handles)
+% hObject    handle to PeakSearchPopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns PeakSearchPopupmenu contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from PeakSearchPopupmenu
+
+
+% --- Executes during object creation, after setting all properties.
+function PeakSearchPopupmenu_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to PeakSearchPopupmenu (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: popupmenu controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
 
