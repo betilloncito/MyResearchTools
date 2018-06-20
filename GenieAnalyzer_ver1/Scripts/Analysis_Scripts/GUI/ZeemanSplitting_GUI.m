@@ -829,7 +829,7 @@ g_factor = slope*2*ALPHA/(uB);
 line(X,Y,'Marker','o','Color','b','LineStyle','none','Parent',handles.axes2);hold on;
 line(pk_B,pk_E,'Marker','o','Color','r','LineStyle','none','Parent',handles.axes2);
 line(pk_B,pk_B*slope+coeff(2),'Marker','none','Color','k','LineStyle','-','Parent',handles.axes2);
-title(handles.axes2,{['Slope = ',num2str(slope)], ['alpha = ',num2str(alpha),' g-factor = ',num2str(g_factor)]},'FontSize',8);
+title(handles.axes2,{['Slope = ',num2str(slope)], ['alpha = ',num2str(abs(alpha)),' g-factor = ',num2str(abs(g_factor))]},'FontSize',8);
 grid(handles.axes2,'on')
 
 guidata(hObject, handles);
