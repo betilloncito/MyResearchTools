@@ -1012,11 +1012,6 @@ delete(hObject);
 
 
 
-
-
-
-
-
 % --- Executes on selection change in PeakSearchPopupmenu.
 function PeakSearchPopupmenu_Callback(hObject, eventdata, handles)
 % hObject    handle to PeakSearchPopupmenu (see GCBO)
