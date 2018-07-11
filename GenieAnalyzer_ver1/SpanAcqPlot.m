@@ -133,13 +133,14 @@ NowDir = cd;
 %Resets Global variable
 handles.Data = [];
 %Gets filetype selected by user in the File Type popupmenu
-FileType = get(handles.FileTypePopupmenu,'Value');
+FileType = get(handles.FileTypePopupmenu,'Value')
 
 %Goes to directory where the Extraction Scripts are saved
 %Extraction Scripts are scripts used to extract data from files depending
 %on their file type
 cd([NowDir,'\Scripts\ExtractData_Scripts'])
-if(FileType==1 || FileType==2 || FileType==3)
+ValidFileTypes = [1,2,3,4,5];
+if(any(FileType == ValidFileTypes))    
     %feval - executes script (name is string variable) given the filename, the
     %path where the file is stored and the file type. Outputs are the
     %headers of all variables and the variable data. 
@@ -440,13 +441,15 @@ else
             
     %If there is more than 1 sweep variable then the correct input of 
     %variables for the Z popupmenu is determined
-    Header_Vector = handles.Header_Vector{end};
+    temp = handles.Header_Vector{end};
+    Header_Vector = temp{1};
     if(length(index_array)>1)        
         %Determines the variable headers which are NOT sweep variables
         headerZ=[];
-        for i=1:length(Header_Vector)
+        for i=1:size(Header_Vector,2)
+%             SelectedHeader = 
             if(any(i==index_array)==0)
-                headerZ = [headerZ,Header_Vector{i}];
+                headerZ = [headerZ,Header_Vector(i)];
             end
         end
         set(handles.Z_VariablePlotPopupmenu,'String',headerZ);
@@ -454,8 +457,8 @@ else
     
     %Sets the String for each popupmenu, where X and Y have all headers but Z
     %only has non sweep variables
-    set(handles.X_VariablePlotPopupmenu,'String',Header_Vector{end});
-    set(handles.Y_VariablePlotPopupmenu,'String',Header_Vector{end});        
+    set(handles.X_VariablePlotPopupmenu,'String',Header_Vector);
+    set(handles.Y_VariablePlotPopupmenu,'String',Header_Vector);        
 
     %Enables buttons to plot and erase data. Also enables ability to open a
     %script and the popupmenus to select X, Y and Z variables
@@ -681,7 +684,6 @@ else
     switch ChosenGUI-1
         
         case 1
-            disp('tunnel');
             TunnelRateAnalysis_GUI(handles.SpanAcqPlotFigure);
             
         case 2
@@ -689,7 +691,10 @@ else
             
         case 3
             ZeemanSplitting_GUI(handles.SpanAcqPlotFigure);
-            
+        
+        case 4
+            ElectronCountingAnalysis_GUI(handles.SpanAcqPlotFigure);
+
     end
 %     cd(NowDir);
     

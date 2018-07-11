@@ -337,6 +337,9 @@ name{5} = 'Time';
         size(Bfield)
         %-----------------------------------------------------------------%
 
+        child = get(handles.axes1,'Children');
+        delete(child);
+        
         surf(handles.Vplg,handles.Bfield,handles.Current,'EdgeAlpha',0,'Parent',handles.axes1);
         XY_plane=[0 90];
         view(handles.axes1,2);
@@ -346,6 +349,14 @@ guidata(hObject, handles);
 % --- Executes on button press in ApplyMathScriptPushbutton.
 function ApplyMathScriptPushbutton_Callback(hObject, eventdata, handles)
 
+if(get(handles.AxesNum1Radiobutton,'Value'))
+    axesHandle = handles.axes1;
+elseif(get(handles.AxesNum2Radiobutton,'Value'))
+    axesHandle = handles.axes2;
+elseif(get(handles.AxesNum3Radiobutton,'Value'))
+    axesHandle = handles.axes3;
+end
+
 filename = get(handles.MathScriptText,'String');
 TableData = get(handles.VariableListTable,'Data');
 UserInputVaribles = (TableData(:,2));
@@ -353,8 +364,8 @@ UserInputVaribles = (TableData(:,2));
 % x_label = get(handles.XaxisEdit,'String');
 % y_label = get(handles.YaxisEdit,'String');
 
-set(handles.ZeemanSplitting_Figure,'CurrentAxes',handles.axes1);
-axs_children = get(handles.axes1,'Children');
+set(handles.ZeemanSplitting_Figure,'CurrentAxes',axesHandle);
+axs_children = get(axesHandle,'Children');
 axs_line_unflipped = findall(axs_children,'Type','Line');
 axs_surf = findall(axs_children,'Type','Surface');
 
@@ -365,9 +376,9 @@ cd(handles.ScriptPath_Math);
 %the global variable with the organized data from all files opened
 
 if(isempty(axs_surf)==0)
-    [XData,YData,ZData] = feval(filename(1:end-2),handles.axes1,UserInputVaribles);
+    [XData,YData,ZData] = feval(filename(1:end-2),axesHandle,UserInputVaribles);
 elseif(isempty(axs_line_unflipped)==0)
-    [XData_unflipped,YData_unflipped] = feval(filename(1:end-2),handles.axes1,UserInputVaribles);
+    [XData_unflipped,YData_unflipped] = feval(filename(1:end-2),axesHandle,UserInputVaribles);
     XData = fliplr(XData_unflipped);
     YData = fliplr(YData_unflipped);
 else
@@ -379,7 +390,7 @@ cd(NowDir);
 if(isempty(axs_surf)==0)
     delete(axs_children);
     
-    set(handles.ZeemanSplitting_Figure,'CurrentAxes',handles.axes1);
+    set(handles.ZeemanSplitting_Figure,'CurrentAxes',axesHandle);
     surf(XData,YData,ZData,'EdgeColor','none');
     XY_plane = [0 90];view(XY_plane);grid on;
 %     xlabel(x_label);ylabel(y_label);
@@ -419,7 +430,7 @@ elseif(isempty(axs_line_unflipped)==0)
             'MarkerSize',markersize{k});
 %         pause;
     end    
-    xlabel(x_label);ylabel(y_label);
+%     xlabel(x_label);ylabel(y_label);
     
 else
     set(handles.MathResultText,'String',[num2str(answer),'%']);
@@ -449,7 +460,7 @@ if(handles.ScriptPath_Math~=0)
     
 end
 %returns to Main directory
-cd(NowDir)
+cd(NowDir);
 guidata(hObject, handles);
 
 % --- Executes on button press in SaveParamPushbutton.
@@ -763,6 +774,13 @@ child = get(handles.axes3,'Children');
 X = get(child,'XData');
 Y = get(child,'YData');
 
+if(isnan(xmin))
+    xmin = min(X);
+end
+if(isnan(xmax))
+    xmax = max(X);
+end
+
 for ii=1:length(X);
     if(ii<length(X))
         if(X(ii)<xmin && X(ii+1)>xmin)
@@ -811,7 +829,7 @@ g_factor = slope*2*ALPHA/(uB);
 line(X,Y,'Marker','o','Color','b','LineStyle','none','Parent',handles.axes2);hold on;
 line(pk_B,pk_E,'Marker','o','Color','r','LineStyle','none','Parent',handles.axes2);
 line(pk_B,pk_B*slope+coeff(2),'Marker','none','Color','k','LineStyle','-','Parent',handles.axes2);
-title(handles.axes2,{['alpha = ',num2str(alpha)], ['g-factor = ',num2str(g_factor)]},'FontSize',8);
+title(handles.axes2,{['Slope = ',num2str(slope)], ['alpha = ',num2str(abs(alpha)),' g-factor = ',num2str(abs(g_factor))]},'FontSize',8);
 grid(handles.axes2,'on')
 
 guidata(hObject, handles);
@@ -991,11 +1009,6 @@ function ZeemanSplitting_Figure_CloseRequestFcn(hObject, eventdata, handles)
 cd(handles.Received_GUI_Data.NowDir);
 % Hint: delete(hObject) closes the ZeemanSplitting_Figure
 delete(hObject);
-
-
-
-
-
 
 
 
