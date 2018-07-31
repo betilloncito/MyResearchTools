@@ -58,6 +58,7 @@ else
     %         S = cell2mat(Variables(1));
     %
     %------------------STOP CODE HERE---------------------------------%
+%     shift = cell2mat(Variables(1));
     
     if(shiftAmount>0)
         Zshift_below = ZData(1:shiftIndex,1:end-shiftAmount+1);
@@ -66,7 +67,7 @@ else
         Z_new = [Zshift_below;Zshift_above];
         X_new = XData(shiftAmount:end);
     else
-        shift = abs(shift);
+        shiftAmount = abs(shiftAmount);
         Zshift_below = ZData(1:shiftIndex,shiftAmount:end);
         Zshift_above = ZData(shiftIndex+1:end,1:end-shiftAmount+1);
         

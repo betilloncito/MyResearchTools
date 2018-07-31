@@ -93,7 +93,7 @@ else
 %         %Initializes input parameters: Example
         Sens = cell2mat(Variables(1));
         VoltDiv = cell2mat(Variables(2));
-        
+                        
         Current = MatrixData(:,I_index,:);
         Vbias = MatrixData(:,Vbias_index,1);
         Lambda = MatrixData(1,Lambda_index,:);
