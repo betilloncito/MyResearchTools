@@ -162,85 +162,135 @@ elseif(fileType==4)
     %     time = linspace(1,100,length(Data_temp))';
     %     Data.data = [time,Data_temp];
     Data.data = Data_temp;
+    size(Data_temp)
     
     cd(NowDir);
     
     %     header = [{'Dummy Time'} {'Wavelength[nm]'} {'Voltage Bias[V]'} {'Preamp Voltage[V]'}]
-    header = [{'Wavelength (nm)'} {'Vbias (V)'} {'Current (V)'}];
+    % power meter measurement: which only has two columns
+    if(size(Data_temp,2)==2)
+        header = [{'Wavelength (nm)'} {'PowerSignal (W)'}];    
+    else
+        header = [{'Wavelength (nm)'} {'Vbias (V)'} {'Current (V)'}];
+    end
     
 elseif(fileType==5)
     
     DATA = importdata(filename);
     
-    header_string = cell2mat(DATA(1));
-    comma_index = strfind(header_string,',');
-    for i=1:length(comma_index)+1
-        if(i==1)
-            header(i) = {header_string(1:comma_index(i)-1)};
-        elseif(i==length(comma_index)+1)
-            header(i) = {header_string(comma_index(i-1)+1:end)};
-        else
-            header(i) = {header_string(comma_index(i-1)+1:comma_index(i)-1)};
-        end
-    end
-    header = [header,{'Osc_time (s)'}];
-    
-    DATA_Matrix_FULL = [];
-    for ii=2:length(DATA)
-        line = cell2mat(DATA(ii));
-        size(line);
-        
-        %NOTE: In the csv file there are several variables which are saved
-        %in columns, and each row represents a single data acquisition event
-        %where the value for all the variables are recorded. It is assumed 
-        %that in the csv file, the oscilloscope data is located on the
-        %last column, i.e. all other variables within a row come before the
-        %oscilloscope data. If this is not the case, the extraction code
-        %below will fail
-        
-        comma_index = strfind(line,',');
-        quotes_index = strfind(line,'"');
-        
-        for i=1:length(comma_index)
-            if(comma_index(i)<quotes_index(1))
-                if(i==1)
-                    storedVarValue(i) = str2double(line(1,1:comma_index(i)-1));
-                else
-                    storedVarValue(i) = str2double(line(1,comma_index(i-1)+1:comma_index(i)-1));
-                end
+    if(isstruct(DATA))
+%         header_string = cell2mat(DATA.textdata(1,1));
+%         comma_index = strfind(header_string,',');
+%         for i=1:length(comma_index)+1
+%             if(i==1)
+%                 header(i) = {header_string(1:comma_index(i)-1)};
+%             elseif(i==length(comma_index)+1)
+%                 header(i) = {header_string(comma_index(i-1)+1:end)};
+%             else
+%                 header(i) = {header_string(comma_index(i-1)+1:comma_index(i)-1)};
+%             end
+%         end
+%         header = [header,{'Osc_time (s)'}]
+%         
+%         Osc_Data = DATA.textdata(2:end,end);
+%         for ii=1:length(Osc_Data)
+%             osc = cell2mat(Osc_Data(ii));
+%             m1 = strfind(osc,'(');
+%             m2 = strfind(osc,')');
+%             
+%             for i=1:length(m1)
+%                 coord = osc(1,m1(i)+1:m2(i)-1);
+%                 size(coord);
+%                 k = strfind(coord,',');
+%                 time(i,1) = str2double(coord(1,1:k-1));
+%                 volt(i,1) = str2double(coord(1,k+1:end));
+%             end
+%             
+%             for i=1:length(header)
+%                 str2double(cell2mat(DATA.textdata(ii+1,i)))
+%                 if(i==length(header))
+%                     DATA_Matrix(:,i) = time;
+%                 elseif(i==length(header)-1)
+%                     DATA_Matrix(:,i) = volt;
+%                 else
+%                     DATA_Matrix(:,i) = str2double(cell2mat(DATA.textdata(ii+1,i)))*ones(length(time),1);
+%                 end
+%             end
+%             DATA_Matrix_FULL = [DATA_Matrix_FULL;DATA_Matrix];
+%         end
+%         Data.data = DATA_Matrix_FULL;
+    else
+        header_string = cell2mat(DATA(1));
+        comma_index = strfind(header_string,',');
+        for i=1:length(comma_index)+1
+            if(i==1)
+                header(i) = {header_string(1:comma_index(i)-1)};
+            elseif(i==length(comma_index)+1)
+                header(i) = {header_string(comma_index(i-1)+1:end)};
             else
-                break;
+                header(i) = {header_string(comma_index(i-1)+1:comma_index(i)-1)};
             end
         end
+        header = [header,{'Osc_time (s)'}];
         
-        osc = line(1,quotes_index(1)+2:quotes_index(2)-2);
-        size(osc);
-        m1 = strfind(osc,'(');
-        m2 = strfind(osc,')');
-        
-        for i=1:length(m1)
-            coord = osc(1,m1(i)+1:m2(i)-1);
-            size(coord);
-            k = strfind(coord,',');
-            time(i,1) = str2double(coord(1,1:k-1));
-            volt(i,1) = str2double(coord(1,k+1:end));
-        end
-        
-        for i=1:length(header)
+        DATA_Matrix_FULL = [];
+        for ii=2:length(DATA)
+            line = cell2mat(DATA(ii));
+            size(line);
             
-            if(i==length(header))
-                DATA_Matrix(:,i) = time;
-            elseif(i==length(header)-1)
-                DATA_Matrix(:,i) = volt;
-            else
-                DATA_Matrix(:,i) = storedVarValue(i)*ones(length(time),1);
-            end        
+            %NOTE: In the csv file there are several variables which are saved
+            %in columns, and each row represents a single data acquisition event
+            %where the value for all the variables are recorded. It is assumed
+            %that in the csv file, the oscilloscope data is located on the
+            %last column, i.e. all other variables within a row come before the
+            %oscilloscope data. If this is not the case, the extraction code
+            %below will fail
+            
+            comma_index = strfind(line,',');
+            quotes_index = strfind(line,'"');
+            
+            for i=1:length(comma_index)
+                if(comma_index(i)<quotes_index(1))
+                    if(i==1)
+                        storedVarValue(i) = str2double(line(1,1:comma_index(i)-1));
+                    else
+                        storedVarValue(i) = str2double(line(1,comma_index(i-1)+1:comma_index(i)-1));
+                    end
+                else
+                    break;
+                end
+            end
+            
+            osc = line(1,quotes_index(1)+2:quotes_index(2)-2);
+            size(osc);
+            m1 = strfind(osc,'(');
+            m2 = strfind(osc,')');
+            
+            for i=1:length(m1)
+                coord = osc(1,m1(i)+1:m2(i)-1);
+                size(coord);
+                k = strfind(coord,',');
+                time(i,1) = str2double(coord(1,1:k-1));
+                volt(i,1) = str2double(coord(1,k+1:end));
+            end
+            
+            for i=1:length(header)
+                
+                if(i==length(header))
+                    DATA_Matrix(:,i) = time;
+                elseif(i==length(header)-1)
+                    DATA_Matrix(:,i) = volt;
+                else
+                    DATA_Matrix(:,i) = storedVarValue(i)*ones(length(time),1);
+                end
+            end
+            
+            DATA_Matrix_FULL = [DATA_Matrix_FULL;DATA_Matrix];
         end
         
-        DATA_Matrix_FULL = [DATA_Matrix_FULL;DATA_Matrix];
+        Data.data = DATA_Matrix_FULL;
+        
     end
-    
-    Data.data = DATA_Matrix_FULL;
 end
 
 %header should be a cell array

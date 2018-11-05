@@ -16,6 +16,8 @@ if(nargin==0)
     DataTable{2,2} = -0.1;
     DataTable{3,1} = 'Bias VoltDiv:';
     DataTable{3,2} = 100;
+    DataTable{4,1} = 'Zero Current Ref-level:';
+    DataTable{4,2} = -7e-5;
     
     varargout = {DataTable};
 else
@@ -23,11 +25,11 @@ else
     %CURRENT
     name{1} = 'Current';
     %LEFT BARRIER
-    name{2} = 'Vacc_L';
+    name{2} = 'Vacc_TL';
     %RIGHT BARRIER
-    name{3} = 'Vacc_R';
+    name{3} = 'Vacc_TR';
     %GATE
-    name{4} = 'Vplg';
+    name{4} = 'Vplg_T_M1';
     %Time (optional)
     name{5} = 'Time';
     
@@ -92,7 +94,8 @@ else
         S = cell2mat(Variables(1));
         Vbias = cell2mat(Variables(2));
         VoltDiv = cell2mat(Variables(3));
-                
+        Baseline = cell2mat(Variables(4));
+        
         global maxPeak_Current;
         global maxPeak_Current_sim;
         global VdepL;
@@ -109,10 +112,10 @@ else
         
         %VdepR was stepped last and VdepL was stepped first: Therefore the
         %index y and x correspond to VdepR and VdepL, respectively.
-%         VdepR = MatrixData(1,VdepR_index,1,:);%y
-%         VdepL = MatrixData(1,VdepL_index,:,1);%x  
-        VdepR = MatrixData(1,VdepR_index,:,1);%x
-        VdepL = MatrixData(1,VdepL_index,1,:);%y
+        VdepR = MatrixData(1,VdepR_index,1,:);%y
+        VdepL = MatrixData(1,VdepL_index,:,1);%x  
+%         VdepR = MatrixData(1,VdepR_index,:,1);%x
+%         VdepL = MatrixData(1,VdepL_index,1,:);%y
         
         VdepR = reshape(VdepR,length(VdepR),1,1,1);
         VdepL = reshape(VdepL,length(VdepL),1,1,1);
@@ -133,26 +136,31 @@ else
 %             end                        
 %         end        
         
-        size(MatrixData,4)
-        size(MatrixData,3)
-        size(VdepL)
-        size(VdepR)
+        size(MatrixData,4);
+        size(MatrixData,3);
+        size(VdepL);
+        size(VdepR);
 %         pause;
         
+%         Baseline = 0*mean(mean(mean(MatrixData(:,I_index,:,:))));
+
         cnt_x = 1;
         cnt_y = 1;
         maxPeak_Current = [];
         for y=1:size(MatrixData,4)
             for x=index_depL_descend:size(MatrixData,3)
                 
-                Peaks = abs(MatrixData(:,I_index,x,y));
+                Peaks = abs(MatrixData(:,I_index,x,y) - Baseline);
                 Vtun = MatrixData(:,Vtun_index,x,y);
                 
                 VdepL_temp = MatrixData(1,VdepL_index,x,y);              
                 VdepR_temp = MatrixData(1,VdepR_index,x,y);
                 
                 %Maximum peak only-----------------------------------------
-                maxPeak_Current(cnt_y,cnt_x) = max(S*Peaks);
+%                 maxPeak_Current(cnt_y,cnt_x) = max(S*Peaks);
+                
+                pks = findpeaks(Peaks);
+                maxPeak_Current(cnt_y,cnt_x) = mean(S*pks(1:4));
                 %----------------------------------------------------------
                 
                 %Average of all peaks--------------------------------------
@@ -189,13 +197,28 @@ else
         
         XY_plane=[0 90];
         disp('o')
-        size(VdepR)
-        size(VdepL)
-        size(maxPeak_Current)                        
+        size(VdepR);
+        size(VdepL);
+        size(maxPeak_Current);            
+        
+        for i=1:size(maxPeak_Current,2)
+        maxPeak_Current(:,i) = smooth(maxPeak_Current(:,i),3);
+        end
+        for i=1:size(maxPeak_Current,1)
+        maxPeak_Current(i,:) = smooth(maxPeak_Current(i,:),3);
+        end
         
         figure(79);
 %         surf(VdepL,VdepR,log(abs(maxPeak_Current)),'EdgeAlpha',0)
         surf(VdepL,VdepR,maxPeak_Current,'EdgeAlpha',0)
+        %         surf(VdepR,VdepL,maxPeak_Current,'EdgeAlpha',0)
+        title('Experimental:');xlabel('VdepL [V]');ylabel('VdepR [V]')
+        view(XY_plane);colormap('jet');
+        colorbar;
+        
+        figure(78);
+        %         surf(VdepL,VdepR,log(abs(maxPeak_Current)),'EdgeAlpha',0)
+        surf(VdepL,VdepR,log10(maxPeak_Current),'EdgeAlpha',0)
         %         surf(VdepR,VdepL,maxPeak_Current,'EdgeAlpha',0)
         title('Experimental:');xlabel('VdepL [V]');ylabel('VdepR [V]')
         view(XY_plane);colormap('jet');
@@ -205,10 +228,15 @@ else
         A1 = 1e-4;        
         A2 = 1e-4;    
         
-        a1 = 1.9;
-        b1 = 5;        
-        a2 = 2.5;
-        b2 = 5;
+%         a1 = 1.9;
+%         b1 = 5;        
+%         a2 = 2.5;
+%         b2 = 5;
+         
+        a1 = 1.6;
+        b1 = 10;
+        a2 = 5;
+        b2 = 1;
         
 %       74.7624    0.0470   63.2273    0.4712
 %       99.9999   -0.0139   36.9187    0.6806
@@ -229,7 +257,13 @@ else
         surf(VdepL,VdepR,maxPeak_Current_sim,'EdgeAlpha',0)
         title('Simulation:');xlabel('VdepL [V]');ylabel('VdepR [V]')
         view(XY_plane);colormap('jet');
-        colorbar;          
+        colorbar; 
+        
+        figure(68);
+        surf(VdepL,VdepR,log10(maxPeak_Current_sim),'EdgeAlpha',0)
+        title('Simulation:');xlabel('VdepL [V]');ylabel('VdepR [V]')
+        view(XY_plane);colormap('jet');
+        colorbar;
         
         %Fitting resultant values
 %         A1 = Opt_par(1)      
@@ -320,8 +354,8 @@ Gamma_L = exp(a2*(VdepL + b2));
 size(Gamma_R);
 size(Gamma_L);
 
-for y=1:length(Gamma_L)
-    for x=1:length(Gamma_R)
+for x=1:length(Gamma_L)
+    for y=1:length(Gamma_R)
         maxPeak_Current_sim(y,x) = e*Gamma_R(y)*Gamma_L(x)/(Gamma_R(y) + Gamma_L(x));
     end
 end    

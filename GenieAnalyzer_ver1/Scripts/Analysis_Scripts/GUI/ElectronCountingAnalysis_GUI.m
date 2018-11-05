@@ -247,303 +247,312 @@ name{4} = cell2mat(VarTable(4,2));   %    name{3} = 'dummy';
 name{5} = 'Time';
 
 % for INDEX=1:length(handles.ChosenFiles_indeces)
-    %Loops over each saved data set.
+%Loops over each saved data set.
 %     for INDEX=1:length(MatrixData_All)
-        %Figuring out the correct index for each variable
-        if(size(handles.Received_GUI_Data.OrgMatrixData,2)==1)
-            Headers = handles.Received_GUI_Data.Header_Vector{INDEX};
-            MatrixData = handles.Received_GUI_Data.OrgMatrixData{INDEX};
+%Figuring out the correct index for each variable
+if(size(handles.Received_GUI_Data.OrgMatrixData,2)==1)
+    Headers = handles.Received_GUI_Data.Header_Vector{INDEX};
+    MatrixData = handles.Received_GUI_Data.OrgMatrixData{INDEX};
+end
+if(size(handles.Received_GUI_Data.Header_Vector,2)>1)
+    temp = handles.Received_GUI_Data.Header_Vector{INDEX};
+    Headers = temp{1};
+    temp = handles.Received_GUI_Data.OrgMatrixData{INDEX};
+    MatrixData = temp{1};
+end
+for i=1:length(name)
+    for ii=1:length(Headers)
+        Current_Header = cell2mat(Headers(ii));
+        n = strfind(Current_Header,' (');
+        if(isempty(n))
+            Headers_corrected = Current_Header;
+        else
+            Headers_corrected = Current_Header(1:n-1);
         end
-        if(size(handles.Received_GUI_Data.Header_Vector,2)>1)
-            temp = handles.Received_GUI_Data.Header_Vector{INDEX};
-            Headers = temp{1};
-            temp = handles.Received_GUI_Data.OrgMatrixData{INDEX};
-            MatrixData = temp{1};
-        end
-        for i=1:length(name)
-            for ii=1:length(Headers)
-                Current_Header = cell2mat(Headers(ii));
-                n = strfind(Current_Header,' (');
-                if(isempty(n))
-                    Headers_corrected = Current_Header;
-                else
-                    Headers_corrected = Current_Header(1:n-1);
-                end
-                if(strcmp(name(i),Headers_corrected))
-                    switch i
-                        %the case # must match the index in the variable
-                        %name
-                        case 1
-                            Vgate_index = ii;
-                        case 2
-                            OscY_index = ii;
-                        case 3
-                            OscX_index = ii;
-                        case 4
-                            Dummy_index = ii;   
-                        case 5
-                            Time_index = ii;
-                            
-                    end
-                    break;
-                end
-            end
-        end
-        %-----------------START CODE HERE---------------------------------%
-        % MatrixData contains all the data in the file number INDEX. To access
-        % the data for a specific file, use number INDEX:
-        % i.e. MatrixData(INDEX)
-        % MatrixData has n+1 dimensions where n represents the number of
-        % sweeps performed when the data was taken. For example, if a
-        % three sweeps were done (i.e. bias sweep) then MatrixData would
-        % have 4 dimensions:
-        % *1st dim: is the number of data points taken during the 1st sweep
-        % *2nd dim: is the number of variables stored during each sweep
-        % *3rd dim: is the number of data points taken during the 2nd sweep
-        % *4th dim: is the number of data points taken during the 3rd sweep
-        %  ...
-        % *nth dim: is the number of data points taken during the nth sweep
-        %-----------------------------------------------------------------%
-        
-        %Extracting Data
-        
-        %Initializes input parameters: Example
-%       S = cell2mat(VarTable(5,2));
-        alpha = str2double(cell2mat(VarTable(5,2)));
-        Thres1 = str2double(cell2mat(VarTable(6,2)))/100;
-        
-        GaussWin = str2double(cell2mat(VarTable(7,2)));
-        Iteration = str2double(cell2mat(VarTable(8,2)));
-        Delay = str2double(cell2mat(VarTable(9,2)));
-        
-        FermiStart = str2double(cell2mat(FitTable(1,2)));
-        Fermi_Max = str2double(cell2mat(FitTable(2,2)));
-        Fermi_Min = str2double(cell2mat(FitTable(3,2)));
-        Gamma_Guess = str2double(cell2mat(FitTable(4,2)));
-        Delay_Fermi = str2double(cell2mat(FitTable(5,2)));
-        
-        n1 = size(MatrixData,1);%Osc time
-        n3 = size(MatrixData,3);%dummy
-        n4 = size(MatrixData,4);%Vgate
-
-        OscY = MatrixData(:,OscY_index,:,:);
-        size(OscY);
-        handles.OscY = reshape(OscY,n1,n3*n4);        
-        for i=1:size(handles.OscY,2)
-           handles.OscY(:,i) = ReduceNoise(handles.OscY(:,i),GaussWin,Iteration,0);
-        end
-        size(handles.OscY);
-        
-        OscX = MatrixData(:,OscX_index,1,1);
-        handles.OscX = reshape(OscX,n1,1);
-        size(handles.OscX);    
-
-        Vgate = MatrixData(1,Vgate_index,1,:);
-        handles.Vgate_nonrepeat = reshape(Vgate,n4,1);
-        handles.Vgate=[];
-        for i=1:length(handles.Vgate_nonrepeat)
-            handles.Vgate = [handles.Vgate; handles.Vgate_nonrepeat(i,1)*ones(n3,1)];
-        end
-        size(handles.Vgate);
-        
-        Dummy = MatrixData(1,Dummy_index,:,1);
-        handles.Dummy = reshape(Dummy,n3,1);     
-        size(handles.Dummy);
-        
-        %-----------------------------------------------------------------%
-
-        for i=1:size(handles.OscY,2)
-            difference(:,i) = abs(diff(handles.OscY(:,i)));
-        end
-        for i=1:size(difference,2)
-            amplitude(i) = max(difference(:,i)) - min(difference(:,i));
-        end
-        Delta_amplitude = max(amplitude)-min(amplitude);
-        Amp_Thres = min(amplitude) + Delta_amplitude*Thres1;
-        
-        child = get(handles.axes3,'Children');
-        delete(child);
-        line(handles.Vgate,amplitude,'Parent',handles.axes3,'Marker','o','LineStyle','none','Color','b');
-        line([handles.Vgate(1),handles.Vgate(end)],[Amp_Thres,Amp_Thres],'Parent',handles.axes3,...
-            'Marker','none','LineStyle','--','Color','r');
-        grid(handles.axes3,'on');
-
-        for i=1:size(difference,2)
-            
-            [pks,loc] = findpeaks(difference(:,i));
-            Avg_Osc(i) = mean(handles.OscY(:,i));
-            
-            ElectronCount = 0;
-            saved_OscY = []; saved_OscX = [];
-            saved_pk = []; saved_x = [];
-            for ii=1:length(pks)
-                
-                if( pks(ii) > Amp_Thres)
-                    ElectronCount = ElectronCount + 1;
-                    saved_OscY(ElectronCount) = handles.OscY(loc(ii),i);
-                    saved_OscX(ElectronCount) = handles.OscX(loc(ii),1);
+        if(strcmp(name(i),Headers_corrected))
+            switch i
+                %the case # must match the index in the variable
+                %name
+                case 1
+                    Vgate_index = ii;
+                case 2
+                    OscY_index = ii;
+                case 3
+                    OscX_index = ii;
+                case 4
+                    Dummy_index = ii;
+                case 5
+                    Time_index = ii;
                     
-                    saved_pk(ElectronCount) = difference(loc(ii),i);
-                    saved_x(ElectronCount) = loc(ii);
-                end
-                
             end
-            
-            if(Delay > 0)
-                child = get(handles.axes1,'Children');
-                delete(child);
-                line(linspace(1,length(difference(:,i)),length(difference(:,i))),difference(:,i),'Parent',handles.axes1,...
-                    'Marker','none','LineStyle','-','Color','k');
-                line([1,length(difference(:,i))],[Amp_Thres,Amp_Thres],'Parent',handles.axes1,...
-                    'Marker','none','LineStyle','--','Color','r');
-                if(ElectronCount>0)
-                    line(saved_x,saved_pk,'Parent',handles.axes1,'Marker','o','LineStyle','none','Color','g');
-                end
-                grid(handles.axes1,'on');
-                
-                child = get(handles.axes2,'Children');
-                delete(child);
-                line(handles.OscX,handles.OscY(:,i),'Parent',handles.axes2,'Marker','none','LineStyle','-','Color','k');
-                if(ElectronCount>0)
-                    line(saved_OscX,saved_OscY,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','r');
-                end
-                grid(handles.axes2,'on');
-                title({['Electron Counts: ',num2str(ElectronCount),'  Vg: ',num2str(handles.Vgate(i,1))],['Iteration: ',num2str(i)]},'Parent',handles.axes2)
-                pause(Delay);
-            end
-            
-            ElectronCountsPerSecond_final (i) = ElectronCount/(max(handles.OscX)-min(handles.OscX));
+            break;
         end
-        
-%         cnt = 1;
-        for i=1:n4
-            
-            ElectronCountsPerSecond_final_cumul(i) = sum(ElectronCountsPerSecond_final((i-1)*n3+1:i*n3));
-            Avg_Osc_cumul(i) = mean(Avg_Osc((i-1)*n3+1:i*n3));
+    end
+end
+%-----------------START CODE HERE---------------------------------%
+% MatrixData contains all the data in the file number INDEX. To access
+% the data for a specific file, use number INDEX:
+% i.e. MatrixData(INDEX)
+% MatrixData has n+1 dimensions where n represents the number of
+% sweeps performed when the data was taken. For example, if a
+% three sweeps were done (i.e. bias sweep) then MatrixData would
+% have 4 dimensions:
+% *1st dim: is the number of data points taken during the 1st sweep
+% *2nd dim: is the number of variables stored during each sweep
+% *3rd dim: is the number of data points taken during the 2nd sweep
+% *4th dim: is the number of data points taken during the 3rd sweep
+%  ...
+% *nth dim: is the number of data points taken during the nth sweep
+%-----------------------------------------------------------------%
 
-%             if(i==1)
-%                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i);
-%             elseif(handles.Vgate(i-1) == handles.Vgate(i))
-%                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i) + ElectronCount_final_cumul(cnt);
-%             else
-%                 cnt = cnt+1;
-%                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i);
-%             end
+%Extracting Data
+
+%Initializes input parameters: Example
+%       S = cell2mat(VarTable(5,2));
+alpha = str2double(cell2mat(VarTable(5,2)));
+Thres1 = str2double(cell2mat(VarTable(6,2)))/100;
+
+GaussWin = str2double(cell2mat(VarTable(7,2)));
+Iteration = str2double(cell2mat(VarTable(8,2)));
+Delay = str2double(cell2mat(VarTable(9,2)));
+
+FermiStart = str2double(cell2mat(FitTable(1,2)));
+Fermi_Max = str2double(cell2mat(FitTable(2,2)));
+Fermi_Min = str2double(cell2mat(FitTable(3,2)));
+Gamma_Guess = str2double(cell2mat(FitTable(4,2)));
+Delay_Fermi = str2double(cell2mat(FitTable(5,2)));
+
+n1 = size(MatrixData,1);%Osc time
+n3 = size(MatrixData,3);%dummy
+n4 = size(MatrixData,4);%Vgate
+
+OscY = MatrixData(:,OscY_index,:,:);
+size(OscY);
+handles.OscY = reshape(OscY,n1,n3*n4);
+for i=1:size(handles.OscY,2)
+    handles.OscY(:,i) = ReduceNoise(handles.OscY(:,i),GaussWin,Iteration,0);
+end
+size(handles.OscY);
+
+OscX = MatrixData(:,OscX_index,1,1);
+handles.OscX = reshape(OscX,n1,1);
+size(handles.OscX);
+
+Vgate = MatrixData(1,Vgate_index,1,:);
+handles.Vgate_nonrepeat = reshape(Vgate,n4,1);
+handles.Vgate=[];
+for i=1:length(handles.Vgate_nonrepeat)
+    handles.Vgate = [handles.Vgate; handles.Vgate_nonrepeat(i,1)*ones(n3,1)];
+end
+size(handles.Vgate);
+
+Dummy = MatrixData(1,Dummy_index,:,1);
+handles.Dummy = reshape(Dummy,n3,1);
+size(handles.Dummy);
+
+%-----------------------------------------------------------------%
+
+for i=1:size(handles.OscY,2)
+    difference(:,i) = abs(diff(handles.OscY(:,i)));
+end
+for i=1:size(difference,2)
+    amplitude(i) = max(difference(:,i)) - min(difference(:,i));
+end
+Delta_amplitude = max(amplitude)-min(amplitude);
+Amp_Thres = min(amplitude) + Delta_amplitude*Thres1;
+
+child = get(handles.axes3,'Children');
+delete(child);
+line(handles.Vgate,amplitude,'Parent',handles.axes3,'Marker','o','LineStyle','none','Color','b');
+line([handles.Vgate(1),handles.Vgate(end)],[Amp_Thres,Amp_Thres],'Parent',handles.axes3,...
+    'Marker','none','LineStyle','--','Color','r');
+grid(handles.axes3,'on');
+
+for i=1:size(difference,2)
+    
+    [pks,loc] = findpeaks(difference(:,i));
+    Avg_Osc(i) = mean(handles.OscY(:,i));
+    
+    ElectronCount = 0;
+    saved_OscY = []; saved_OscX = [];
+    saved_pk = []; saved_x = [];
+    for ii=1:length(pks)
+        
+        if( pks(ii) > Amp_Thres)
+            ElectronCount = ElectronCount + 1;
+            saved_OscY(ElectronCount) = handles.OscY(loc(ii),i);
+            saved_OscX(ElectronCount) = handles.OscX(loc(ii),1);
+            
+            saved_pk(ElectronCount) = difference(loc(ii),i);
+            saved_x(ElectronCount) = loc(ii);
         end
         
-        %fits: FERMI DIST.
-        %Renormalize the data to be fit
-        
-        if(Delay_Fermi>0)
-            child = get(handles.axes1,'Children');delete(child);
-            line(handles.Vgate_nonrepeat,Avg_Osc_cumul,'Parent',handles.axes1,'Marker','.','LineStyle','none','Color','b');
-            grid(handles.axes1,'on');
-            title(handles.axes1,'Average Occupansy vs. Vgate');
-            pause(Delay_Fermi);
-        end
-        if(isnan(Fermi_Min))
-            Avg_Osc_cumul_norm = (Avg_Osc_cumul - min(Avg_Osc_cumul));
-        else
-            Avg_Osc_cumul_norm = (Avg_Osc_cumul - Fermi_Min);
-        end
-        if(Delay_Fermi>0)
-            child = get(handles.axes1,'Children');delete(child);
-            line(handles.Vgate_nonrepeat,Avg_Osc_cumul_norm,'Parent',handles.axes1,'Marker','.','LineStyle','none','Color','b');
-            grid(handles.axes1,'on');
-            title(handles.axes1,'Average Occupancy - Min Value vs. Vgate');
-            pause(Delay_Fermi);
-        end
-        if(isnan(Fermi_Max))
-            Avg_Osc_cumul_norm = Avg_Osc_cumul_norm/max(Avg_Osc_cumul_norm);
-        else
-            Avg_Osc_cumul_norm = Avg_Osc_cumul_norm/Fermi_Max;
-        end
-        kB = 8.6173303e-5;%eV/K
-        
-        if(FermiStart==1)
-            func = strcat('1/(exp(',num2str(alpha),'*(Vg - mu)/(',num2str(kB),'*Te)) + 1)');
-        else
-            func = strcat('1/(exp(-1*',num2str(alpha),'*(Vg - mu)/(',num2str(kB),'*Te)) + 1)');
-        end
-        modelVariables = {'Te','mu'};
-        fmodel = fittype(func, 'ind', {'Vg'}, 'coeff', modelVariables);
-        
-%         Here I define values for the starting "guess" for the fitting parameters
-        Te_start  = 100e-3;
-        [val, ind] = max(abs(diff(Avg_Osc_cumul_norm)));
-        mu_start = handles.Vgate_nonrepeat(ind(1));
-        
-        [myfit,gof] = fit(handles.Vgate_nonrepeat, Avg_Osc_cumul_norm', fmodel,...
-            'Start', [Te_start, mu_start],...
-            'TolFun',1e-45,'TolX',1e-45,'MaxFunEvals',1000,'MaxIter',1000);
-        
-%         The 3 lines below are used to estimate error bars on the values for the
-%         fitting parameters
-        ci = confint(myfit,0.9999);
-        Te_fit_ebar = ci(:,1);
-        mu_fit_ebar = ci(:,2);
-        
-%         vals contains the final values for the fitting parameters
-        vals = coeffvalues(myfit);
-        Te_fit = vals(1);mu_fit = vals(2);
-               
+    end
+    
+    if(Delay > 0)
         child = get(handles.axes1,'Children');
         delete(child);
-        set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes1);
-        plot(myfit,handles.Vgate_nonrepeat,Avg_Osc_cumul_norm);
-        line([mu_start,mu_start], [min(Avg_Osc_cumul_norm),max(Avg_Osc_cumul_norm)],'Parent',handles.axes1,'Marker','none','LineStyle','--','Color','g');
-%         line(handles.Vgate_nonrepeat,Avg_Osc_cumul,'Parent',handles.axes1,'Marker','o','LineStyle','none','Color','b');
+        line(linspace(1,length(difference(:,i)),length(difference(:,i))),difference(:,i),'Parent',handles.axes1,...
+            'Marker','none','LineStyle','-','Color','k');
+        line([1,length(difference(:,i))],[Amp_Thres,Amp_Thres],'Parent',handles.axes1,...
+            'Marker','none','LineStyle','--','Color','r');
+        if(ElectronCount>0)
+            line(saved_x,saved_pk,'Parent',handles.axes1,'Marker','o','LineStyle','none','Color','g');
+        end
         grid(handles.axes1,'on');
-        title(handles.axes1, [{'N_{occupancy} vs. Vgate'},...
-            {['Fit: T_e=',num2str(round(Te_fit*1000,1)),' (',num2str(round((Te_fit-Te_fit_ebar(1))*1000,1)),', ',num2str(round((Te_fit-Te_fit_ebar(2))*1000,1)),' [95% CI]) mK']},... 
-            {['mu=',num2str(mu_fit),' (',num2str(round((mu_fit-mu_fit_ebar(1)),6)),', ',num2str(round((mu_fit-mu_fit_ebar(2)),6)),' [95% CI]) V']}],...
-            'FontSize',10);
-
         
-        %fits: Electron Transition Curve
-        %Renormalize the data to be fit
-        func = strcat('Gamma*(1/(exp(',num2str(alpha),'*(Vg - ',num2str(mu_fit),')/(',num2str(kB*Te_fit),')) + 1))',...
-            '*(1 - 1/(exp(',num2str(alpha),'*(Vg - ',num2str(mu_fit),')/(',num2str(kB*Te_fit),')) + 1))');
-        modelVariables = {'Gamma'};
-        fmodel = fittype(func, 'ind', {'Vg'}, 'coeff', modelVariables);
-        
-%         Here I define values for the starting "guess" for the fitting parameters
-        Gamma_start  = Gamma_Guess;
-        
-        [myfit,gof] = fit(handles.Vgate_nonrepeat, ElectronCountsPerSecond_final_cumul', fmodel,...
-            'Start', Gamma_start,...
-            'TolFun',1e-45,'TolX',1e-45,'MaxFunEvals',1000,'MaxIter',1000);
-        
-%         The 3 lines below are used to estimate error bars on the values for the
-%         fitting parameters
-        ci = confint(myfit,0.9999);
-        Gamma_fit_ebar = ci(:,1);
-        
-%         vals contains the final values for the fitting parameters
-        vals = coeffvalues(myfit);
-        Gamma_fit = vals(1);
-    
         child = get(handles.axes2,'Children');
         delete(child);
-        
-        set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes2);
-        plot(myfit,handles.Vgate_nonrepeat,ElectronCountsPerSecond_final_cumul);      
-%         line(handles.Vgate_nonrepeat,ElectronCount_final_cumul,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','b');
+        line(handles.OscX,handles.OscY(:,i),'Parent',handles.axes2,'Marker','none','LineStyle','-','Color','k');
+        if(ElectronCount>0)
+            line(saved_OscX,saved_OscY,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','r');
+        end
         grid(handles.axes2,'on');
-        title(handles.axes2, [{'<n_{transitions}> vs. Vgate'},...
-            {['Fit: Gamma=',num2str(round(Gamma_fit,1)),' (',num2str(round((Gamma_fit-Gamma_fit_ebar(1)),1)),', ',num2str(round((Gamma_fit-Gamma_fit_ebar(2)),1)),' [95% CI]) Hz']}],... 
-            'FontSize',10);
+        title({['Electron Counts: ',num2str(ElectronCount),'  Vg: ',num2str(handles.Vgate(i,1))],['Iteration: ',num2str(i)]},'Parent',handles.axes2)
+        pause(Delay);
+    end
+    
+    ElectronCountsPerSecond_final (i) = ElectronCount/(max(handles.OscX)-min(handles.OscX));
+end
 
-        
-        
-        
-        %         line(handles.Vgate,ElectronCount_final,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','b');
-        
+%         cnt = 1;
+for i=1:n4
+    
+    ElectronCountsPerSecond_final_cumul(i) = sum(ElectronCountsPerSecond_final((i-1)*n3+1:i*n3));
+    Avg_Osc_cumul(i) = mean(Avg_Osc((i-1)*n3+1:i*n3));
+    
+    %             if(i==1)
+    %                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i);
+    %             elseif(handles.Vgate(i-1) == handles.Vgate(i))
+    %                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i) + ElectronCount_final_cumul(cnt);
+    %             else
+    %                 cnt = cnt+1;
+    %                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i);
+    %             end
+end
+
+%fits: FERMI DIST.
+%Renormalize the data to be fit
+
+if(Delay_Fermi>0)
+    child = get(handles.axes1,'Children');delete(child);
+    line(handles.Vgate_nonrepeat,Avg_Osc_cumul,'Parent',handles.axes1,'Marker','.','LineStyle','none','Color','b');
+    grid(handles.axes1,'on');
+    title(handles.axes1,'Average Occupansy vs. Vgate');
+    pause(Delay_Fermi);
+end
+if(isnan(Fermi_Min))
+    Avg_Osc_cumul_norm = (Avg_Osc_cumul - min(Avg_Osc_cumul));
+else
+    Avg_Osc_cumul_norm = (Avg_Osc_cumul - Fermi_Min);
+end
+if(Delay_Fermi>0)
+    child = get(handles.axes1,'Children');delete(child);
+    line(handles.Vgate_nonrepeat,Avg_Osc_cumul_norm,'Parent',handles.axes1,'Marker','.','LineStyle','none','Color','b');
+    grid(handles.axes1,'on');
+    title(handles.axes1,'Average Occupancy - Min Value vs. Vgate');
+    pause(Delay_Fermi);
+end
+if(isnan(Fermi_Max))
+    Avg_Osc_cumul_norm = Avg_Osc_cumul_norm/max(Avg_Osc_cumul_norm);
+else
+    Avg_Osc_cumul_norm = Avg_Osc_cumul_norm/Fermi_Max;
+end
+kB = 8.6173303e-5;%eV/K
+
+if(FermiStart==1)
+    func = strcat('1/(exp(',num2str(alpha),'*(Vg - mu)/(',num2str(kB),'*Te)) + 1)');
+else
+    func = strcat('1/(exp(-1*',num2str(alpha),'*(Vg - mu)/(',num2str(kB),'*Te)) + 1)');
+end
+modelVariables = {'Te','mu'};
+fmodel = fittype(func, 'ind', {'Vg'}, 'coeff', modelVariables);
+
+%         Here I define values for the starting "guess" for the fitting parameters
+Te_start  = 100e-3;
+[val, ind] = max(abs(diff(Avg_Osc_cumul_norm)));
+mu_start = handles.Vgate_nonrepeat(ind(1));
+
+[myfit,gof] = fit(handles.Vgate_nonrepeat, Avg_Osc_cumul_norm', fmodel,...
+    'Start', [Te_start, mu_start],...
+    'TolFun',1e-45,'TolX',1e-45,'MaxFunEvals',1000,'MaxIter',1000);
+
+%         The 3 lines below are used to estimate error bars on the values for the
+%         fitting parameters
+ci = confint(myfit,0.95);
+Te_fit_ebar = ci(:,1);
+mu_fit_ebar = ci(:,2);
+
+%         vals contains the final values for the fitting parameters
+vals = coeffvalues(myfit);
+Te_fit = vals(1);mu_fit = vals(2);
+
+child = get(handles.axes1,'Children');
+delete(child);
+set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes1);
+plot(myfit,handles.Vgate_nonrepeat,Avg_Osc_cumul_norm);
+line([mu_start,mu_start], [min(Avg_Osc_cumul_norm),max(Avg_Osc_cumul_norm)],'Parent',handles.axes1,'Marker','none','LineStyle','--','Color','g');
+%         line(handles.Vgate_nonrepeat,Avg_Osc_cumul,'Parent',handles.axes1,'Marker','o','LineStyle','none','Color','b');
+grid(handles.axes1,'on');
+title(handles.axes1, [{'N_{occupancy} vs. Vgate'},...
+    {['Fit: T_e=',num2str(round(Te_fit*1000,1)),' (',num2str(round((Te_fit-Te_fit_ebar(1))*1000,1)),', ',num2str(round((Te_fit-Te_fit_ebar(2))*1000,1)),' [95% CI]) mK']},...
+    {['mu=',num2str(mu_fit),' (',num2str(round((mu_fit-mu_fit_ebar(1)),6)),', ',num2str(round((mu_fit-mu_fit_ebar(2)),6)),' [95% CI]) V']}],...
+    'FontSize',10);
+
+
+%fits: Electron Transition Curve
+%Renormalize the data to be fit
+func = strcat('Gamma*(1/(exp(',num2str(alpha),'*(Vg - ',num2str(mu_fit),')/(',num2str(kB*Te_fit),')) + 1))',...
+    '*(1 - 1/(exp(',num2str(alpha),'*(Vg - ',num2str(mu_fit),')/(',num2str(kB*Te_fit),')) + 1))');
+
+func = strcat('Gamma*(1/(exp(',num2str(alpha),'*(Vg - mu)/(',num2str(kB),'*Te)) + 1))',...
+    '*(1 - 1/(exp(',num2str(alpha),'*(Vg - mu)/(',num2str(kB),'*Te)) + 1))');
+ModelVar_start = [Gamma_Guess, Te_start, mu_start];
+
+modelVariables = {'Gamma', 'Te', 'mu'};
+fmodel = fittype(func, 'ind', {'Vg'}, 'coeff', modelVariables);
+
+%         Here I define values for the starting "guess" for the fitting parameters
+%         ModelVar_start  = Gamma_Guess;
+
+[myfit,gof] = fit(handles.Vgate_nonrepeat, ElectronCountsPerSecond_final_cumul', fmodel,...
+    'Start', ModelVar_start,...
+    'TolFun',1e-45,'TolX',1e-45,'MaxFunEvals',1000,'MaxIter',1000);
+
+%         The 3 lines below are used to estimate error bars on the values for the
+%         fitting parameters
+ci = confint(myfit,0.9999);
+Gamma_fit_ebar = ci(:,1);
+Te_fit_ebar = ci(:,2);
+mu_fit_ebar = ci(:,3);
+
+%         vals contains the final values for the fitting parameters
+vals = coeffvalues(myfit);
+Gamma_fit = vals(1);
+Te_fit = vals(2);mu_fit = vals(3);
+
+child = get(handles.axes2,'Children');
+delete(child);
+
+set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes2);
+plot(myfit,handles.Vgate_nonrepeat,ElectronCountsPerSecond_final_cumul);
+%         line(handles.Vgate_nonrepeat,ElectronCount_final_cumul,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','b');
+grid(handles.axes2,'on');
+title(handles.axes2, [{'<r_e> vs. Vgate'},...
+    {['Fit: Gamma=',num2str(round(Gamma_fit,1)),' (',num2str(round((Gamma_fit-Gamma_fit_ebar(1)),1)),', ',num2str(round((Gamma_fit-Gamma_fit_ebar(2)),1)),' [95% CI]) Hz']},...
+    {['Te =',num2str(Te_fit*1000),'mK']}],...
+    'FontSize',10);
+
+
+
+
+%         line(handles.Vgate,ElectronCount_final,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','b');
+
 %         line([handles.Vgate(1),handles.Vgate(end)],[Amp_Thres,Amp_Thres],'Parent',handles.axes3,...
 %             'Marker','none','LineStyle','--','Color','r');
-        
+
 %         handles.Current = (transpose(Current));
-%         
+%
 %         size(Current)
 %         if(isempty(Vtun_index))
 %             Vbias = MatrixData(:,Vbias_index,1);
@@ -555,25 +564,25 @@ name{5} = 'Time';
 %             Vplg = reshape(Vplg,n1,1);
 %             handles.Vplg = Vplg;
 %             handles.Vbias = [];
-%             
+%
 %             size(Vplg)
 %         end
 %         Time = MatrixData(:,Time_index,:);
 %         Time = reshape(Time,n1,n3);
 %         handles.Time = (transpose(Time));
-%         
+%
 %         size(Time)
-%         
+%
 %         Bfield = MatrixData(1,Bfield_index,:);
 %         Bfield = reshape(Bfield,n3,1);
 %         handles.Bfield = Bfield;
-%         
+%
 %         size(Bfield)
 %         %-----------------------------------------------------------------%
-% 
+%
 %         child = get(handles.axes1,'Children');
 %         delete(child);
-%         
+%
 %         surf(handles.Vplg,handles.Bfield,handles.Current,'EdgeAlpha',0,'Parent',handles.axes1);
 %         XY_plane=[0 90];
 %         view(handles.axes1,2);

@@ -24,6 +24,8 @@ else
     name{2} = 'Vbias';
     %GATE
     name{3} = 'Wavelength';
+    %POWER
+    name{4} = 'PowerSignal';
     %VOLTAGE PROBE
 %     name{4} = 'Voltage Probe';
 %     %MAGNETIC FIELD
@@ -33,8 +35,10 @@ else
     
     %Initializes MatrixData and Variables from the input varargin
     MatrixData_All = varargin{1};
+    MatrixData_All
     Variables = varargin{2};
     Headers_All = varargin{3};
+    Filename_string = varargin{4};
     %---------------------------------------------------------------------%
     %Loops over each saved data set.
     for INDEX=1:length(MatrixData_All)        
@@ -62,8 +66,8 @@ else
                             Vbias_index = ii;
                         case 3
                             Lambda_index = ii;
-%                         case 4
-%                             Vprobe_index = ii;
+                        case 4
+                            Power_index = ii;
 %                         case 5
 %                             MagField_index = ii;
 %                         case 6
@@ -93,27 +97,73 @@ else
 %         %Initializes input parameters: Example
         Sens = cell2mat(Variables(1));
         VoltDiv = cell2mat(Variables(2));
+        filename = cell2mat(Filename_string(INDEX));
         
-        Current = MatrixData(:,I_index,:);
-        Vbias = MatrixData(:,Vbias_index,1);
-        Lambda = MatrixData(1,Lambda_index,:);
+        n1=strfind(filename,'_');
+        n2=strfind(filename,'.');
         
-        Current = reshape(Current,length(Vbias),length(Lambda));
-        Vbias = reshape(Vbias,length(Vbias),1,1);
-        Lambda = reshape(Lambda,length(Lambda),1,1);
+        label = filename(1,n1(end)+1:n2(end)-1);
         
-        for i=1:size(Current,2)
-            figure(100);
-            plot(Vbias,log(abs(Current(:,i))));hold on;
+        if(strcmp(label,'light'))
+            Light_current = squeeze(MatrixData(:,I_index,:))*Sens;
+            Light_bias = squeeze(MatrixData(:,Vbias_index,1))/VoltDiv;
+            Light_Lambda = squeeze(MatrixData(1,Lambda_index,:));
+            
+%             figure;plot(squeeze(MatrixData(:,I_index,:)));
+%             hold on;
+            
+        elseif(strcmp(label,'dark'))
+            Dark_current = squeeze(MatrixData(:,I_index))*Sens;
+            Dark_bias = squeeze(MatrixData(:,Vbias_index))/VoltDiv;
+            
+            [val,ind] = min(log10(abs(Dark_current)));
+            Dark_MinVolt = Dark_bias(ind);
+            
+            figure;
+            plot(Dark_bias,log10(abs(Dark_current)));hold on;
+            title('Response of the NW device in the DARK')
+            xlabel('Wavelength [nm]');ylabel('Power [arb]');
             grid on;
-            [val,ind] = min(log(abs(Current(:,i))))
-            MinVolt(i) = Vbias(ind)
+        else
+            PowerMeter_power = squeeze(MatrixData(:,Power_index));
+            PowerMeter_lambda = squeeze(MatrixData(:,Lambda_index));
+            
+            figure;
+            plot(PowerMeter_lambda,PowerMeter_power);hold on;
+            title('Efficiency (power) of Light Source')
+            xlabel('Wavelength [nm]');ylabel('Power [arb]');
+            grid on;
+            
         end
-        figure(200);
-        plot(Lambda,MinVolt);
-        %
+        
         %------------------STOP CODE HERE---------------------------------%
     end
+    
+    figure;
+    for i=1:size(Light_current,2)
+        
+        plot(Light_bias,log10(abs(Light_current(:,i))));hold on;
+        xlabel('Vbias [V]');ylabel('Current [A]');
+        grid on;
+
+        [val,ind] = min(log10(abs(Light_current(:,i))));
+        NW_Response(i) = Dark_MinVolt - Light_bias(ind);
+        
+        [val,ind] = min(abs(PowerMeter_lambda - Light_Lambda(i)));
+        NW_Response_norm(i) = NW_Response(i)/sqrt(PowerMeter_power(ind));
+
+    end
+    title('Response of NW device at specific \lambda');
+    
+    figure;
+    plot(Light_Lambda,NW_Response);grid on;
+    title('Response of the NW reference to DARK response')
+    xlabel('Wavelength [nm]');ylabel('Response O.C. [V]');
+    
+    figure;
+    plot(Light_Lambda,NW_Response_norm);grid on;
+    title('Normalized Response of the NW reference to DARK response')
+    xlabel('Wavelength [nm]');ylabel('Normalized Response O.C. [V]');
     
 %     %Plotting Example
 %     HandleFig = figure('WindowStyle','normal','Name','Data Plot');

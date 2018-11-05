@@ -236,10 +236,11 @@ if(isempty(axs_surf)==0)
     zdata = get(axs_surf,'ZData');
     EdgeColor = get(axs_surf,'EdgeColor');
     FaceAlpha = get(axs_surf,'FaceAlpha');
+    EdgeAlpha = get(axs_surf,'EdgeAlpha');
     CData = get(axs_surf,'CData');
     
     figure('WindowStyle','normal','Name','Data Plot');
-    surf(xdata,ydata,zdata,'EdgeColor',EdgeColor,...
+    surf(xdata,ydata,zdata,'EdgeColor',EdgeColor,'EdgeAlpha',EdgeAlpha,...
         'FaceAlpha',FaceAlpha,'CData',CData)
 
     xlabel(x_label);ylabel(y_label);
@@ -694,6 +695,9 @@ else
         
         case 4
             ElectronCountingAnalysis_GUI(handles.SpanAcqPlotFigure);
+            
+        case 5
+            PulsedExperimentAnalysis_GUI(handles.SpanAcqPlotFigure);
 
     end
 %     cd(NowDir);
