@@ -101,6 +101,10 @@ else
         
         n1=strfind(filename,'_');
         n2=strfind(filename,'.');
+                        
+        Current = MatrixData(:,I_index,:);
+        Vbias = MatrixData(:,Vbias_index,1);
+        Lambda = MatrixData(1,Lambda_index,:);
         
         label = filename(1,n1(end)+1:n2(end)-1);
         

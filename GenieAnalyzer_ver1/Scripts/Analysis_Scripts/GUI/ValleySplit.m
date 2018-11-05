@@ -5,6 +5,7 @@ figHandle = figure(fignum);
 % child = get(figHandle,'Children');delete(child);
 
 g = 2;
+g_v = 1;
 ee = 1.60217662e-19;%C
 m = 9.109e-31;%kg
 me = 0.19*m;
@@ -14,33 +15,37 @@ er = 11.7;
 h = 6.62607004e-34; %J*s
 hbar = h/(2*pi);
 
-U = 5e-3; %eV
+U = 8.2e-3; %eV
 Cap = ee/U;
 r = Cap/(8*er*eo);
 L = sqrt(pi*r^2);
+Area = pi*r^2;
 
 %Number of electrons
-N = 20;
+N = 6;
 e_pairs = round(N/2);
 
-%Vslley splitting energy
-E_VS = [0, 100, 230, 360]*1e-6; %eV
+%Valley splitting energy
+E_VS = [0, 289]*1e-6; %eV
 % E_orb = 1.3e-3; %eV
 
 %In Tesla
 B_start = 0;
-B_end = 3;
-B_steps = 100;
+B_end = 6;
+B_steps = 500;
 Bfield = linspace(B_start,B_end,B_steps);
 
 %Orbital energy
 Lx = L;
 Ly = L;
-e_orb_0 = hbar^2*pi^2/(2*me)*((1/Lx)^2 + (1/Ly)^2);
+% e_orb_0 = hbar^2*pi^2/(2*me)*((1/Lx)^2 + (1/Ly)^2);
+e_orb_0 = 2*pi*hbar^2/(g_v*g*me*Area);
+
 cnt = 1;
 for nx = 1:e_pairs
     for ny = 1:e_pairs
-        e_orb = hbar^2*pi^2/(2*me)*((nx/Lx)^2 + (ny/Ly)^2) - e_orb_0;
+%         e_orb = hbar^2*pi^2/(2*me)*((nx/Lx)^2 + (ny/Ly)^2) - e_orb_0;
+        e_orb = e_orb_0;
         E_orb(cnt) = e_orb/ee;
         cnt = cnt+1;
     end

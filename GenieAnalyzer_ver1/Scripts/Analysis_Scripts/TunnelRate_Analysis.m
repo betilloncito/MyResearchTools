@@ -161,6 +161,7 @@ else
                 
                 pks = findpeaks(Peaks);
                 maxPeak_Current(cnt_y,cnt_x) = mean(S*pks(1:4));
+%                 maxPeak_Current(cnt_y,cnt_x) = max(S*Peaks);
                 %----------------------------------------------------------
                 
                 %Average of all peaks--------------------------------------
@@ -208,7 +209,7 @@ else
         maxPeak_Current(i,:) = smooth(maxPeak_Current(i,:),3);
         end
         
-        figure(79);
+        figure(790);
 %         surf(VdepL,VdepR,log(abs(maxPeak_Current)),'EdgeAlpha',0)
         surf(VdepL,VdepR,maxPeak_Current,'EdgeAlpha',0)
         %         surf(VdepR,VdepL,maxPeak_Current,'EdgeAlpha',0)
@@ -351,8 +352,8 @@ b2 = par(4);
 Gamma_R = exp(a1*(VdepR + b1));
 Gamma_L = exp(a2*(VdepL + b2));
 
-size(Gamma_R);
-size(Gamma_L);
+size(Gamma_R)
+size(Gamma_L)
 
 for x=1:length(Gamma_L)
     for y=1:length(Gamma_R)
