@@ -23,11 +23,11 @@ else
     %CURRENT
     name{1} = 'Current';
     %LEFT BARRIER
-    name{2} = 'Vacc_L';
+    name{2} = 'Vacc_TL';
     %RIGHT BARRIER
-    name{3} = 'Vacc_R';
+    name{3} = 'Vacc_TR';
     %GATE
-    name{4} = 'Vplg';
+    name{4} = 'Vplg_T_M1';
     %Time (optional)
     name{5} = 'Time';
     
@@ -109,10 +109,10 @@ else
         
         %VdepR was stepped last and VdepL was stepped first: Therefore the
         %index y and x correspond to VdepR and VdepL, respectively.
-%         VdepR = MatrixData(1,VdepR_index,1,:);%y
-%         VdepL = MatrixData(1,VdepL_index,:,1);%x  
-        VdepR = MatrixData(1,VdepR_index,:,1);%x
-        VdepL = MatrixData(1,VdepL_index,1,:);%y
+        VdepR = MatrixData(1,VdepR_index,1,:);%y
+        VdepL = MatrixData(1,VdepL_index,:,1);%x  
+%         VdepR = MatrixData(1,VdepR_index,:,1);%x
+%         VdepL = MatrixData(1,VdepL_index,1,:);%y
         
         VdepR = reshape(VdepR,length(VdepR),1,1,1);
         VdepL = reshape(VdepL,length(VdepL),1,1,1);
@@ -152,6 +152,8 @@ else
                 VdepR_temp = MatrixData(1,VdepR_index,x,y);
                 
                 %Maximum peak only-----------------------------------------
+                maxPeak_Current(cnt_y,cnt_x) = max(S*Peaks);
+                
                 maxPeak_Current(cnt_y,cnt_x) = max(S*Peaks);
                 %----------------------------------------------------------
                 
@@ -193,7 +195,7 @@ else
         size(VdepL)
         size(maxPeak_Current)                        
         
-        figure(79);
+        figure(790);
 %         surf(VdepL,VdepR,log(abs(maxPeak_Current)),'EdgeAlpha',0)
         surf(VdepL,VdepR,maxPeak_Current,'EdgeAlpha',0)
         %         surf(VdepR,VdepL,maxPeak_Current,'EdgeAlpha',0)
@@ -317,11 +319,11 @@ b2 = par(4);
 Gamma_R = exp(a1*(VdepR + b1));
 Gamma_L = exp(a2*(VdepL + b2));
 
-size(Gamma_R);
-size(Gamma_L);
+size(Gamma_R)
+size(Gamma_L)
 
-for y=1:length(Gamma_L)
-    for x=1:length(Gamma_R)
+for x=1:length(Gamma_L)
+    for y=1:length(Gamma_R)
         maxPeak_Current_sim(y,x) = e*Gamma_R(y)*Gamma_L(x)/(Gamma_R(y) + Gamma_L(x));
     end
 end    
