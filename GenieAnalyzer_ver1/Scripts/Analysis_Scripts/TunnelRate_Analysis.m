@@ -352,8 +352,8 @@ b2 = par(4);
 Gamma_R = exp(a1*(VdepR + b1));
 Gamma_L = exp(a2*(VdepL + b2));
 
-size(Gamma_R)
-size(Gamma_L)
+size(Gamma_R);
+size(Gamma_L);
 
 for x=1:length(Gamma_L)
     for y=1:length(Gamma_R)
