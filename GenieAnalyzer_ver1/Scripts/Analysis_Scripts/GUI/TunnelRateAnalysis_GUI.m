@@ -422,15 +422,19 @@ name{5} = 'Time';
         n = strfind(a1_lim,',');
         a1.lb = str2double(a1_lim(1:n-1));
         a1.ub = str2double(a1_lim(n+1:end));
+        delta_a1 = (a1.ub - a1.lb);
         n = strfind(b1_lim,',');
         b1.lb = str2double(b1_lim(1:n-1));
         b1.ub = str2double(b1_lim(n+1:end));
+        delta_b1 = (b1.ub - b1.lb);
         n = strfind(a2_lim,',');
         a2.lb = str2double(a2_lim(1:n-1));
         a2.ub = str2double(a2_lim(n+1:end));
+        delta_a2 = (a2.ub - a2.lb);
         n = strfind(b2_lim,',');
         b2.lb = str2double(b2_lim(1:n-1));
         b2.ub = str2double(b2_lim(n+1:end));
+        delta_b2 = (b2.ub - b2.lb);
         
         %lowerbound and upper bound (optional)
         lb = [a1.lb, b1.lb, a2.lb, b2.lb];
@@ -438,15 +442,16 @@ name{5} = 'Time';
         
         searchIter = cell2mat(VarTable(12,2));
         searchVec = [];
-        b1 = linspace(b1.lb,b1.ub,searchIter)';
-        a2 = linspace(a2.lb,a2.ub,searchIter)';
-        b2 = linspace(b2.lb,b2.ub,searchIter)';
+        Offset_percent = 0.1;
+        b1 = linspace(b1.lb + Offset_percent*delta_b1, b1.ub - Offset_percent*delta_b1, searchIter)';
+        a2 = linspace(a2.lb + Offset_percent*delta_a2, a2.ub - Offset_percent*delta_a2, searchIter)';
+        b2 = linspace(b2.lb + Offset_percent*delta_b2, b2.ub - Offset_percent*delta_b2, searchIter)';
         
         for iii=1:searchIter
             for ii=1:searchIter
                 for i=1:searchIter
-                    newsearchIter = [linspace(a1.lb,a1.ub,searchIter)',...
-                        b1(i)*ones(searchIter,1),a2(ii)*ones(searchIter,1),b2(iii)*ones(searchIter,1)];
+                    newsearchIter = [linspace(a1.lb + Offset_percent*delta_a1, a1.ub - Offset_percent*delta_a1, searchIter)',...
+                        b1(i)*ones(searchIter,1), a2(ii)*ones(searchIter,1), b2(iii)*ones(searchIter,1)];
                     searchVec = [searchVec; newsearchIter];
                 end
             end
