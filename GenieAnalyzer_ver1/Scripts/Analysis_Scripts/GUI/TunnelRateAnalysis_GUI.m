@@ -73,7 +73,7 @@ handles.AvailableFiles_indeces = [1:1:length(handles.Received_GUI_Data.OrgMatrix
 
 handles.VarDataTable = [{'V_Sweep1 :'},{'Vacc_R'}; {'V_Sweep2 :'},{'Vacc_L'}; {'Gate:'},{'Vplg'};...
     {'Current:'},{'Current'}; {'Sens. (V/A):'},{1e-8}; {'Pause:'},{0}; {'Smoothing Iter.'},{1};...
-    {'a1:'},{'0.1,100'}; {'b1:'},{'1,50'}; {'a2:'},{'0.1,100'}; {'b2:'},{'1,50'}; {'Fit Iter.:'},{3}];
+    {'a1:'},{'0.1,10'}; {'b1:'},{'1,50'}; {'a2:'},{'0.1,10'}; {'b2:'},{'1,50'}; {'Fit Iter.:'},{3}];
 set(handles.VariableListTable,'Data',handles.VarDataTable);
 
 % Update handles structure
@@ -453,15 +453,16 @@ name{5} = 'Time';
         end
         size(searchVec)
         
-        options = optimset('TolFun',1e-5,'TolX',1e-5,'MaxFunEvals',100000,'MaxIter',10000);                
+        options = optimset('TolFun',1e-10,'TolX',1e-8,'MaxFunEvals',1e5,'MaxIter',1e4);                
         for i=1:size(searchVec,1)
-            par = searchVec(i,:);
+            par = searchVec(i,:)
 %             Opt_par = fminunc(@FidCalc,par,options);
+            FidCalc(par)
             Opt_par = fmincon(@FidCalc,par,[],[],[],[],lb,ub,[],options);
             
             Opt_par_vec(i,:) = Opt_par;
             Final_Fidelity(i) = FidCalc(Opt_par_vec);
-            
+%             pause;
 %             title(handles.axes2,['Simulation iteration: ',num2str(i),'/',num2str(size(searchVec,1))]);
 %             pause;
         end

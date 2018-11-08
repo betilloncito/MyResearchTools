@@ -249,7 +249,7 @@ else
         lb = [0.01,-50,0.01,-50];
         ub = [100,50,100,50];
         
-        options = optimset('TolFun',1e-10,'TolX',1e-8,'MaxFunEvals',100000,'MaxIter',10000);        
+        options = optimset('TolFun',1e-10,'TolX',1e-8,'MaxFunEvals',1e5,'MaxIter',1e4);        
         
 %         Opt_par = fminsearch(@FidCalc,par,options)
         Opt_par = fmincon(@FidCalc,par,[],[],[],[],lb,ub,[],options)
