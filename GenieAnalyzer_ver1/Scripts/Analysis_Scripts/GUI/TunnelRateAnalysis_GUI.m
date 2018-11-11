@@ -71,9 +71,9 @@ set(handles.FilesAvailableListbox,'String',handles.Received_GUI_Data.Filenames_S
 handles.ChosenFiles_indeces = [];
 handles.AvailableFiles_indeces = [1:1:length(handles.Received_GUI_Data.OrgMatrixData)];
 
-handles.VarDataTable = [{'V_Sweep1 :'},{'Vacc_R'}; {'V_Sweep2 :'},{'Vacc_L'}; {'Gate:'},{'Vplg'};...
+handles.VarDataTable = [{'V_Sweep1 (First sweep):'},{'Vacc_TL'}; {'V_Sweep2 (Second sweep):'},{'Vacc_TR'}; {'Gate:'},{'Vplg_T_M1'};...
     {'Current:'},{'Current'}; {'Sens. (V/A):'},{1e-8}; {'Pause:'},{0}; {'Smoothing Iter.'},{1};...
-    {'a1:'},{'0.1,10'}; {'b1:'},{'1,50'}; {'a2:'},{'0.1,10'}; {'b2:'},{'1,50'}; {'Fit Iter.:'},{3}];
+    {'a1:'},{'0.1,5'}; {'b1:'},{'1,25'}; {'a2:'},{'0.1,5'}; {'b2:'},{'1,25'}; {'Fit Iter.:'},{2}];
 set(handles.VariableListTable,'Data',handles.VarDataTable);
 
 % Update handles structure
@@ -292,11 +292,12 @@ name{5} = 'Time';
         %  ...
         % *nth dim: is the number of data points taken during the nth sweep
         %-----------------------------------------------------------------%
+        
         global V_sweep1;
         global V_sweep2;
         global maxPeak_Current;
         global maxPeak_Current_sim;
-        
+     
         %Extracting Data
         
         %Initializes input parameters: Example
@@ -321,10 +322,10 @@ name{5} = 'Time';
         Time = MatrixData(:,Time_index,:,:);
         Time = reshape(Time,n_plg,n_sweep1,n_sweep2);
         
-        size(Time)
-        size(Current)
-        size(V_sweep1)
-        size(V_sweep2)
+        size(Time);
+        size(Current);
+        size(V_sweep1);
+        size(V_sweep2);
         
         index_depL_descend = 1;
                
@@ -392,21 +393,52 @@ name{5} = 'Time';
         end
         XY_plane=[0 90];
         
-        for j=1:size(maxPeak_Current,1)
-            maxPeak_Current_smoothY(j,:) = ReduceNoise(maxPeak_Current(j,:),3,SmoothIter,0);            
-        end
-        for i=1:size(maxPeak_Current_smoothY,2)
-            maxPeak_Current_smoothYX(:,i) = ReduceNoise(maxPeak_Current_smoothY(:,i),3,SmoothIter,0);                
-        end
-        maxPeak_Current = maxPeak_Current_smoothYX;
-        
-        surf(V_sweep1,V_sweep2,maxPeak_Current,'EdgeAlpha',0,'Parent',handles.axes1)
+%         for j=1:size(maxPeak_Current,1)
+%             maxPeak_Current_smoothY(j,:) = ReduceNoise(maxPeak_Current(j,:),3,SmoothIter,0);            
+%         end
+%         for i=1:size(maxPeak_Current_smoothY,2)
+%             maxPeak_Current_smoothYX(:,i) = ReduceNoise(maxPeak_Current_smoothY(:,i),3,SmoothIter,0);                
+%         end
+%         maxPeak_Current = maxPeak_Current_smoothYX;                
+%         size(maxPeak_Current)                                                 
+
+         surf(V_sweep1,V_sweep2,log10(maxPeak_Current),'EdgeAlpha',0,'Parent',handles.axes1);
+%         surf(V_sweep1,V_sweep2,maxPeak_Current,'EdgeAlpha',0,'Parent',handles.axes1);
         title(handles.axes1,'Experimental');xlabel(handles.axes1,'Vsweep1 [V]');ylabel(handles.axes1,'Vsweep2 [V]')        
         view(handles.axes1,2);colormap('jet');  
         colorbar(handles.axes1);
+%--------------------------------------------------------------------------        
+        %{
+        ee = 1.602e-19;
+        func = strcat(num2str(ee),'*(exp(a1*V1+b1)*exp(a2*V2+b2)/(exp(a1*V1+b1)+exp(a2*V2+b2)))');
+        modelVariables = {'a1','b1','a2','b2'};
+        fmodel = fittype(func, 'ind', {'V1','V2'}, 'coeff', modelVariables);
+
+        %{
+        %  ConvLorenz(Gamma, T, C2, Vo, alpha, Vg)
+         modelVariables = {'Gamma', 'T','C2','Vo'};
+         fmodel = fittype('ConvLorenz(Gamma, T, C2, Vo, ',num2str(alpha),', Vg)', 'ind', {'Vg'}, 'coeff', modelVariables);
+         size(Vg)
+         size(G)
+        %}
         
-        %{%}                   
+        a1 = 1;
+        b1 = 1;
+        a2 = 1;
+        b2 = 1;
         
+        [my2Dfit,gof] = fit([V_sweep1, V_sweep2'], maxPeak_Current, fmodel,...
+            'Start', [a1, b1, a2, b2],...
+            'TolFun',1e-45,'TolX',1e-45,'MaxFunEvals',1000,'MaxIter',1000)
+        
+%         ci = confint(myfit_G,0.95);
+%         T_fit_ebar = ci(:,1)
+%         C2_fit_ebar = ci(:,2)
+% 
+%         vals = coeffvalues(myfit_G);
+%         T_fit = vals(1);C2_fit = vals(2);Vo_fit = vals(3);    
+          %}
+%--------------------------------------------------------------------------
         %Initial values for fitting
         A1 = 1e-4;        
         A2 = 1e-4;    
@@ -473,17 +505,25 @@ name{5} = 'Time';
         end
         child = get(handles.axes3,'Children');delete(child);
         line([1:1:size(searchVec,1)],Final_Fidelity,'Parent',handles.axes3,'Color','k','Marker','o');
-        title(handles.axes3,'Fidelities');        
+        title(handles.axes3,['Fidelities: ',num2str(min(Final_Fidelity))]);        
                     
         [MIN_Final_Fidelity, MIN_index] = min(Final_Fidelity);
         Fit_var = Opt_par_vec(MIN_index,:);        
         FidCalc(Fit_var);
         
+        surf(V_sweep1,V_sweep2,log10(maxPeak_Current),'EdgeAlpha',0,'Parent',handles.axes1);
+%         surf(V_sweep1,V_sweep2,maxPeak_Current,'EdgeAlpha',0,'Parent',handles.axes1);
+        title(handles.axes1,'Experimental');xlabel(handles.axes1,'Vsweep1 [V]');ylabel(handles.axes1,'Vsweep2 [V]')        
+        view(handles.axes1,2);colormap('jet');  
+        colorbar(handles.axes1);
+        
 %         figure(69);
-        surf(V_sweep1,V_sweep2,maxPeak_Current_sim,'EdgeAlpha',0,'Parent',handles.axes2)
+        surf(V_sweep1,V_sweep2,log10(maxPeak_Current_sim),'EdgeAlpha',0,'Parent',handles.axes2)
+%         surf(V_sweep1,V_sweep2,maxPeak_Current_sim,'EdgeAlpha',0,'Parent',handles.axes2)
         title(handles.axes2,['Simulation: ',num2str(MIN_Final_Fidelity)]);xlabel(handles.axes2,'Vsweep1 [V]');ylabel(handles.axes2,'Vsweep2 [V]')
         view(handles.axes2,2);colormap('jet');              
-        ColorAxis_Min_Max = [min(min(maxPeak_Current)),max(max(maxPeak_Current))];
+        ColorAxis_Min_Max = [min(min(log10(maxPeak_Current))),max(max(log10(maxPeak_Current)))];
+%         ColorAxis_Min_Max = [min(min(maxPeak_Current)),max(max(maxPeak_Current))];
         caxis(handles.axes2,ColorAxis_Min_Max);
         colorbar(handles.axes2);
         
@@ -529,7 +569,10 @@ name{5} = 'Time';
         line(V_sweep2,Gamma_2,'Parent',ax2,'Color','k')
         xlabel(ax2,'Vsweep2 [V]');
         ylabel(ax2,'\Gamma_2 [Hz]');
-        grid on;                                                                                        
+        grid on;                  
+        
+        %{
+        %}
         
 guidata(hObject, handles);
 
@@ -541,6 +584,7 @@ global maxPeak_Current_sim;
 
 maxPeak_Current_sim = [];
 e = 1.602e-19;
+I_min = 1e-12;
 
 a1 = par(1);
 b1 = par(2);
@@ -556,10 +600,19 @@ for y=1:length(Gamma_2)
         maxPeak_Current_sim(y,x) = e*Gamma_2(y)*Gamma_1(x)/(Gamma_2(y) + Gamma_1(x));
     end
 end
-diffSquares = sum(sum((maxPeak_Current - maxPeak_Current_sim).^2));
+
+Total_Resistance_sim = 1./maxPeak_Current_sim + 1/I_min;
+Total_Resistance_exp = 1./maxPeak_Current;
+
+% diffSquares = sum(sum((log10(maxPeak_Current) - log10(maxPeak_Current_sim)).^2));
+diffSquares = sum(sum((Total_Resistance_exp - Total_Resistance_sim).^2));
 
 fidelity = diffSquares*1e17;
-% pause(1);
+
+if(isnan(fidelity))
+    diffSquares      
+    pause;
+end
 
 
 
