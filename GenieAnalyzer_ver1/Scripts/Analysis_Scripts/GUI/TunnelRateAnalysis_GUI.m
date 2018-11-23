@@ -75,7 +75,7 @@ handles.VarDataTable = [{'V_Sweep1 (First sweep):'},{'Vacc_TL'}; {'V_Sweep2 (Sec
     {'Current:'},{'Current'}; {'Sens. (V/A):'},{1e-8}; {'Pause:'},{0}; {'Smoothing Iter.'},{1};...
     {'a1:'},{'0.1,5'}; {'b1:'},{'1,25'}; {'a2:'},{'0.1,5'}; {'b2:'},{'1,25'}; {'Gamman Fit Type [1,2,B]:'},{'B'}; {'Fit Iter.:'},{2};...
     {'Xmin :'},{0}; {'Xmax :'},{0}; {'Ymin :'},{0}; {'Ymax :'},{0}; {'Volt Bias [mV] :'},{0.5}; {'Rmin [kOhm] :'},{'10,500'};...
-    {'Io [pA]:'},{'1,10'}; {'HeaviSide_xo [V]:'},{'2.3,2.7'}; {'HeaviSide_yo [V]:'},{'2.5,2.9'}];
+    {'Io [fA]:'},{'1,10'}; {'HeaviSide_xo [V]:'},{'2.3,2.7'}; {'HeaviSide_yo [V]:'},{'2.5,2.9'}];
 set(handles.VariableListTable,'Data',handles.VarDataTable);
 
 % Update handles structure
@@ -368,8 +368,8 @@ name{5} = 'Time';
                 
                 %Maximum peak only-----------------------------------------
 %                 maxPeak_Current(j,i) = max(Sens*Peaks);
-                
-                maxPeak_Current(j,i) = Sens*Peaks(round(length(Peaks)/2));
+                maxPeak_Current(j,i) = mean(Sens*Peaks);
+%                 maxPeak_Current(j,i) = Sens*Peaks(round(length(Peaks)*0.99));
 
                 %----------------------------------------------------------
                 
@@ -416,7 +416,7 @@ name{5} = 'Time';
             %             cnt_i = 1;
             %             cnt_j = cnt_j+1;
         end
-        maxPeak_Current = maxPeak_Current - MinCurrent*Sens;
+        maxPeak_Current = abs(maxPeak_Current - MinCurrent*Sens);
         XY_plane=[0 90];
         
         for j=1:size(maxPeak_Current,1)
@@ -1046,12 +1046,12 @@ e = 1.602e-19;
 
 if(length(par)>2)
     Rmin = par(1)*1e3;
-    Io = par(2)*1e-12;
+    Io = par(2)*1e-15;
     X_on = par(3);
     Y_on = par(4);
 else
     Rmin = par(1)*1e3;
-    Io = par(2)*1e-12;
+    Io = par(2)*1e-15;
     X_on = X_on_value;
     Y_on = Y_on_value;
 end

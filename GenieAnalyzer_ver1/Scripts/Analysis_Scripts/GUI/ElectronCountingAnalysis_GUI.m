@@ -77,8 +77,8 @@ handles.AvailableFiles_indeces = [1:1:length(handles.Received_GUI_Data.OrgMatrix
 handles.VarDataTable = [{'Vgate:'},{'VplgL_dot'}; {'Osc_Y [volt]:'},{'Osc_wave'};...
     {'Osc_X [time]:'},{'Osc_time'}; {'Dummy :'},{'Dummy'};...
     {'\alpha (eV/V):'},{'0.139'}; {'Threshold 1 [%]:'},{'50'};...
-    {'Smoothing: Number of points:'},{'3'}; {'Smoothing: Number of Iterations:'},{'5'};...
-    {'Delay (s)'},{'0'}];
+    {'Smoothing: Number of points:'},{'3'}; {'Smoothing: Number of Iterations:'},{'4'};...
+    {'Delay (s)'},{'0'}; {'Hist. Bin Number:'},{'100'}; {'Hist. Smoothing: [numPts,Iter]'},{'5,3'}];
 handles.FitDataParamTable = [{'Fermi Dirac "Start" [1 or 0]:'},{'1'}; {'Fermi MAX Value:'},{''}; {'Fermi MIN Value:'},{''};...
     {'Gamma Guess [Hz]:'},{'1e3'}; {'Delay Fermi (s):'},{'0'}];
 
@@ -316,6 +316,12 @@ GaussWin = str2double(cell2mat(VarTable(7,2)));
 Iteration = str2double(cell2mat(VarTable(8,2)));
 Delay = str2double(cell2mat(VarTable(9,2)));
 
+Hist_BinNumber = str2double(cell2mat(VarTable(10,2)));
+Hist_smooth = cell2mat(VarTable(11,2));
+n = strfind(Hist_smooth,',');
+Hist_smooth_numPts = str2double(Hist_smooth(1:n-1));
+Hist_smooth_Iter = str2double(Hist_smooth(n+1:end));
+
 FermiStart = str2double(cell2mat(FitTable(1,2)));
 Fermi_Max = str2double(cell2mat(FitTable(2,2)));
 Fermi_Min = str2double(cell2mat(FitTable(3,2)));
@@ -359,7 +365,27 @@ for i=1:size(difference,2)
     amplitude(i) = max(difference(:,i)) - min(difference(:,i));
 end
 Delta_amplitude = max(amplitude)-min(amplitude);
-Amp_Thres = min(amplitude) + Delta_amplitude*Thres1;
+% Amp_Thres = min(amplitude) + Delta_amplitude*Thres1;
+
+% axs_new = get(fig,'CurrentAxes');
+child = get(handles.axes1,'Children');
+delete(child);
+Hist_Obj = histogram(handles.axes1,amplitude,Hist_BinNumber);
+Hist_freq_raw = Hist_Obj.Values;
+Hist_Xval = Hist_Obj.BinEdges(1:end-1) + Hist_Obj.BinWidth/2;
+Hist_freq = ReduceNoise(Hist_freq_raw,Hist_smooth_numPts,Hist_smooth_Iter,0);
+line(Hist_Xval,Hist_freq,'Parent',handles.axes1,...
+    'Marker','o','MarkerSize',5,'MarkerFaceColor','r','MarkerEdgeColor','k','LineStyle','--','Color','r');
+grid(handles.axes1,'on');
+[pks,loc] = findpeaks(Hist_freq,'SortStr','descend');
+Delta_amplitude_correct = Hist_Xval(loc(1)) - Hist_Xval(loc(2));
+Amp_Thres = Hist_Xval(loc(2)) + Delta_amplitude_correct*Thres1;
+line([Amp_Thres,Amp_Thres],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
+    'Marker','none','LineStyle','-','Color','g','LineWidth',3);
+line([Hist_Xval(loc(1)),Hist_Xval(loc(1))],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
+    'Marker','none','LineStyle','--','Color','b','LineWidth',2);
+line([Hist_Xval(loc(2)),Hist_Xval(loc(2))],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
+    'Marker','none','LineStyle','--','Color','b','LineWidth',2);
 
 child = get(handles.axes3,'Children');
 delete(child);
@@ -435,11 +461,11 @@ end
 %Renormalize the data to be fit
 
 if(Delay_Fermi>0)
-    child = get(handles.axes1,'Children');delete(child);
-    line(handles.Vgate_nonrepeat,Avg_Osc_cumul,'Parent',handles.axes1,'Marker','.','LineStyle','none','Color','b');
-    grid(handles.axes1,'on');
-    title(handles.axes1,'Average Occupansy vs. Vgate');
-    pause(Delay_Fermi);
+%     child = get(handles.axes1,'Children');delete(child);
+%     line(handles.Vgate_nonrepeat,Avg_Osc_cumul,'Parent',handles.axes1,'Marker','.','LineStyle','none','Color','b');
+%     grid(handles.axes1,'on');
+%     title(handles.axes1,'Average Occupansy vs. Vgate');
+%     pause(Delay_Fermi);
 end
 if(isnan(Fermi_Min))
     Avg_Osc_cumul_norm = (Avg_Osc_cumul - min(Avg_Osc_cumul));
@@ -447,11 +473,11 @@ else
     Avg_Osc_cumul_norm = (Avg_Osc_cumul - Fermi_Min);
 end
 if(Delay_Fermi>0)
-    child = get(handles.axes1,'Children');delete(child);
-    line(handles.Vgate_nonrepeat,Avg_Osc_cumul_norm,'Parent',handles.axes1,'Marker','.','LineStyle','none','Color','b');
-    grid(handles.axes1,'on');
-    title(handles.axes1,'Average Occupancy - Min Value vs. Vgate');
-    pause(Delay_Fermi);
+%     child = get(handles.axes1,'Children');delete(child);
+%     line(handles.Vgate_nonrepeat,Avg_Osc_cumul_norm,'Parent',handles.axes1,'Marker','.','LineStyle','none','Color','b');
+%     grid(handles.axes1,'on');
+%     title(handles.axes1,'Average Occupancy - Min Value vs. Vgate');
+%     pause(Delay_Fermi);
 end
 if(isnan(Fermi_Max))
     Avg_Osc_cumul_norm = Avg_Osc_cumul_norm/max(Avg_Osc_cumul_norm);
@@ -487,17 +513,17 @@ mu_fit_ebar = ci(:,2);
 vals = coeffvalues(myfit);
 Te_fit = vals(1);mu_fit = vals(2);
 
-child = get(handles.axes1,'Children');
-delete(child);
-set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes1);
-plot(myfit,handles.Vgate_nonrepeat,Avg_Osc_cumul_norm);
-line([mu_start,mu_start], [min(Avg_Osc_cumul_norm),max(Avg_Osc_cumul_norm)],'Parent',handles.axes1,'Marker','none','LineStyle','--','Color','g');
-%         line(handles.Vgate_nonrepeat,Avg_Osc_cumul,'Parent',handles.axes1,'Marker','o','LineStyle','none','Color','b');
-grid(handles.axes1,'on');
-title(handles.axes1, [{'N_{occupancy} vs. Vgate'},...
-    {['Fit: T_e=',num2str(round(Te_fit*1000,1)),' (',num2str(round((Te_fit-Te_fit_ebar(1))*1000,1)),', ',num2str(round((Te_fit-Te_fit_ebar(2))*1000,1)),' [95% CI]) mK']},...
-    {['mu=',num2str(mu_fit),' (',num2str(round((mu_fit-mu_fit_ebar(1)),6)),', ',num2str(round((mu_fit-mu_fit_ebar(2)),6)),' [95% CI]) V']}],...
-    'FontSize',10);
+% child = get(handles.axes1,'Children');
+% delete(child);
+% set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes1);
+% plot(myfit,handles.Vgate_nonrepeat,Avg_Osc_cumul_norm);
+% line([mu_start,mu_start], [min(Avg_Osc_cumul_norm),max(Avg_Osc_cumul_norm)],'Parent',handles.axes1,'Marker','none','LineStyle','--','Color','g');
+% %         line(handles.Vgate_nonrepeat,Avg_Osc_cumul,'Parent',handles.axes1,'Marker','o','LineStyle','none','Color','b');
+% grid(handles.axes1,'on');
+% title(handles.axes1, [{'N_{occupancy} vs. Vgate'},...
+%     {['Fit: T_e=',num2str(round(Te_fit*1000,1)),' (',num2str(round((Te_fit-Te_fit_ebar(1))*1000,1)),', ',num2str(round((Te_fit-Te_fit_ebar(2))*1000,1)),' [95% CI]) mK']},...
+%     {['mu=',num2str(mu_fit),' (',num2str(round((mu_fit-mu_fit_ebar(1)),6)),', ',num2str(round((mu_fit-mu_fit_ebar(2)),6)),' [95% CI]) V']}],...
+%     'FontSize',10);
 
 
 %fits: Electron Transition Curve
@@ -541,7 +567,7 @@ grid(handles.axes2,'on');
 title(handles.axes2, [{'<r_e> vs. Vgate'},...
     {['Fit: Gamma=',num2str(round(Gamma_fit,1)),' (',num2str(round((Gamma_fit-Gamma_fit_ebar(1)),1)),', ',num2str(round((Gamma_fit-Gamma_fit_ebar(2)),1)),' [95% CI]) Hz']},...
     {['Te =',num2str(Te_fit*1000),'mK']}],...
-    'FontSize',10);
+    'FontSize',13);
 
 
 
@@ -586,7 +612,7 @@ title(handles.axes2, [{'<r_e> vs. Vgate'},...
 %         surf(handles.Vplg,handles.Bfield,handles.Current,'EdgeAlpha',0,'Parent',handles.axes1);
 %         XY_plane=[0 90];
 %         view(handles.axes1,2);
-
+disp('>>>DONE<<<')
 guidata(hObject, handles);
 
 
@@ -747,6 +773,8 @@ axs_children = get(gca,'Children');
 axs_line = findall(axs_children,'Type','Line');
 axs_text = findall(axs_children,'Type','Text');
 axs_surf = findall(axs_children,'Type','Surface');
+axs_hist = findall(axs_children,'Type','Histogram');
+
 ax = gca;
 title_label = ax.Title.String;
 x_label = ax.XLabel.String;
@@ -757,6 +785,7 @@ if(isempty(axs_line)==0)
     CustomizeFigures(gcf);
     xlabel(x_label);ylabel(y_label);
 end
+
 % for k=length(axs_line):-1:1
 %     xdata = get(axs_line(k),'XData');
 %     ydata = get(axs_line(k),'YData');
