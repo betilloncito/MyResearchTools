@@ -76,11 +76,11 @@ handles.AvailableFiles_indeces = [1:1:length(handles.Received_GUI_Data.OrgMatrix
 %Needs to re-edit
 handles.VarDataTable = [{'Vgate:'},{'VplgL_dot'}; {'Osc_Y [volt]:'},{'Osc_wave'};...
     {'Osc_X [time]:'},{'Osc_time'}; {'Dummy :'},{'Dummy'};...
-    {'\alpha (eV/V):'},{'0.139'}; {'Threshold 1 [%]:'},{'50'};...
-    {'Smoothing: Number of points:'},{'3'}; {'Smoothing: Number of Iterations:'},{'4'};...
+    {'\alpha (eV/V):'},{'0.139'}; {'Threshold 1: [%,lin,log]'},{'50'};...
+    {'Smoothing: Number of points:'},{'3'}; {'Smoothing: Number of Iterations: [#,lin,log]'},{'4'};...
     {'Delay (s)'},{'0'}; {'Hist. Bin Number:'},{'100'}; {'Hist. Smoothing: [numPts,Iter]'},{'5,3'}];
-handles.FitDataParamTable = [{'Fermi Dirac "Start" [1 or 0]:'},{'1'}; {'Fermi MAX Value:'},{''}; {'Fermi MIN Value:'},{''};...
-    {'Gamma Guess [Hz]:'},{'1e3'}; {'Delay Fermi (s):'},{'0'}];
+handles.FitDataParamTable = [{'Bound: Gamma (min, max) [Hz]:'},{'1,1e4'}; {'Bound: Te_max (Delta Vg) [min%, max%]:'},{'20,75'};...
+    {'Bounds: mu_min & mu_max [min%, max%]'},{'10,90'}; {'empty:'},{''}];
 
 set(handles.VariableListTable,'Data',handles.VarDataTable);
 set(handles.FittingParamTable,'Data',handles.FitDataParamTable);
@@ -305,15 +305,60 @@ end
 % *nth dim: is the number of data points taken during the nth sweep
 %-----------------------------------------------------------------%
 
-%Extracting Data
+%Constant----------------------------------------------------------
+kB = 8.6173303e-5;%eV/K
 
+%Extracting User Input---------------------------------------------
 %Initializes input parameters: Example
 %       S = cell2mat(VarTable(5,2));
 alpha = str2double(cell2mat(VarTable(5,2)));
-Thres1 = str2double(cell2mat(VarTable(6,2)))/100;
+
+Thres1_str = str2double(cell2mat(VarTable(6,2)));
+if(isnan(Thres1_str))
+    Thres1_str = cell2mat(VarTable(6,2));
+    type = Thres1_str(1:3);
+    comma = strfind(Thres1_str,',');
+    p1 = strfind(Thres1_str,'(');
+    p2 = strfind(Thres1_str,')');
+    numIter1 = str2double(Thres1_str(p1+1:comma(1)-1));
+    numIter2 = str2double(Thres1_str(comma(1)+1:comma(2)-1));
+    numIter3 = str2double(Thres1_str(comma(2)+1:p2-1));
+    if(strcmp(type,'log'))
+        Thres1 = logspace(numIter1,numIter2,numIter3)/100;
+    elseif(strcmp(type,'lin'))
+        Thres1 = linspace(numIter1,numIter2,numIter3)/100;
+    else
+        msgbox('Incorrest syntax in Threshold1. Default to 50%');
+        Thres1 = 0.50;
+    end
+else
+    Thres1 = Thres1_str/100;
+end
 
 GaussWin = str2double(cell2mat(VarTable(7,2)));
-Iteration = str2double(cell2mat(VarTable(8,2)));
+
+Iteration_str = str2double(cell2mat(VarTable(8,2)));
+if(isnan(Iteration_str))
+    Iteration_str = cell2mat(VarTable(8,2));
+    type = Iteration_str(1:3);
+    comma = strfind(Iteration_str,',');
+    p1 = strfind(Iteration_str,'(');
+    p2 = strfind(Iteration_str,')');
+    numIter1 = str2double(Iteration_str(p1+1:comma(1)-1));
+    numIter2 = str2double(Iteration_str(comma(1)+1:comma(2)-1));
+    numIter3 = str2double(Iteration_str(comma(2)+1:p2-1));
+    if(strcmp(type,'log'))
+        Iteration = round(logspace(numIter1,numIter2,numIter3));
+    elseif(strcmp(type,'lin'))
+        Iteration = round(linspace(numIter1,numIter2,numIter3));
+    else
+        msgbox('Incorrest syntax in Smoothing: Iteration. Default to 1');
+        Iteration = 1;
+    end
+else
+    Iteration = round(Iteration_str);
+end
+
 Delay = str2double(cell2mat(VarTable(9,2)));
 
 Hist_BinNumber = str2double(cell2mat(VarTable(10,2)));
@@ -322,144 +367,205 @@ n = strfind(Hist_smooth,',');
 Hist_smooth_numPts = str2double(Hist_smooth(1:n-1));
 Hist_smooth_Iter = str2double(Hist_smooth(n+1:end));
 
-FermiStart = str2double(cell2mat(FitTable(1,2)));
-Fermi_Max = str2double(cell2mat(FitTable(2,2)));
-Fermi_Min = str2double(cell2mat(FitTable(3,2)));
-Gamma_Guess = str2double(cell2mat(FitTable(4,2)));
-Delay_Fermi = str2double(cell2mat(FitTable(5,2)));
+%Fitting parameters
+Gamma_MIN_MAX_str = cell2mat(FitTable(1,2));
+comma = strfind(Gamma_MIN_MAX_str,',');
+Gamma_MIN_MAX = [str2double(Gamma_MIN_MAX_str(1:comma-1)), str2double(Gamma_MIN_MAX_str(comma+1:end))];
+
+Te_DeltaVg_MIN_MAX_str = cell2mat(FitTable(2,2));
+comma = strfind(Te_DeltaVg_MIN_MAX_str,',');
+Te_DeltaVg_MIN_MAX = [str2double(Te_DeltaVg_MIN_MAX_str(1:comma-1)), str2double(Te_DeltaVg_MIN_MAX_str(comma+1:end))];
+
+mu_MIN_MAX_str = cell2mat(FitTable(3,2));
+comma = strfind(mu_MIN_MAX_str,',');
+mu_MIN_MAX_percent = [str2double(mu_MIN_MAX_str(1:comma-1)), str2double(mu_MIN_MAX_str(comma+1:end))];
+ 
+% FermiStart = str2double(cell2mat(FitTable(1,2)));
+% Fermi_Max = str2double(cell2mat(FitTable(2,2)));
+% Fermi_Min = str2double(cell2mat(FitTable(3,2)));
+% Gamma_Guess = str2double(cell2mat(FitTable(1,2)));
+% Delay_Fermi = str2double(cell2mat(FitTable(5,2)));
 
 n1 = size(MatrixData,1);%Osc time
 n3 = size(MatrixData,3);%dummy
 n4 = size(MatrixData,4);%Vgate
 
-OscY = MatrixData(:,OscY_index,:,:);
-size(OscY);
-handles.OscY = reshape(OscY,n1,n3*n4);
-for i=1:size(handles.OscY,2)
-    handles.OscY(:,i) = ReduceNoise(handles.OscY(:,i),GaussWin,Iteration,0);
-end
-size(handles.OscY);
+%Extracting Variables in Data------------------------------------
 
+%Y-data in oscilloscope data
+OscY = MatrixData(:,OscY_index,:,:);
+OscY_org = reshape(OscY,n1,n3*n4);
+
+%X-data in oscilloscope data
 OscX = MatrixData(:,OscX_index,1,1);
 handles.OscX = reshape(OscX,n1,1);
-size(handles.OscX);
 
+%Vgate sweeping
 Vgate = MatrixData(1,Vgate_index,1,:);
 handles.Vgate_nonrepeat = reshape(Vgate,n4,1);
 handles.Vgate=[];
 for i=1:length(handles.Vgate_nonrepeat)
     handles.Vgate = [handles.Vgate; handles.Vgate_nonrepeat(i,1)*ones(n3,1)];
 end
-size(handles.Vgate);
 
+%Dummy iterations
 Dummy = MatrixData(1,Dummy_index,:,1);
 handles.Dummy = reshape(Dummy,n3,1);
-size(handles.Dummy);
 
 %-----------------------------------------------------------------%
 
-for i=1:size(handles.OscY,2)
-    difference(:,i) = abs(diff(handles.OscY(:,i)));
-end
-for i=1:size(difference,2)
-    amplitude(i) = max(difference(:,i)) - min(difference(:,i));
-end
-Delta_amplitude = max(amplitude)-min(amplitude);
-% Amp_Thres = min(amplitude) + Delta_amplitude*Thres1;
-
-% axs_new = get(fig,'CurrentAxes');
-child = get(handles.axes1,'Children');
-delete(child);
-Hist_Obj = histogram(handles.axes1,amplitude,Hist_BinNumber);
-Hist_freq_raw = Hist_Obj.Values;
-Hist_Xval = Hist_Obj.BinEdges(1:end-1) + Hist_Obj.BinWidth/2;
-Hist_freq = ReduceNoise(Hist_freq_raw,Hist_smooth_numPts,Hist_smooth_Iter,0);
-line(Hist_Xval,Hist_freq,'Parent',handles.axes1,...
-    'Marker','o','MarkerSize',5,'MarkerFaceColor','r','MarkerEdgeColor','k','LineStyle','--','Color','r');
-grid(handles.axes1,'on');
-[pks,loc] = findpeaks(Hist_freq,'SortStr','descend');
-Delta_amplitude_correct = Hist_Xval(loc(1)) - Hist_Xval(loc(2));
-Amp_Thres = Hist_Xval(loc(2)) + Delta_amplitude_correct*Thres1;
-line([Amp_Thres,Amp_Thres],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
-    'Marker','none','LineStyle','-','Color','g','LineWidth',3);
-line([Hist_Xval(loc(1)),Hist_Xval(loc(1))],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
-    'Marker','none','LineStyle','--','Color','b','LineWidth',2);
-line([Hist_Xval(loc(2)),Hist_Xval(loc(2))],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
-    'Marker','none','LineStyle','--','Color','b','LineWidth',2);
-
-child = get(handles.axes3,'Children');
-delete(child);
-line(handles.Vgate,amplitude,'Parent',handles.axes3,'Marker','o','LineStyle','none','Color','b');
-line([handles.Vgate(1),handles.Vgate(end)],[Amp_Thres,Amp_Thres],'Parent',handles.axes3,...
-    'Marker','none','LineStyle','--','Color','r');
-grid(handles.axes3,'on');
-
-for i=1:size(difference,2)
+%POINT FOR LOOP************************
+for INDEX_iter = 1:length(Iteration)
+    Iteration(INDEX_iter)
     
-    [pks,loc] = findpeaks(difference(:,i));
-    Avg_Osc(i) = mean(handles.OscY(:,i));
-    
-    ElectronCount = 0;
-    saved_OscY = []; saved_OscX = [];
-    saved_pk = []; saved_x = [];
-    for ii=1:length(pks)
-        
-        if( pks(ii) > Amp_Thres)
-            ElectronCount = ElectronCount + 1;
-            saved_OscY(ElectronCount) = handles.OscY(loc(ii),i);
-            saved_OscX(ElectronCount) = handles.OscX(loc(ii),1);
-            
-            saved_pk(ElectronCount) = difference(loc(ii),i);
-            saved_x(ElectronCount) = loc(ii);
-        end
-        
+    %Smoothing Y-data in oscilloscope data (moving average)
+    % sliceNum = linspace(201,210,10);
+    % for i=1:size(handles.OscY,2)
+    %     i
+    %     if(any(sliceNum==i))
+    %         plotOpt = 1;
+    %     else
+    %         plotOpt = 0;
+    %     end
+    %     handles.OscY(:,i) = ReduceNoise_Thres(handles.OscY(:,i),GaussWin,Iteration,0.5,plotOpt);
+    % end
+    for i=1:size(OscY_org,2)
+        handles.OscY(:,i) = ReduceNoise(OscY_org(:,i),GaussWin,Iteration(INDEX_iter),0);
     end
     
-    if(Delay > 0)
+    for INDEX_thres = 1:length(Thres1)
+        Thres1(INDEX_thres)
+        
+        %Calculates the "effective" derivative (i.e. deltaY instead of deltaY/deltaX)
+        for i=1:size(handles.OscY,2)
+            difference(:,i) = abs(diff(handles.OscY(:,i)));
+        end
+        for i=1:size(difference,2)
+            [N,edges] = histcounts(difference(:,i),Hist_BinNumber);
+%             for ii=1:length(edges)-1
+%                xx(ii) = mean(edges(ii:ii+1));
+%             end
+%             child = get(handles.axes4,'Children');delete(child);
+%             Hist_Obj = histogram(handles.axes4,difference(:,i),Hist_BinNumber);
+            
+            N = ReduceNoise(N,Hist_smooth_numPts,Hist_smooth_Iter,0);
+            [val,ind] = max(N);
+            base(i) = mean(edges(ind:ind+1));
+%             line([base,base],[0,val],'Parent',handles.axes4,'Marker','none',...
+%                 'LineStyle','--','Color','g','LineWidth',4);
+%             line(xx,N,'Parent',handles.axes4,'MarkerFaceColor','r','MarkerEdgeColor','k',...
+%                 'Marker','o','LineStyle','--','Color','r');
+            
+%             child = get(handles.axes1,'Children');delete(child);
+%             line(linspace(1,length(difference(:,i)),length(difference(:,i))),difference(:,i),'Parent',handles.axes1,...
+%                 'Marker','none','LineStyle','-','Color','k');
+%             line([1,length(difference(:,i))],[base,base],'Parent',handles.axes1,...
+%                 'Marker','none','LineStyle','--','Color','r');
+            
+%             pause;
+            
+            amplitude(i) = max(difference(:,i)) - base(i);
+%             amplitude(i) = mean(difference(:,i));
+        end
+%         Amp_Thres = min(amplitude) +
+%         peak2peak(amplitude)*Thres1(INDEX_thres);h v
+%         Amp_Thres = min(min(difference)) + peak2peak(difference)*Thres1(INDEX_thres);
+        
         child = get(handles.axes1,'Children');
         delete(child);
-        line(linspace(1,length(difference(:,i)),length(difference(:,i))),difference(:,i),'Parent',handles.axes1,...
-            'Marker','none','LineStyle','-','Color','k');
-        line([1,length(difference(:,i))],[Amp_Thres,Amp_Thres],'Parent',handles.axes1,...
-            'Marker','none','LineStyle','--','Color','r');
-        if(ElectronCount>0)
-            line(saved_x,saved_pk,'Parent',handles.axes1,'Marker','o','LineStyle','none','Color','g');
-        end
+        Hist_Obj = histogram(handles.axes1,amplitude,Hist_BinNumber);
+        Hist_freq_raw = Hist_Obj.Values;
+        Hist_Xval = Hist_Obj.BinEdges(1:end-1) + Hist_Obj.BinWidth/2;
+        Hist_freq = ReduceNoise(Hist_freq_raw,Hist_smooth_numPts,Hist_smooth_Iter,0);
+        line(Hist_Xval,Hist_freq,'Parent',handles.axes1,...
+            'Marker','o','MarkerSize',5,'MarkerFaceColor','r','MarkerEdgeColor','k','LineStyle','--','Color','r');
         grid(handles.axes1,'on');
-        
-        child = get(handles.axes2,'Children');
+        [pks,loc] = findpeaks(Hist_freq,'SortStr','descend');
+        Delta_amplitude_correct = Hist_Xval(loc(1)) - Hist_Xval(loc(2));
+        Amp_Thres = Hist_Xval(loc(2)) + Delta_amplitude_correct*Thres1(INDEX_thres);
+        line([Amp_Thres,Amp_Thres],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
+            'Marker','none','LineStyle','-','Color','g','LineWidth',3);
+        line([Hist_Xval(loc(1)),Hist_Xval(loc(1))],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
+            'Marker','none','LineStyle','--','Color','b','LineWidth',2);
+        line([Hist_Xval(loc(2)),Hist_Xval(loc(2))],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
+            'Marker','none','LineStyle','--','Color','b','LineWidth',2);
+
+        child = get(handles.axes3,'Children');
         delete(child);
-        line(handles.OscX,handles.OscY(:,i),'Parent',handles.axes2,'Marker','none','LineStyle','-','Color','k');
-        if(ElectronCount>0)
-            line(saved_OscX,saved_OscY,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','r');
+%         Hist_Obj = histogram(handles.axes3,difference,Hist_BinNumber);
+        line(handles.Vgate,amplitude,'Parent',handles.axes3,'Marker','o','LineStyle','none','Color','b');
+        line([handles.Vgate(1),handles.Vgate(end)],[Amp_Thres,Amp_Thres],'Parent',handles.axes3,...
+            'Marker','none','LineStyle','--','Color','r');
+        grid(handles.axes3,'on');
+        
+        for i=1:size(difference,2)
+            
+            [pks,loc] = findpeaks(difference(:,i) - base(i));
+            Avg_Osc(i) = mean(handles.OscY(:,i));
+            
+            ElectronCount = 0;
+            saved_OscY = []; saved_OscX = [];
+            saved_pk = []; saved_x = [];
+            for ii=1:length(pks)
+                
+                if( pks(ii) > Amp_Thres)
+                    ElectronCount = ElectronCount + 1;
+                    saved_OscY(ElectronCount) = handles.OscY(loc(ii),i);
+                    saved_OscX(ElectronCount) = handles.OscX(loc(ii),1);
+                    
+                    saved_pk(ElectronCount) = difference(loc(ii),i);
+                    saved_x(ElectronCount) = loc(ii);
+                end
+                
+            end
+            
+            if(Delay > 0)
+                child = get(handles.axes1,'Children');
+                delete(child);
+                line(linspace(1,length(difference(:,i)),length(difference(:,i))),difference(:,i),'Parent',handles.axes1,...
+                    'Marker','none','LineStyle','-','Color','k');
+                line([1,length(difference(:,i))],[Amp_Thres,Amp_Thres],'Parent',handles.axes1,...
+                    'Marker','none','LineStyle','--','Color','r');
+                if(ElectronCount>0)
+                    line(saved_x,saved_pk,'Parent',handles.axes1,'Marker','o','LineStyle','none','Color','g');
+                end
+                grid(handles.axes1,'on');
+                
+                child = get(handles.axes2,'Children');
+                delete(child);
+                line(handles.OscX,handles.OscY(:,i),'Parent',handles.axes2,'Marker','none','LineStyle','-','Color','k');
+                if(ElectronCount>0)
+                    line(saved_OscX,saved_OscY,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','r');
+                end
+                grid(handles.axes2,'on');
+                title({['Electron Counts: ',num2str(ElectronCount),'  Vg: ',num2str(handles.Vgate(i,1))],['Iteration: ',num2str(i)]},'Parent',handles.axes2)
+                pause(Delay);
+            end
+            
+            ElectronCountsPerSecond_final(i) = ElectronCount/(max(handles.OscX)-min(handles.OscX));
+            %     max(handles.OscX)-min(handles.OscX);
+            ElectronCount_final(i) = ElectronCount;
         end
-        grid(handles.axes2,'on');
-        title({['Electron Counts: ',num2str(ElectronCount),'  Vg: ',num2str(handles.Vgate(i,1))],['Iteration: ',num2str(i)]},'Parent',handles.axes2)
-        pause(Delay);
-    end
-    
-    ElectronCountsPerSecond_final (i) = ElectronCount/(max(handles.OscX)-min(handles.OscX));
-end
-
-%         cnt = 1;
-for i=1:n4
-    
-    ElectronCountsPerSecond_final_cumul(i) = sum(ElectronCountsPerSecond_final((i-1)*n3+1:i*n3));
-    Avg_Osc_cumul(i) = mean(Avg_Osc((i-1)*n3+1:i*n3));
-    
-    %             if(i==1)
-    %                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i);
-    %             elseif(handles.Vgate(i-1) == handles.Vgate(i))
-    %                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i) + ElectronCount_final_cumul(cnt);
-    %             else
-    %                 cnt = cnt+1;
-    %                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i);
-    %             end
-end
-
-%fits: FERMI DIST.
+        
+        %         cnt = 1;
+        for i=1:n4
+            
+            ElectronCountsPerSecond_final_cumul(i) = mean(ElectronCountsPerSecond_final((i-1)*n3+1:i*n3));
+            Avg_Osc_cumul(i) = mean(Avg_Osc((i-1)*n3+1:i*n3));
+            
+            %             if(i==1)
+            %                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i);
+            %             elseif(handles.Vgate(i-1) == handles.Vgate(i))
+            %                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i) + ElectronCount_final_cumul(cnt);
+            %             else
+            %                 cnt = cnt+1;
+            %                 ElectronCount_final_cumul(cnt) = ElectronCount_final(i);
+            %             end
+        end
+        
+        %fits: FERMI DIST.---------------------------------------------------------
+        %{
 %Renormalize the data to be fit
-
 if(Delay_Fermi>0)
 %     child = get(handles.axes1,'Children');delete(child);
 %     line(handles.Vgate_nonrepeat,Avg_Osc_cumul,'Parent',handles.axes1,'Marker','.','LineStyle','none','Color','b');
@@ -484,7 +590,6 @@ if(isnan(Fermi_Max))
 else
     Avg_Osc_cumul_norm = Avg_Osc_cumul_norm/Fermi_Max;
 end
-kB = 8.6173303e-5;%eV/K
 
 if(FermiStart==1)
     func = strcat('1/(exp(',num2str(alpha),'*(Vg - mu)/(',num2str(kB),'*Te)) + 1)');
@@ -525,11 +630,114 @@ Te_fit = vals(1);mu_fit = vals(2);
 %     {['mu=',num2str(mu_fit),' (',num2str(round((mu_fit-mu_fit_ebar(1)),6)),', ',num2str(round((mu_fit-mu_fit_ebar(2)),6)),' [95% CI]) V']}],...
 %     'FontSize',10);
 
+        %}
+        %--------------------------------------------------------------------------
+        
+        %FITTING: Electron tunneling rate vs Gate voltage Curve ------------------------------------------
+        %Renormalize the data to be fit
+        % func = strcat('Gamma*(1/(exp(',num2str(alpha),'*(Vg - ',num2str(mu_fit),')/(',num2str(kB*Te_fit),')) + 1))',...
+        %     '*(1 - 1/(exp(',num2str(alpha),'*(Vg - ',num2str(mu_fit),')/(',num2str(kB*Te_fit),')) + 1))');
+        
+        lb_Te = (Te_DeltaVg_MIN_MAX(1)/100)*peak2peak(handles.Vgate)*alpha/(3*kB);
+        ub_Te = (Te_DeltaVg_MIN_MAX(2)/100)*peak2peak(handles.Vgate)*alpha/(3*kB);
+        
+        lb_mu = min(handles.Vgate) + mu_MIN_MAX_percent(1)*peak2peak(handles.Vgate)/100;
+        ub_mu = min(handles.Vgate) + mu_MIN_MAX_percent(2)*peak2peak(handles.Vgate)/100;
+        
+        lb = [Gamma_MIN_MAX(1), lb_Te, lb_mu];
+        ub = [Gamma_MIN_MAX(2), ub_Te, ub_mu];
+        
+        Gamma_start = mean(Gamma_MIN_MAX);
+        Te_start = (ub_Te-lb_Te)/2;
+        mu_start = handles.Vgate_nonrepeat(round(length(handles.Vgate_nonrepeat)/2));
+        
+        var_start = [Gamma_start, Te_start, mu_start];
+        FUN = @(var, xdata)var(1).*(1./(exp(alpha*(xdata - var(3))./(kB*var(2))) + 1)).*(1 - 1./(exp(alpha*(xdata - var(3))./(kB*var(2))) + 1));
+        
+        %     size(handles.Vgate)
+        %     size(ElectronCountsPerSecond_final)
+        
+        [VAR, resnorm, resid, exitflag, output, lambda, Jacob] = lsqcurvefit(FUN, var_start, handles.Vgate, ElectronCountsPerSecond_final', lb, ub);
+        ci = nlparci(VAR, resid, 'Jacobian', Jacob);
+        resnorm_stored(INDEX_iter, INDEX_thres) = resnorm;
+        VAR(1);
+        VAR(2);
+        VAR(3);
+        
+        child = get(handles.axes2,'Children');
+        delete(child);
+        
+        newVAR = VAR;
+        % newVAR = [2, VAR(2:3)];
+        
+        %     fitamp_stored(INDEX_iter, INDEX_thres) = max(FUN(newVAR, handles.Vgate));
+        %     fitamp_stored(INDEX_iter, INDEX_thres) = peak2peak(FUN(newVAR, handles.Vgate));
+        %     fitamp_stored(INDEX_iter, INDEX_thres) = peak2peak(ElectronCountsPerSecond_final);
+            fitamp_stored(INDEX_iter, INDEX_thres) = VAR(1);%GAMMA
+        
+        set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes2);
+        child = get(handles.axes2,'Children');delete(child);
+        line(handles.Vgate,ElectronCountsPerSecond_final,'LineStyle','none','Marker','o','MarkerFaceColor','b','MarkerFaceColor','k','MarkerSize',4);
+        line(handles.Vgate,FUN(newVAR, handles.Vgate),'LineStyle','-','Color','r','LineWidth',2,'Marker','none');
+        %         line(handles.Vgate_nonrepeat,ElectronCount_final_cumul,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','b');
+        grid(handles.axes2,'on');
+        title(handles.axes2, [{'<r_e> vs. Vgate'},...
+            {['Fit: Gamma=',num2str(round(VAR(1),2)),' (',num2str(round((VAR(1)-ci(1,1)),2)),', ',num2str(round((VAR(1)-ci(1,2)),2)),' [95% CI]) Hz']},...
+            {['Te =',num2str(VAR(2)*1000),'mK']}],...
+            'FontSize',13);
+%             pause
+    end
+end
 
-%fits: Electron Transition Curve
-%Renormalize the data to be fit
-func = strcat('Gamma*(1/(exp(',num2str(alpha),'*(Vg - ',num2str(mu_fit),')/(',num2str(kB*Te_fit),')) + 1))',...
-    '*(1 - 1/(exp(',num2str(alpha),'*(Vg - ',num2str(mu_fit),')/(',num2str(kB*Te_fit),')) + 1))');
+% figure(100);
+%     line(V_sweep1_fit,Gamma_1,'Color','r');
+%     ax1 = gca; % current axes
+%     xlabel(ax1,'Vsweep1 [V]');
+%     ylabel(ax1,'\Gamma_1 [Hz]');
+%     ax1.XColor = 'r';
+%     ax1.YColor = 'r';
+%     
+%     ax1_pos = ax1.Position; % position of first axes
+%     ax2 = axes('Position',ax1_pos,...
+%         'XAxisLocation','top',...
+%         'YAxisLocation','right',...
+%         'Color','none');
+%     
+%     line(V_sweep2_fit,Gamma_2,'Parent',ax2,'Color','k');
+%     xlabel(ax2,'Vsweep2 [V]');
+%     ylabel(ax2,'\Gamma_2 [Hz]');
+%     grid on;
+
+
+child = get(handles.axes4,'Children');delete(child);
+if(INDEX_iter>1 && INDEX_thres>1)
+    surf(Thres1, Iteration, fitamp_stored,'Parent',handles.axes4,'EdgeAlpha',0);
+    view(handles.axes1, 2);
+else
+    if(INDEX_iter>1 && INDEX_thres==1)
+        line(Iteration,fitamp_stored,'Parent',handles.axes4,'Marker','o','MarkerFaceColor','k','MarkerFaceColor','k','MarkerSize',4,'LineStyle','--','Color','k');
+    elseif(INDEX_iter==1 && INDEX_thres>1)
+        line(Thres1,fitamp_stored,'Parent',handles.axes4,'Marker','o','MarkerFaceColor','k','MarkerFaceColor','k','MarkerSize',4,'LineStyle','--','Color','k');
+    else
+         line(1,fitamp_stored,'Parent',handles.axes4,'Marker','o','MarkerFaceColor','k','MarkerFaceColor','k','MarkerSize',4,'LineStyle','--','Color','k');
+    end
+    set(handles.axes4,'YScale','linear');
+    grid(handles.axes4,'on');
+end
+
+
+% figure;axes1_sub=axes;
+% line(Thres1,resnorm_stored,'Parent',axes1_sub,'Marker','o','MarkerFaceColor','r','MarkerFaceColor','r','MarkerSize',4,'LineStyle','--','Color','r');
+% set(handles.axes1_sub,'YScale','linear');
+% grid(handles.axes1_sub,'on');
+
+
+
+    
+% title(handles.axes1,'Average Occupansy vs. Vgate');
+
+
+%{
 
 func = strcat('Gamma*(1/(exp(',num2str(alpha),'*(Vg - mu)/(',num2str(kB),'*Te)) + 1))',...
     '*(1 - 1/(exp(',num2str(alpha),'*(Vg - mu)/(',num2str(kB),'*Te)) + 1))');
@@ -541,13 +749,17 @@ fmodel = fittype(func, 'ind', {'Vg'}, 'coeff', modelVariables);
 %         Here I define values for the starting "guess" for the fitting parameters
 %         ModelVar_start  = Gamma_Guess;
 
-[myfit,gof] = fit(handles.Vgate_nonrepeat, ElectronCountsPerSecond_final_cumul', fmodel,...
+% [myfit,gof] = fit(handles.Vgate_nonrepeat, ElectronCountsPerSecond_final_cumul', fmodel,...
+%     'Start', ModelVar_start,...
+%     'TolFun',1e-45,'TolX',1e-45,'MaxFunEvals',1000,'MaxIter',1000);
+
+[myfit,gof] = fit(handles.Vgate, ElectronCountsPerSecond_final', fmodel,...
     'Start', ModelVar_start,...
     'TolFun',1e-45,'TolX',1e-45,'MaxFunEvals',1000,'MaxIter',1000);
 
 %         The 3 lines below are used to estimate error bars on the values for the
 %         fitting parameters
-ci = confint(myfit,0.9999);
+ci = confint(myfit,0.95);
 Gamma_fit_ebar = ci(:,1);
 Te_fit_ebar = ci(:,2);
 mu_fit_ebar = ci(:,3);
@@ -561,7 +773,7 @@ child = get(handles.axes2,'Children');
 delete(child);
 
 set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes2);
-plot(myfit,handles.Vgate_nonrepeat,ElectronCountsPerSecond_final_cumul);
+plot(myfit,handles.Vgate,ElectronCountsPerSecond_final);
 %         line(handles.Vgate_nonrepeat,ElectronCount_final_cumul,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','b');
 grid(handles.axes2,'on');
 title(handles.axes2, [{'<r_e> vs. Vgate'},...
@@ -569,49 +781,11 @@ title(handles.axes2, [{'<r_e> vs. Vgate'},...
     {['Te =',num2str(Te_fit*1000),'mK']}],...
     'FontSize',13);
 
+figure;
+plot(handles.Vgate,ElectronCount_final);
+grid on;
 
-
-
-%         line(handles.Vgate,ElectronCount_final,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','b');
-
-%         line([handles.Vgate(1),handles.Vgate(end)],[Amp_Thres,Amp_Thres],'Parent',handles.axes3,...
-%             'Marker','none','LineStyle','--','Color','r');
-
-%         handles.Current = (transpose(Current));
-%
-%         size(Current)
-%         if(isempty(Vtun_index))
-%             Vbias = MatrixData(:,Vbias_index,1);
-%             Vbias = reshape(Vbias,n1,1);
-%             handles.Vbias = Vbias;
-%             handles.Vplg = [];
-%         else
-%             Vplg = MatrixData(:,Vtun_index,1);
-%             Vplg = reshape(Vplg,n1,1);
-%             handles.Vplg = Vplg;
-%             handles.Vbias = [];
-%
-%             size(Vplg)
-%         end
-%         Time = MatrixData(:,Time_index,:);
-%         Time = reshape(Time,n1,n3);
-%         handles.Time = (transpose(Time));
-%
-%         size(Time)
-%
-%         Bfield = MatrixData(1,Bfield_index,:);
-%         Bfield = reshape(Bfield,n3,1);
-%         handles.Bfield = Bfield;
-%
-%         size(Bfield)
-%         %-----------------------------------------------------------------%
-%
-%         child = get(handles.axes1,'Children');
-%         delete(child);
-%
-%         surf(handles.Vplg,handles.Bfield,handles.Current,'EdgeAlpha',0,'Parent',handles.axes1);
-%         XY_plane=[0 90];
-%         view(handles.axes1,2);
+%}
 disp('>>>DONE<<<')
 guidata(hObject, handles);
 
@@ -767,6 +941,9 @@ elseif(get(handles.AxesNum2Radiobutton,'Value')==1)
 
 elseif(get(handles.AxesNum3Radiobutton,'Value')==1)
     set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes3);
+
+elseif(get(handles.AxesNum4Radiobutton,'Value')==1)
+    set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes4);
 end
 
 axs_children = get(gca,'Children');
