@@ -74,12 +74,14 @@ handles.AvailableFiles_indeces = [1:1:length(handles.Received_GUI_Data.OrgMatrix
 %-------------------------------------------------------------------------%
 
 %Needs to re-edit
-handles.VarDataTable = [{'Vgate:'},{'VplgL_dot'}; {'Osc_Y [volt]:'},{'Osc_wave'};...
+handles.VarDataTable = [{'Vgate:'},{'Vplg_T'}; {'Osc_Y [volt]:'},{'Osc_wave'};...
     {'Osc_X [time]:'},{'Osc_time'}; {'Dummy :'},{'Dummy'};...
-    {'\alpha (eV/V):'},{'0.139'}; {'Threshold 1: [%,lin,log]'},{'50'};...
-    {'Smoothing: Number of points:'},{'3'}; {'Smoothing: Number of Iterations: [#,lin,log]'},{'4'};...
-    {'Delay (s)'},{'0'}; {'Hist. Bin Number:'},{'100'}; {'Hist. Smoothing: [numPts,Iter]'},{'5,3'}];
-handles.FitDataParamTable = [{'Bound: Gamma (min, max) [Hz]:'},{'1,1e4'}; {'Bound: Te_max (Delta Vg) [min%, max%]:'},{'20,75'};...
+    {'\alpha (eV/V):'},{'0.13'}; {'Threshold 1: [%,lin,log]'},{'50'};...
+    {'Thres. (Gauss fit): Num. Pts [#]'},{'10'}; {'Data Smoothing: Num. of points:'},{'3'};...
+    {'Data Smoothing: Num. of Iterations: [#,lin,log]'},{'4'};...
+    {'Delay (s)'},{'0'}; {'Hist. Bin Number:'},{'100'}; {'Hist. Smoothing: [numPts,Iter]'},{'3,3'}];
+handles.FitDataParamTable = [{'Bound: Gamma (min, max) [Hz]:'},{'1,1e4'};...
+    {'Bound: Te_max (Delta Vg) [min%, max%]:'},{'20,60'};...
     {'Bounds: mu_min & mu_max [min%, max%]'},{'10,90'}; {'empty:'},{''}];
 
 set(handles.VariableListTable,'Data',handles.VarDataTable);
@@ -227,7 +229,7 @@ function ExtractPushbutton_Callback(hObject, eventdata, handles)
 % hObject    handle to ExtractPushbutton (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
+tic;
 chosenFile = get(handles.FilesChosenListbox,'Value');
 INDEX = handles.ChosenFiles_indeces(chosenFile);
 
@@ -313,33 +315,34 @@ kB = 8.6173303e-5;%eV/K
 %       S = cell2mat(VarTable(5,2));
 alpha = str2double(cell2mat(VarTable(5,2)));
 
-Thres1_str = str2double(cell2mat(VarTable(6,2)));
-if(isnan(Thres1_str))
-    Thres1_str = cell2mat(VarTable(6,2));
-    type = Thres1_str(1:3);
-    comma = strfind(Thres1_str,',');
-    p1 = strfind(Thres1_str,'(');
-    p2 = strfind(Thres1_str,')');
-    numIter1 = str2double(Thres1_str(p1+1:comma(1)-1));
-    numIter2 = str2double(Thres1_str(comma(1)+1:comma(2)-1));
-    numIter3 = str2double(Thres1_str(comma(2)+1:p2-1));
+ThresInput_str = str2double(cell2mat(VarTable(6,2)));
+if(isnan(ThresInput_str))
+    ThresInput_str = cell2mat(VarTable(6,2));
+    type = ThresInput_str(1:3);
+    comma = strfind(ThresInput_str,',');
+    p1 = strfind(ThresInput_str,'(');
+    p2 = strfind(ThresInput_str,')');
+    numIter1 = str2double(ThresInput_str(p1+1:comma(1)-1));
+    numIter2 = str2double(ThresInput_str(comma(1)+1:comma(2)-1));
+    numIter3 = str2double(ThresInput_str(comma(2)+1:p2-1));
     if(strcmp(type,'log'))
-        Thres1 = logspace(numIter1,numIter2,numIter3)/100;
+        ThresInput = logspace(numIter1,numIter2,numIter3)/100;
     elseif(strcmp(type,'lin'))
-        Thres1 = linspace(numIter1,numIter2,numIter3)/100;
+        ThresInput = linspace(numIter1,numIter2,numIter3)/100;
     else
         msgbox('Incorrest syntax in Threshold1. Default to 50%');
-        Thres1 = 0.50;
+        ThresInput = 0.50;
     end
 else
-    Thres1 = Thres1_str/100;
+    ThresInput = ThresInput_str/100;
 end
+ThresInput_GaussFit_NumPts = str2double(cell2mat(VarTable(7,2)));
 
-GaussWin = str2double(cell2mat(VarTable(7,2)));
+GaussWin = str2double(cell2mat(VarTable(8,2)));
 
-Iteration_str = str2double(cell2mat(VarTable(8,2)));
+Iteration_str = str2double(cell2mat(VarTable(9,2)));
 if(isnan(Iteration_str))
-    Iteration_str = cell2mat(VarTable(8,2));
+    Iteration_str = cell2mat(VarTable(9,2));
     type = Iteration_str(1:3);
     comma = strfind(Iteration_str,',');
     p1 = strfind(Iteration_str,'(');
@@ -359,10 +362,10 @@ else
     Iteration = round(Iteration_str);
 end
 
-Delay = str2double(cell2mat(VarTable(9,2)));
+Delay = str2double(cell2mat(VarTable(10,2)));
 
-Hist_BinNumber = str2double(cell2mat(VarTable(10,2)));
-Hist_smooth = cell2mat(VarTable(11,2));
+Hist_BinNumber = str2double(cell2mat(VarTable(11,2)));
+Hist_smooth = cell2mat(VarTable(12,2));
 n = strfind(Hist_smooth,',');
 Hist_smooth_numPts = str2double(Hist_smooth(1:n-1));
 Hist_smooth_Iter = str2double(Hist_smooth(n+1:end));
@@ -432,64 +435,88 @@ for INDEX_iter = 1:length(Iteration)
     for i=1:size(OscY_org,2)
         handles.OscY(:,i) = ReduceNoise(OscY_org(:,i),GaussWin,Iteration(INDEX_iter),0);
     end
+    %Calculates the "effective" derivative (i.e. deltaY instead of deltaY/deltaX)
+    for i=1:size(handles.OscY,2)
+        difference(:,i) = abs(diff(handles.OscY(:,i)));
+    end
+    for i=1:size(difference,2)
+        [N,edges] = histcounts(difference(:,i),Hist_BinNumber);
+        %             for ii=1:length(edges)-1
+        %                xx(ii) = mean(edges(ii:ii+1));
+        %             end
+        %             child = get(handles.axes4,'Children');delete(child);
+        %             Hist_Obj = histogram(handles.axes4,difference(:,i),Hist_BinNumber);
+        N = ReduceNoise(N,Hist_smooth_numPts,Hist_smooth_Iter,0);
+        [val,ind] = max(N);
+        base(i) = mean(edges(ind:ind+1));
+        %             line([base,base],[0,val],'Parent',handles.axes4,'Marker','none',...
+        %                 'LineStyle','--','Color','g','LineWidth',4);
+        %             line(xx,N,'Parent',handles.axes4,'MarkerFaceColor','r','MarkerEdgeColor','k',...
+        %                 'Marker','o','LineStyle','--','Color','r');
+        
+        %             child = get(handles.axes1,'Children');delete(child);
+        %             line(linspace(1,length(difference(:,i)),length(difference(:,i))),difference(:,i),'Parent',handles.axes1,...
+        %                 'Marker','none','LineStyle','-','Color','k');
+        %             line([1,length(difference(:,i))],[base,base],'Parent',handles.axes1,...
+        %                 'Marker','none','LineStyle','--','Color','r');
+        amplitude(i) = max(difference(:,i)) - base(i);
+        
+    end
+       
+    child = get(handles.axes1,'Children');delete(child);
+    Hist_Obj = histogram(handles.axes1,amplitude,Hist_BinNumber);
+    Hist_freq_raw = Hist_Obj.Values;
+    Hist_Xval = Hist_Obj.BinEdges(1:end-1) + Hist_Obj.BinWidth/2;
+    Hist_freq = ReduceNoise(Hist_freq_raw,Hist_smooth_numPts,Hist_smooth_Iter,0);   
+    [pks,loc] = findpeaks(Hist_freq,'SortStr','descend');
+    lowerBound = Hist_Xval(loc(2));
+    Delta_amplitude_correct = Hist_Xval(loc(1))-lowerBound;
+    line(Hist_Xval,Hist_freq,'Parent',handles.axes1,...
+        'Marker','o','MarkerSize',5,'MarkerFaceColor','r','MarkerEdgeColor','k','LineStyle','--','Color','r');
+    line([Hist_Xval(loc(1)),Hist_Xval(loc(1))],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
+        'Marker','none','LineStyle','--','Color','b','LineWidth',2);
+    line([Hist_Xval(loc(2)),Hist_Xval(loc(2))],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
+        'Marker','none','LineStyle','--','Color','b','LineWidth',2);
+    grid(handles.axes1,'on');
     
-    for INDEX_thres = 1:length(Thres1)
-        Thres1(INDEX_thres)
-        
-        %Calculates the "effective" derivative (i.e. deltaY instead of deltaY/deltaX)
-        for i=1:size(handles.OscY,2)
-            difference(:,i) = abs(diff(handles.OscY(:,i)));
+    if(ThresInput_GaussFit_NumPts>0)
+        for j=1:2
+            Pts = ThresInput_GaussFit_NumPts;
+            if(loc(j)-Pts < 1)
+                init = 1;
+                Pts = loc(j)-1;
+            else
+                init = loc(j)-Pts;
+            end
+            XX = Hist_Xval(init:loc(j)+Pts);
+            YY = Hist_freq(init:loc(j)+Pts)';
+            xo_gauss = Hist_Xval(loc(j));
+            vargauss_start = [0.1*peak2peak(Hist_Xval), pks(j)];
+            gauss_FUN = @(vargauss, xdata)vargauss(2)*exp(-(xdata - xo_gauss).^2/(2*vargauss(1)^2));
+            lb = [0.005*peak2peak(Hist_Xval)];
+            ub = [0.9*peak2peak(Hist_Xval)];
+            VARGAUSS(:,j) = lsqcurvefit(gauss_FUN, vargauss_start, XX, YY, lb, ub);
+            STD = VARGAUSS(1,j);
+            Thres_limit(j) = Hist_Xval(loc(j)) + 2*STD*(-1)^j;
+            Thres_percent(j) = abs(Thres_limit(j) - Hist_Xval(loc(2)))/Delta_amplitude_correct;
+            line(Hist_Xval,gauss_FUN(VARGAUSS(:,j),Hist_Xval),'Parent',handles.axes1,...
+                'Marker','none','LineStyle',':','Color','c','LineWidth',3);
+            line([Thres_limit(j),Thres_limit(j)],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
+                'Marker','none','LineStyle','-','Color','k','LineWidth',3);
         end
-        for i=1:size(difference,2)
-            [N,edges] = histcounts(difference(:,i),Hist_BinNumber);
-%             for ii=1:length(edges)-1
-%                xx(ii) = mean(edges(ii:ii+1));
-%             end
-%             child = get(handles.axes4,'Children');delete(child);
-%             Hist_Obj = histogram(handles.axes4,difference(:,i),Hist_BinNumber);
-            
-            N = ReduceNoise(N,Hist_smooth_numPts,Hist_smooth_Iter,0);
-            [val,ind] = max(N);
-            base(i) = mean(edges(ind:ind+1));
-%             line([base,base],[0,val],'Parent',handles.axes4,'Marker','none',...
-%                 'LineStyle','--','Color','g','LineWidth',4);
-%             line(xx,N,'Parent',handles.axes4,'MarkerFaceColor','r','MarkerEdgeColor','k',...
-%                 'Marker','o','LineStyle','--','Color','r');
-            
-%             child = get(handles.axes1,'Children');delete(child);
-%             line(linspace(1,length(difference(:,i)),length(difference(:,i))),difference(:,i),'Parent',handles.axes1,...
-%                 'Marker','none','LineStyle','-','Color','k');
-%             line([1,length(difference(:,i))],[base,base],'Parent',handles.axes1,...
-%                 'Marker','none','LineStyle','--','Color','r');
-            
-%             pause;
-            
-            amplitude(i) = max(difference(:,i)) - base(i);
-%             amplitude(i) = mean(difference(:,i));
+        ThresInput = [mean(Thres_percent),Thres_percent(1),Thres_percent(2)];
+        disp(['Threshold bounds: ',num2str(ThresInput(2)),', ',num2str(ThresInput(1)),', ',num2str(ThresInput(3))])
+    end
+    
+    for INDEX_thres = 1:length(ThresInput)
+        ThresInput(INDEX_thres)                
+        Amp_Thres = lowerBound + Delta_amplitude_correct*ThresInput(INDEX_thres)
+        if(INDEX_thres == 1)
+            line([Amp_Thres,Amp_Thres],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
+                'Marker','none','LineStyle','-','Color','g','LineWidth',3);
         end
-%         Amp_Thres = min(amplitude) +
-%         peak2peak(amplitude)*Thres1(INDEX_thres);h v
-%         Amp_Thres = min(min(difference)) + peak2peak(difference)*Thres1(INDEX_thres);
+%         pause;
         
-        child = get(handles.axes1,'Children');
-        delete(child);
-        Hist_Obj = histogram(handles.axes1,amplitude,Hist_BinNumber);
-        Hist_freq_raw = Hist_Obj.Values;
-        Hist_Xval = Hist_Obj.BinEdges(1:end-1) + Hist_Obj.BinWidth/2;
-        Hist_freq = ReduceNoise(Hist_freq_raw,Hist_smooth_numPts,Hist_smooth_Iter,0);
-        line(Hist_Xval,Hist_freq,'Parent',handles.axes1,...
-            'Marker','o','MarkerSize',5,'MarkerFaceColor','r','MarkerEdgeColor','k','LineStyle','--','Color','r');
-        grid(handles.axes1,'on');
-        [pks,loc] = findpeaks(Hist_freq,'SortStr','descend');
-        Delta_amplitude_correct = Hist_Xval(loc(1)) - Hist_Xval(loc(2));
-        Amp_Thres = Hist_Xval(loc(2)) + Delta_amplitude_correct*Thres1(INDEX_thres);
-        line([Amp_Thres,Amp_Thres],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
-            'Marker','none','LineStyle','-','Color','g','LineWidth',3);
-        line([Hist_Xval(loc(1)),Hist_Xval(loc(1))],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
-            'Marker','none','LineStyle','--','Color','b','LineWidth',2);
-        line([Hist_Xval(loc(2)),Hist_Xval(loc(2))],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
-            'Marker','none','LineStyle','--','Color','b','LineWidth',2);
-
         child = get(handles.axes3,'Children');
         delete(child);
 %         Hist_Obj = histogram(handles.axes3,difference,Hist_BinNumber);
@@ -502,6 +529,7 @@ for INDEX_iter = 1:length(Iteration)
             
             [pks,loc] = findpeaks(difference(:,i) - base(i));
             Avg_Osc(i) = mean(handles.OscY(:,i));
+            
             
             ElectronCount = 0;
             saved_OscY = []; saved_OscX = [];
@@ -711,13 +739,18 @@ end
 
 child = get(handles.axes4,'Children');delete(child);
 if(INDEX_iter>1 && INDEX_thres>1)
-    surf(Thres1, Iteration, fitamp_stored,'Parent',handles.axes4,'EdgeAlpha',0);
-    view(handles.axes1, 2);
+    for I=1:INDEX_thres
+        line(Iteration,fitamp_stored(:,I),'Parent',handles.axes4,'Marker','o','MarkerFaceColor','k','MarkerFaceColor','k','MarkerSize',4,'LineStyle','--','Color','k');           
+    end
+    set(handles.axes4,'YScale','linear');
+    grid(handles.axes4,'on');
+%     surf(Thres1, Iteration, fitamp_stored,'Parent',handles.axes4,'EdgeAlpha',0);
+%     view(handles.axes1, 2);
 else
     if(INDEX_iter>1 && INDEX_thres==1)
         line(Iteration,fitamp_stored,'Parent',handles.axes4,'Marker','o','MarkerFaceColor','k','MarkerFaceColor','k','MarkerSize',4,'LineStyle','--','Color','k');
     elseif(INDEX_iter==1 && INDEX_thres>1)
-        line(Thres1,fitamp_stored,'Parent',handles.axes4,'Marker','o','MarkerFaceColor','k','MarkerFaceColor','k','MarkerSize',4,'LineStyle','--','Color','k');
+        line(ThresInput,fitamp_stored,'Parent',handles.axes4,'Marker','o','MarkerFaceColor','k','MarkerFaceColor','k','MarkerSize',4,'LineStyle','--','Color','k');
     else
          line(1,fitamp_stored,'Parent',handles.axes4,'Marker','o','MarkerFaceColor','k','MarkerFaceColor','k','MarkerSize',4,'LineStyle','--','Color','k');
     end
@@ -786,7 +819,8 @@ plot(handles.Vgate,ElectronCount_final);
 grid on;
 
 %}
-disp('>>>DONE<<<')
+timelapsed = toc;
+disp(['>>>DONE: ',num2str(timelapsed/60),'min <<<']);
 guidata(hObject, handles);
 
 
