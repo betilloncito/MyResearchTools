@@ -1,0 +1,102 @@
+***** Experimental Data Logging *****     
+Device ID: SiDD402-01-M1                  
+                                          
+-----------------------------------------------
+>Date: 02-Jan-2019                        
+File         :   11-45-34,          ,          
+Vbias        :          1,          ,          
+Vacc_T       :          3,          ,          
+Vplg         :      2.343,     2.454,       152
+Vacc_B       :          4,          ,          
+Viso         :          0,          ,          
+Vscr         :          0,          ,          
+B-field      :          0,         3,       101
+VoltDiv      :      1/100,          ,          
+-----------------------------------------------
+>>>Date: 02-Jan-2019                      
+File         :   11-45-34,          ,          
+Vbias        :          1,          ,          
+Vacc_T       :          3,          ,          
+Vplg         :      2.343,     2.454,       152
+Vacc_B       :          4,          ,          
+Viso         :          0,          ,          
+Vscr         :          0,          ,          
+B-field      :          0,         3,       101
+VoltDiv      :      1/100,          ,          
+-----------------------------------------------
+>>>Date: 02-Jan-2019                      
+File         :   11-45-34,          ,          
+Vbias        :          1,          ,          
+Vacc_T       :          3,          ,          
+Vplg         :      2.343,     2.454,       152
+Vacc_B       :          4,          ,          
+Viso         :          0,          ,          
+Vscr         :          0,          ,          
+B-field      :          0,         3,       101
+VoltDiv      :      1/100,          ,          
+-----------------------------------------------
+>>>Date: 02-Jan-2019                      
+File         :   11-45-34,          ,          
+Vbias        :          1,          ,          
+Vacc_T       :          3,          ,          
+Vplg         :      2.343,     2.454,       152
+Vacc_B       :          4,          ,          
+Viso         :          0,          ,          
+Vscr         :          0,          ,          
+B-field      :          0,         3,       101
+VoltDiv      :      1/100,          ,          
+                                    Notes:
+                                          
+-----------------------------------------------
+>>>Date: 02-Jan-2019                      
+File         :   11-45-34,          ,          
+Vbias        :          1,          ,          
+Vacc_T       :          3,          ,          
+Vplg         :      2.343,     2.454,       152
+Vacc_B       :          4,          ,          
+Viso         :          0,          ,          
+Vscr         :          0,          ,          
+B-field      :          0,         3,       101
+VoltDiv      :      1/100,          ,          
+Notes:                                    
+  This run is supposed to capture the first and second transitions and should reveal the addition energy
+-----------------------------------------------
+>>>Date: 02-Jan-2019                      
+File         :   11-45-34,          ,          
+Vbias        :          1,          ,          
+Vacc_T       :          3,          ,          
+Vplg         :      2.343,     2.454,       152
+Vacc_B       :          4,          ,          
+Viso         :          0,          ,          
+Vscr         :          0,          ,          
+B-field      :          0,         3,       101
+VoltDiv      :      1/100,          ,          
+Notes:                                    
+This run is supposed to capture the first and second transitions and should reveal the addition energy
+-----------------------------------------------
+>>>Date: 02-Jan-2019                      
+File         :   11-45-34,          ,          
+Vbias        :          1,          ,          
+Vacc_T       :          3,          ,          
+Vplg         :      2.343,     2.454,       152
+Vacc_B       :          4,          ,          
+Viso         :          0,          ,          
+Vscr         :          0,          ,          
+B-field      :          0,         3,       101
+VoltDiv      :      1/100,          ,          
+Notes:                                    
+This run is supposed to capture the first and second transitions and should reveal the addition energy. This run is supposed to capture the first and second transitions and should reveal the addition energy. This run is supposed to capture the first and second transitions and should reveal the addition energy
+-----------------------------------------------
+>>>Date: 02-Jan-2019                      
+File         :   11-45-34,          ,          
+Vbias        :          1,          ,          
+Vacc_T       :          3,          ,          
+Vplg         :      2.343,     2.454,       152
+Vacc_B       :          4,          ,          
+Viso         :          0,          ,          
+Vscr         :          0,          ,          
+B-field      :          0,         3,       101
+VoltDiv      :      1/100,          ,          
+>>>Notes:                                 
+This run is supposed to capture the first and second transitions and should reveal the addition energy. This run is supposed to capture the first and second transitions and should reveal the addition energy. This run is supposed to capture the first and second transitions and should reveal the addition energy
+-----------------------------------------------

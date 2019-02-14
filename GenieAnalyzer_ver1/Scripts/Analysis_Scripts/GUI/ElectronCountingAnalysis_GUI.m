@@ -509,21 +509,24 @@ for INDEX_iter = 1:length(Iteration)
     end
     
     for INDEX_thres = 1:length(ThresInput)
-        ThresInput(INDEX_thres)                
+        ThresInput(INDEX_thres)
         Amp_Thres = lowerBound + Delta_amplitude_correct*ThresInput(INDEX_thres)
         if(INDEX_thres == 1)
             line([Amp_Thres,Amp_Thres],[0,max(Hist_freq_raw)],'Parent',handles.axes1,...
                 'Marker','none','LineStyle','-','Color','g','LineWidth',3);
         end
-%         pause;
+        %         pause;
         
-        child = get(handles.axes3,'Children');
-        delete(child);
-%         Hist_Obj = histogram(handles.axes3,difference,Hist_BinNumber);
-        line(handles.Vgate,amplitude,'Parent',handles.axes3,'Marker','o','LineStyle','none','Color','b');
-        line([handles.Vgate(1),handles.Vgate(end)],[Amp_Thres,Amp_Thres],'Parent',handles.axes3,...
-            'Marker','none','LineStyle','--','Color','r');
-        grid(handles.axes3,'on');
+        if(INDEX_thres==1)
+            child = get(handles.axes3,'Children');
+            delete(child);
+            %         Hist_Obj = histogram(handles.axes3,difference,Hist_BinNumber);
+            line(handles.Vgate,amplitude,'Parent',handles.axes3,'Marker','o','LineStyle','none','Color','b');
+            line([handles.Vgate(1),handles.Vgate(end)],[Amp_Thres,Amp_Thres],'Parent',handles.axes3,...
+                'Marker','none','LineStyle','--','Color','r');
+            title(['Threshold : ',num2str(ThresInput(INDEX_thres)*100),'%'],'Parent',handles.axes3)
+            grid(handles.axes3,'on');
+        end
         
         for i=1:size(difference,2)
             
@@ -547,7 +550,7 @@ for INDEX_iter = 1:length(Iteration)
                 
             end
             
-            if(Delay > 0)
+            if(Delay > 0 && INDEX_thres==1)
                 child = get(handles.axes1,'Children');
                 delete(child);
                 line(linspace(1,length(difference(:,i)),length(difference(:,i))),difference(:,i),'Parent',handles.axes1,...
@@ -567,7 +570,11 @@ for INDEX_iter = 1:length(Iteration)
                 end
                 grid(handles.axes2,'on');
                 title({['Electron Counts: ',num2str(ElectronCount),'  Vg: ',num2str(handles.Vgate(i,1))],['Iteration: ',num2str(i)]},'Parent',handles.axes2)
-                pause(Delay);
+                if(Delay==999)
+                    pause;
+                else
+                    pause(Delay);
+                end
             end
             
             ElectronCountsPerSecond_final(i) = ElectronCount/(max(handles.OscX)-min(handles.OscX));
@@ -692,28 +699,27 @@ Te_fit = vals(1);mu_fit = vals(2);
         VAR(2);
         VAR(3);
         
-        child = get(handles.axes2,'Children');
-        delete(child);
-        
         newVAR = VAR;
         % newVAR = [2, VAR(2:3)];
         
         %     fitamp_stored(INDEX_iter, INDEX_thres) = max(FUN(newVAR, handles.Vgate));
         %     fitamp_stored(INDEX_iter, INDEX_thres) = peak2peak(FUN(newVAR, handles.Vgate));
         %     fitamp_stored(INDEX_iter, INDEX_thres) = peak2peak(ElectronCountsPerSecond_final);
-            fitamp_stored(INDEX_iter, INDEX_thres) = VAR(1);%GAMMA
+        fitamp_stored(INDEX_iter, INDEX_thres) = VAR(1);%GAMMA
         
-        set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes2);
-        child = get(handles.axes2,'Children');delete(child);
-        line(handles.Vgate,ElectronCountsPerSecond_final,'LineStyle','none','Marker','o','MarkerFaceColor','b','MarkerFaceColor','k','MarkerSize',4);
-        line(handles.Vgate,FUN(newVAR, handles.Vgate),'LineStyle','-','Color','r','LineWidth',2,'Marker','none');
-        %         line(handles.Vgate_nonrepeat,ElectronCount_final_cumul,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','b');
-        grid(handles.axes2,'on');
-        title(handles.axes2, [{'<r_e> vs. Vgate'},...
-            {['Fit: Gamma=',num2str(round(VAR(1),2)),' (',num2str(round((VAR(1)-ci(1,1)),2)),', ',num2str(round((VAR(1)-ci(1,2)),2)),' [95% CI]) Hz']},...
-            {['Te =',num2str(VAR(2)*1000),'mK']}],...
-            'FontSize',13);
-%             pause
+        if(INDEX_thres==1)
+            set(handles.ElectronCounting_Figure,'CurrentAxes',handles.axes2);
+            child = get(handles.axes2,'Children');delete(child);
+            line(handles.Vgate,ElectronCountsPerSecond_final,'LineStyle','none','Marker','o','MarkerFaceColor','b','MarkerFaceColor','k','MarkerSize',4);
+            line(handles.Vgate,FUN(newVAR, handles.Vgate),'LineStyle','-','Color','r','LineWidth',2,'Marker','none');
+            %         line(handles.Vgate_nonrepeat,ElectronCount_final_cumul,'Parent',handles.axes2,'Marker','o','LineStyle','none','Color','b');
+            grid(handles.axes2,'on');
+            title(handles.axes2, [{'<r_e> vs. Vgate'},...
+                {['Fit: Gamma=',num2str(round(VAR(1),2)),' (',num2str(round((VAR(1)-ci(1,1)),2)),', ',num2str(round((VAR(1)-ci(1,2)),2)),' [95% CI]) Hz']},...
+                {['Te =',num2str(VAR(2)*1000),'mK']}],...
+                'FontSize',13);
+        end
+        %             pause
     end
 end
 
@@ -984,7 +990,7 @@ axs_children = get(gca,'Children');
 axs_line = findall(axs_children,'Type','Line');
 axs_text = findall(axs_children,'Type','Text');
 axs_surf = findall(axs_children,'Type','Surface');
-axs_hist = findall(axs_children,'Type','Histogram');
+axs_hist = findall(axs_children,'Type','Histogram')
 
 ax = gca;
 title_label = ax.Title.String;
@@ -996,6 +1002,8 @@ if(isempty(axs_line)==0)
     CustomizeFigures(gcf);
     xlabel(x_label);ylabel(y_label);
 end
+
+
 
 % for k=length(axs_line):-1:1
 %     xdata = get(axs_line(k),'XData');
