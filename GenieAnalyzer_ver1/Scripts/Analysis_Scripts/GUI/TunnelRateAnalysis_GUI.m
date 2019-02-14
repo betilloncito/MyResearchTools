@@ -356,7 +356,9 @@ name{5} = 'Time';
         for j=1:n_sweep2
             for i=index_depL_descend:n_sweep1
                 
-                Peaks = Current(:,i,j);
+%                 Peaks = Current(:,i,j);
+                Peaks = findpeaks(Current(:,i,j));
+                
                 %abs(MatrixData(:,I_index,x,y));
                 %                 Vtun = MatrixData(:,Vtun_index,x,y);
                 
@@ -1064,15 +1066,19 @@ Gamma_2 = exp(GammaFit_param.a2*(V_sweep2_fit + GammaFit_param.b2));
 
 for y=1:length(Gamma_2)
     for x=1:length(Gamma_1)
-        maxPeak_Current_Gamma(y,x) = e*Gamma_2(y)*Gamma_1(x)/(Gamma_2(y) + Gamma_1(x));
+        Current_Gamma(y,x) = e*Gamma_2(y)*Gamma_1(x)/(Gamma_2(y) + Gamma_1(x));
     end
 end
 
-Rt_exp = Bias_volt./maxPeak_Current_fit;
+% Rt_exp = Bias_volt./maxPeak_Current_fit;
 
-fun = maxPeak_Current_Gamma.*StepFun(V_sweep1_fit,V_sweep2_fit,X_on,Y_on) + Io*(1 - StepFun(V_sweep1_fit,V_sweep2_fit,X_on,Y_on));
-Rt_sim = Rmin + Bias_volt*((Rt_exp - Rmin)./Rt_exp)./fun;
-maxPeak_Current_sim = Bias_volt./Rt_sim;
+Current_Gamma_trunc = Current_Gamma.*StepFun(V_sweep1_fit,V_sweep2_fit,X_on,Y_on) + Io*(1 - StepFun(V_sweep1_fit,V_sweep2_fit,X_on,Y_on));
+R_gamma = Bias_volt./Current_Gamma_trunc;
+
+R_t_sim = Rmin + R_gamma;
+% Rt_sim = Rmin + Bias_volt*((Rt_exp - Rmin)./Rt_exp)./fun;
+
+maxPeak_Current_sim = Bias_volt./R_t_sim;
 
 diffSquares = sum(sum((log10(maxPeak_Current_fit) - log10(maxPeak_Current_sim)).^2));
 % diffSquares = sum(sum((Total_Resistance_exp - Total_Resistance_sim).^2));
