@@ -22,7 +22,7 @@ function varargout = ExpDataLog(varargin)
 
 % Edit the above text to modify the response to help ExpDataLog
 
-% Last Modified by GUIDE v2.5 02-Jan-2019 21:57:22
+% Last Modified by GUIDE v2.5 14-Feb-2019 19:01:04
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -62,6 +62,7 @@ set(handles.DeleteVarPushbutton,'Enable','off');
 set(handles.NumEdit,'Enable','off');
 set(handles.NewLoggingTogglebutton,'Enable','off');
 set(handles.SaveLoggingTogglebutton,'Enable','off');
+set(handles.SavedLogItems_Listbox,'String',{'<empty>','<empty>','<empty>','<empty>','<empty>'});
 
 handles.WorkDir = cd;
 
@@ -162,6 +163,9 @@ fprintf(fileID,'%-42s\r\n',['>>>Date: ',datestr(today)]);
 
 for i=1:size(VarTable,1)
     VarNameLengths(i) = length(cell2mat(VarTable(i,1)));
+    if(i==1)
+       FirstEntry_ID = cell2mat(VarTable(i,2));
+    end
 end
 
 for i = 1:size(VarTable,1)
@@ -188,12 +192,25 @@ set(handles.AddVarPushbutton,'Enable','off');
 set(handles.DeleteVarPushbutton,'Enable','off');
 set(handles.NumEdit,'Enable','off');
 
+SavedLogItems_list = get(handles.SavedLogItems_Listbox,'String');
+for i=1:length(SavedLogItems_list)-1
+    SavedLogItems_list{i}
+    SavedLogItems_list_color_reset{i} = ['<HTML><FONT color="black">',SavedLogItems_list{i},'</Font></html>']
+end
+
+% uicontrol(handles.SavedLogItems_Listbox)
+% uicontrol('String', ...
+% {'<HTML><FONT color="red">Hello</Font></html>', 'world', ...
+%  '<html><font style="font-family:impact;color:green"><i>What a', ...
+%  '<Html><FONT color="blue" face="Comic Sans MS">nice day!</font>'});
+
+New_list = [{['<HTML><FONT color="red">',FirstEntry_ID,'</Font></html>']}; SavedLogItems_list_color_reset(1:4)]
+set(handles.SavedLogItems_Listbox,'String',New_list);
+
 cd(NowDir);
 
 % Update handles structure
 guidata(hObject, handles);
-
-
 
 % --- Executes on button press in NewLoggingTogglebutton.
 function NewLoggingTogglebutton_Callback(hObject, eventdata, handles)
@@ -238,8 +255,8 @@ end
 
 
 % --------------------------------------------------------------------
-function uipushtool3_ClickedCallback(hObject, eventdata, handles)
-% hObject    handle to uipushtool3 (see GCBO)
+function NewLog_Toolbar_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to NewLog_Toolbar (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 NowDir = cd;
@@ -277,6 +294,9 @@ if(isnumeric(FileName)==0 && isempty(answer)==0)
     set(handles.SaveLoggingTogglebutton,'Enable','on');
     set(handles.NewLoggingTogglebutton,'Value',1.0);
     set(handles.SaveLoggingTogglebutton,'Value',0.0);
+        
+    set(handles.SavedLogItems_Listbox,'String',{'<empty>','<empty>',...
+        '<empty>','<empty>','<empty>'});
 end
 cd(NowDir);
 
@@ -285,8 +305,8 @@ guidata(hObject, handles);
 
 
 % --------------------------------------------------------------------
-function uipushtool1_ClickedCallback(hObject, eventdata, handles)
-% hObject    handle to uipushtool1 (see GCBO)
+function OpenLog_Toolbar_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to OpenLog_Toolbar (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 NowDir = cd;
@@ -318,9 +338,35 @@ if(isnumeric(FileName)==0)
     set(handles.SaveLoggingTogglebutton,'Enable','on');
     set(handles.NewLoggingTogglebutton,'Value',1.0);
     set(handles.SaveLoggingTogglebutton,'Value',0.0);
+       
+    set(handles.SavedLogItems_Listbox,'String',{'<empty>','<empty>',...
+        '<empty>','<empty>','<empty>'});
     
 end
 cd(NowDir);
 
 % Update handles structure
 guidata(hObject, handles);
+
+
+% --- Executes on selection change in SavedLogItems_Listbox.
+function SavedLogItems_Listbox_Callback(hObject, eventdata, handles)
+% hObject    handle to SavedLogItems_Listbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns SavedLogItems_Listbox contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from SavedLogItems_Listbox
+
+
+% --- Executes during object creation, after setting all properties.
+function SavedLogItems_Listbox_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to SavedLogItems_Listbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
