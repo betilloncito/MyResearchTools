@@ -1,0 +1,60 @@
+***** Experimental Data Logging *****     
+Device ID: SiDD101                        
+                                          
+-----------------------------------------------
+>>>Date: 15-Feb-2019                      
+Filename     :          4,          ,          
+Vbias [V]    :          4,          ,          
+Vacc_LT [V]  :          0,          ,          
+Vplg_L [V]   :          0,          ,          
+Vscr [V]     :         00,          ,          
+Sens [A/V]   :          5,          ,          
+Volt Divider :          0,          ,          
+Temp [K]     :          0,          ,          
+-----------------------------------------------
+>>>Date: 15-Feb-2019                      
+Filename     :   11:22;33,          ,          
+Vbias [V]    :          4,          ,          
+Vacc_LT [V]  :          0,          ,          
+Vplg_L [V]   :          0,          ,          
+Vscr [V]     :         00,          ,          
+Sens [A/V]   :          5,          ,          
+Volt Divider :          0,          ,          
+Temp [K]     :          0,          ,          
+-----------------------------------------------
+>>>Date: 15-Feb-2019                      
+Filename     :   11:22;33,          ,          
+Vbias [V]    :          4,          ,          
+Vacc_LT [V]  :          0,          ,          
+Vplg_L [V]   :          0,          ,          
+Vscr [V]     :         00,          ,          
+Sens [A/V]   :          5,          ,          
+Volt Divider :          0,          ,          
+Temp [K]     :          0,          ,          
+-----------------------------------------------
+>>>Date: 15-Feb-2019                      
+Filename     :   11:22;33,          ,          
+Vbias [V]    :          4,          ,          
+Vacc_LT [V]  :          0,          ,          
+Vplg_L [V]   :          0,          ,          
+Vscr [V]     :         00,          ,          
+Sens [A/V]   :          5,          ,          
+Volt Divider :          0,          ,          
+Temp [K]     :          0,          ,          
+-----------------------------------------------
+>>>Date: 15-Feb-2019                      
+Filename     :   11:22;33,          ,          
+Vbias [V]    :          4,          ,          
+Vacc_LT [V]  :          0,          ,          
+Vplg_L [V]   :          0,          ,          
+Vscr [V]     :         00,          ,          
+Sens [A/V]   :          5,          ,          
+Volt Divider :          0,          ,          
+Temp [K]     :          0,          ,          
+-----------------------------------------------
+>>>Date: 15-Feb-2019                      
+Filename     :          1,          ,          
+Vbias [V]    :          4,          ,          
+Vacc_LT [V]  :          0,          ,          
+Vplg_L [V]   :          0,          ,          
+-----------------------------------------------

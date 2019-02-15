@@ -1,0 +1,14 @@
+>>>Date: 15-Feb-2019                      
+Filename    
+Vbias [V]   
+Vacc_LT [V] 
+Vplg_L [V]  
+Vacc_LB [V] 
+Viso [V]    
+Vacc_RT [V] 
+Vplg_R [V]  
+Vacc_RV [V] 
+Vscr [V]    
+Sens [A/V]  
+Volt Divider
+Temp [K]    

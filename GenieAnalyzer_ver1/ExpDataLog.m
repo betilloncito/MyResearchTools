@@ -22,7 +22,7 @@ function varargout = ExpDataLog(varargin)
 
 % Edit the above text to modify the response to help ExpDataLog
 
-% Last Modified by GUIDE v2.5 14-Feb-2019 19:01:04
+% Last Modified by GUIDE v2.5 15-Feb-2019 04:43:39
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -62,9 +62,17 @@ set(handles.DeleteVarPushbutton,'Enable','off');
 set(handles.NumEdit,'Enable','off');
 set(handles.NewLoggingTogglebutton,'Enable','off');
 set(handles.SaveLoggingTogglebutton,'Enable','off');
-set(handles.SavedLogItems_Listbox,'String',{'<empty>','<empty>','<empty>','<empty>','<empty>'});
+% set(handles.SavedLogItems_Listbox,'String',{'<<empty>>','<<empty>>',...
+%     '<<empty>>','<<empty>>','<<empty>>'});
+set(handles.SavedLogItems_Listbox,'String',{...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>'});
 
 handles.WorkDir = cd;
+handles.TemplateDir = cd;
 
 % handles.VarDataTable = [{'V_Sweep1 (First sweep):'},{'Vacc_TL'}; {'V_Sweep2 (Second sweep):'},{'Vacc_TR'}; {'Gate:'},{'Vplg_T_M1'};...
 %     {'Current:'},{'Current'}; {'Sens. (V/A):'},{1e-8}; {'Pause:'},{0}; {'Smoothing Iter.'},{1};...
@@ -156,56 +164,82 @@ NowDir = cd;
 cd(handles.WorkDir);
 
 VarTable = get(handles.VarTable,'Data');
-Note = get(handles.NoteEdit,'String')
-
-fileID = fopen(FileName,'a+');
-fprintf(fileID,'%-42s\r\n',['>>>Date: ',datestr(today)]);
-
+VarNames_ERROR = 0;
 for i=1:size(VarTable,1)
+    VarName = cell2mat(VarTable(i,1));
+    m = any(strfind(VarName,':'))
+    n = strcmp(VarName,'-----------------------------------------------')
+    if(m==1 || n==1)
+        VarNames_ERROR = 1;
+        break;
+    end
     VarNameLengths(i) = length(cell2mat(VarTable(i,1)));
     if(i==1)
        FirstEntry_ID = cell2mat(VarTable(i,2));
     end
 end
+Note = get(handles.NoteEdit,'String');
 
-for i = 1:size(VarTable,1)
-    fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], cell2mat(VarTable(i,1)));
-    fprintf(fileID,'%10s,', cell2mat(VarTable(i,2)));
-    fprintf(fileID,'%10s,', cell2mat(VarTable(i,3)));
-    fprintf(fileID,'%10s\r\n', cell2mat(VarTable(i,4)));
+if(VarNames_ERROR == 0)
+    fileID = fopen(FileName,'a+');
+    fprintf(fileID,'%-42s\r\n',['>>>Date: ',datestr(today)]);
+    %
+    % for i=1:size(VarTable,1)
+    %     VarNameLengths(i) = length(cell2mat(VarTable(i,1)));
+    %     if(i==1)
+    %        FirstEntry_ID = cell2mat(VarTable(i,2));
+    %     end
+    % end
+    
+    for i = 1:size(VarTable,1)
+        fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], cell2mat(VarTable(i,1)));
+        fprintf(fileID,'%10s,', cell2mat(VarTable(i,2)));
+        fprintf(fileID,'%10s,', cell2mat(VarTable(i,3)));
+        fprintf(fileID,'%10s\r\n', cell2mat(VarTable(i,4)));
+    end
+    if(~isempty(Note))
+        fprintf(fileID,'%-42s\r\n','>>>Notes:');
+        fprintf(fileID,'%-42s\r\n', Note);
+    end
+    fprintf(fileID,'%-42s\r\n','-----------------------------------------------');
+    fclose(fileID);
+    
+    set(handles.NewLoggingTogglebutton,'Value',0.0);
+    set(handles.SaveLoggingTogglebutton,'Value',1.0);
+    set(handles.NewLoggingTogglebutton,'Enable','on');
+    set(handles.SaveLoggingTogglebutton,'Enable','off');
+    
+    set(handles.VarTable,'Enable','off');
+    set(handles.NoteEdit,'Enable','off');
+    set(handles.AddVarPushbutton,'Enable','off');
+    set(handles.DeleteVarPushbutton,'Enable','off');
+    set(handles.NumEdit,'Enable','off');
+    
+    SavedLogItems_list = get(handles.SavedLogItems_Listbox,'String');
+    for i=1:length(SavedLogItems_list)-1
+        long_Entry = SavedLogItems_list{i};
+        m = strfind(long_Entry,'>');
+        n = strfind(long_Entry,'<');
+        entry = long_Entry(m(2)+1:n(3)-1);
+        if(strcmp(entry,'empty'))
+            New_list{i+1} = ['<HTML><FONT color="gray">',entry,'</Font></html>'];
+        else
+            New_list{i+1} = ['<HTML><FONT color="black">',entry,'</Font></html>'];
+        end
+    end
+    
+    % uicontrol(handles.SavedLogItems_Listbox)
+    % uicontrol('String', ...
+    % {'<HTML><FONT color="red">Hello</Font></html>', 'world', ...
+    %  '<html><font style="font-family:impact;color:green"><i>What a', ...
+    %  '<Html><FONT color="blue" face="Comic Sans MS">nice day!</font>'});
+    
+    New_list{1} = ['<HTML><FONT color="red">',FirstEntry_ID,'</Font></html>'];
+    set(handles.SavedLogItems_Listbox,'String',New_list);
+else
+    msgbox('Do NOT use : in Variable Names. Do NOT use - (repeatedly) in Variable Names.', 'Error','error');
+    set(handles.SaveLoggingTogglebutton,'Value',0);
 end
-if(~isempty(Note))
-    fprintf(fileID,'%-42s\r\n','>>>Notes:');
-    fprintf(fileID,'%-42s\r\n', Note);
-end
-fprintf(fileID,'%-42s\r\n','-----------------------------------------------');
-fclose(fileID);
-
-set(handles.NewLoggingTogglebutton,'Value',0.0);
-set(handles.SaveLoggingTogglebutton,'Value',1.0);
-set(handles.NewLoggingTogglebutton,'Enable','on');
-set(handles.SaveLoggingTogglebutton,'Enable','off');
-
-set(handles.VarTable,'Enable','off');
-set(handles.NoteEdit,'Enable','off');
-set(handles.AddVarPushbutton,'Enable','off');
-set(handles.DeleteVarPushbutton,'Enable','off');
-set(handles.NumEdit,'Enable','off');
-
-SavedLogItems_list = get(handles.SavedLogItems_Listbox,'String');
-for i=1:length(SavedLogItems_list)-1
-    SavedLogItems_list{i}
-    SavedLogItems_list_color_reset{i} = ['<HTML><FONT color="black">',SavedLogItems_list{i},'</Font></html>']
-end
-
-% uicontrol(handles.SavedLogItems_Listbox)
-% uicontrol('String', ...
-% {'<HTML><FONT color="red">Hello</Font></html>', 'world', ...
-%  '<html><font style="font-family:impact;color:green"><i>What a', ...
-%  '<Html><FONT color="blue" face="Comic Sans MS">nice day!</font>'});
-
-New_list = [{['<HTML><FONT color="red">',FirstEntry_ID,'</Font></html>']}; SavedLogItems_list_color_reset(1:4)]
-set(handles.SavedLogItems_Listbox,'String',New_list);
 
 cd(NowDir);
 
@@ -264,39 +298,45 @@ cd(handles.WorkDir);
 
 [FileName,PathName,FilterIndex] = uiputfile('*.txt','Select directory and filename to save new dta log file');
 
-prompt = {'Enter the DEVICE ID for the current Experiment'};
-dlg_title = 'Device ID';
-num_lines = 1;
-def = {'SiDD???'};
-answer = inputdlg(prompt,dlg_title,num_lines,def);
+if(isnumeric(FileName)==0)
 
-if(isnumeric(FileName)==0 && isempty(answer)==0)
-    
-    handles.deviceID = answer;
-    set(handles.DeviceText,'String',answer);
-    set(handles.FilenameText,'String',FileName);
-    
-    handles.WorkDir = PathName;
-    cd(handles.WorkDir);
-    fileID = fopen(FileName,'w');
-    fprintf(fileID,'%-42s\r\n','***** Experimental Data Logging *****');
-    fprintf(fileID,'%-42s\r\n',['Device ID: ',cell2mat(answer)]);
-    fprintf(fileID,'%-42s\r\n','');
-    fprintf(fileID,'%-42s\r\n','-----------------------------------------------');
-    fclose(fileID);
-    
-    set(handles.VarTable,'Enable','on');
-    set(handles.NoteEdit,'Enable','on');
-    set(handles.AddVarPushbutton,'Enable','on');
-    set(handles.DeleteVarPushbutton,'Enable','on');
-    set(handles.NumEdit,'Enable','on');
-    set(handles.NewLoggingTogglebutton,'Enable','off');
-    set(handles.SaveLoggingTogglebutton,'Enable','on');
-    set(handles.NewLoggingTogglebutton,'Value',1.0);
-    set(handles.SaveLoggingTogglebutton,'Value',0.0);
+    prompt = {'Enter the DEVICE ID for the current Experiment'};
+    dlg_title = 'Device ID';
+    num_lines = 1;
+    def = {'SiDD???'};
+    answer = inputdlg(prompt,dlg_title,num_lines,def);
+
+    if(isempty(answer)==0)
+        handles.deviceID = answer;
+        set(handles.DeviceText,'String',answer);
+        set(handles.FilenameText,'String',FileName);
         
-    set(handles.SavedLogItems_Listbox,'String',{'<empty>','<empty>',...
-        '<empty>','<empty>','<empty>'});
+        handles.WorkDir = PathName;
+        cd(handles.WorkDir);
+        fileID = fopen(FileName,'w');
+        fprintf(fileID,'%-42s\r\n','***** Experimental Data Logging *****');
+        fprintf(fileID,'%-42s\r\n',['Device ID: ',cell2mat(answer)]);
+        fprintf(fileID,'%-42s\r\n','');
+        fprintf(fileID,'%-42s\r\n','-----------------------------------------------');
+        fclose(fileID);
+        
+        set(handles.VarTable,'Enable','on');
+        set(handles.NoteEdit,'Enable','on');
+        set(handles.AddVarPushbutton,'Enable','on');
+        set(handles.DeleteVarPushbutton,'Enable','on');
+        set(handles.NumEdit,'Enable','on');
+        set(handles.NewLoggingTogglebutton,'Enable','off');
+        set(handles.SaveLoggingTogglebutton,'Enable','on');
+        set(handles.NewLoggingTogglebutton,'Value',1.0);
+        set(handles.SaveLoggingTogglebutton,'Value',0.0);
+        
+        set(handles.SavedLogItems_Listbox,'String',{...
+            '<HTML><FONT color="gray">empty</Font></html>',...
+            '<HTML><FONT color="gray">empty</Font></html>',...
+            '<HTML><FONT color="gray">empty</Font></html>',...
+            '<HTML><FONT color="gray">empty</Font></html>',...
+            '<HTML><FONT color="gray">empty</Font></html>'});
+    end
 end
 cd(NowDir);
 
@@ -324,10 +364,30 @@ if(isnumeric(FileName)==0)
     Line_str = cell2mat(Line{1});
     n = strfind(Line_str,':');
     deviceInfo = Line_str(n(1)+2:end);
+    
+    AllData_nested = textscan(fileID,'%s','HeaderLines',3,'Delimiter','\r\n');
+    AllData = AllData_nested{1};
+    index1=[];
+    for i=size(AllData,1):-1:1
+        if(strcmp(AllData{i},'-----------------------------------------------')==1 && isempty(index1)==1)
+            index1 = i;     
+        elseif(strcmp(AllData{i},'-----------------------------------------------')==1 && isempty(index1)==0)
+           index2 = i;
+           break;
+        end
+    end
+    count = 1;
+    for i=index2+2:index1-1
+        Line = AllData{i};
+        m = strfind(Line,':');
+        VarTable_labels(count, 1:4) = {strtrim(Line(1:m-1)), '' , '' , '' };
+        count = count + 1;
+    end    
     fclose(fileID);
 
     set(handles.DeviceText,'String',deviceInfo);
     set(handles.FilenameText,'String',FileName);
+    set(handles.VarTable,'Data',VarTable_labels);
        
     set(handles.VarTable,'Enable','on');
     set(handles.NoteEdit,'Enable','on');
@@ -339,8 +399,12 @@ if(isnumeric(FileName)==0)
     set(handles.NewLoggingTogglebutton,'Value',1.0);
     set(handles.SaveLoggingTogglebutton,'Value',0.0);
        
-    set(handles.SavedLogItems_Listbox,'String',{'<empty>','<empty>',...
-        '<empty>','<empty>','<empty>'});
+    set(handles.SavedLogItems_Listbox,'String',{...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>'});
     
 end
 cd(NowDir);
@@ -370,3 +434,67 @@ function SavedLogItems_Listbox_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+% --------------------------------------------------------------------
+function OpenLogTemplate_Toolbar_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to OpenLogTemplate_Toolbar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+NowDir = cd;
+cd(handles.TemplateDir);
+
+[FileName,PathName,FilterIndex] = uigetfile('*.txt','Select template file to open');
+
+if(isnumeric(FileName)==0)
+    handles.TemplateDir = PathName;
+    cd(handles.TemplateDir);
+    
+    fileID = fopen(FileName,'r');
+    
+    Data = textscan(fileID, '%s','Delimiter','\r\n');
+    Template_Lines = Data{1};
+    for i=2:length(Template_Lines)
+        VarTable_labels(i-1,1:4) = {strtrim(cell2mat(Template_Lines(i))),'','',''}
+    end
+    set(handles.VarTable,'Data',VarTable_labels);
+end
+cd(NowDir);
+
+% Update handles structure
+guidata(hObject, handles);
+
+
+
+% --------------------------------------------------------------------
+function SaveLogTemplate_Toolbar_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to SaveLogTemplate_Toolbar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+NowDir = cd;
+cd(handles.TemplateDir);
+
+[FileName,PathName,FilterIndex] = uiputfile('*.txt','Select template filename and directory to save template');
+
+if(isnumeric(FileName)==0)
+    handles.TemplateDir = PathName;
+    cd(handles.TemplateDir);
+    
+    VarTable = get(handles.VarTable,'Data');
+    fileID = fopen(FileName,'w');
+    fprintf(fileID,'%-42s\r\n',['>>>Date: ',datestr(today)]);
+    
+    for i=1:size(VarTable,1)
+        VarNameLengths(i) = length(cell2mat(VarTable(i,1)));
+    end
+    
+    for i = 1:size(VarTable,1)
+        fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s\r\n'],cell2mat(VarTable(i,1)))
+    end
+end
+
+cd(NowDir);
+
+% Update handles structure
+guidata(hObject, handles);
+
+
