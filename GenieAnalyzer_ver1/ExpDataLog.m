@@ -139,7 +139,7 @@ function DeleteVarPushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 table = get(handles.VarTable,'Data');
-numRow = str2double(get(handles.NumEdit,'String'));
+numRow = str2double(get(handles.DeleteNumEdit,'String'));
 
 if(numRow>1 && numRow<size(table,1))
     newtable = [table(1:numRow-1,:); table(numRow+1:end,:)];
@@ -377,7 +377,7 @@ if(isnumeric(FileName)==0)
         end
     end
     count = 1;
-    for i=index2+2:index1-1
+    for i=index2+2:index1-3
         Line = AllData{i};
         m = strfind(Line,':');
         VarTable_labels(count, 1:4) = {strtrim(Line(1:m-1)), '' , '' , '' };

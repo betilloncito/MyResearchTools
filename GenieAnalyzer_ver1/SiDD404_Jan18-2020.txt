@@ -1,0 +1,38 @@
+***** Experimental Data Logging *****     
+Device ID: SiDD???                        
+                                          
+-----------------------------------------------
+>>>Date: 16-Feb-2019                      
+Filename     :           ,          ,          
+Vbias [V]    :           ,          ,          
+Vacc_LT [V]  :           ,          ,          
+Vplg_L [V]   :           ,          ,          
+Vacc_LB [V]  :           ,          ,          
+Viso [V]     :           ,          ,          
+Vacc_RT [V]  :           ,          ,          
+Vplg_R [V]   :           ,          ,          
+Vacc_RV [V]  :           ,          ,          
+Vscr [V]     :           ,          ,          
+Sens [A/V]   :           ,          ,          
+Volt Divider :           ,          ,          
+Temp [K]     :           ,          ,          
+>>>Notes:                                 
+testing a comment                         
+-----------------------------------------------
+>>>Date: 16-Feb-2019                      
+Filename     :          1,          ,          
+Vbias [V]    :           ,          ,          
+Vacc_LT [V]  :           ,          ,          
+Vplg_L [V]   :           ,          ,          
+Vacc_LB [V]  :           ,          ,          
+Viso [V]     :           ,          ,          
+Vacc_RT [V]  :           ,          ,          
+Vplg_R [V]   :           ,          ,          
+Vacc_RV [V]  :           ,          ,          
+Vscr [V]     :           ,          ,          
+Sens [A/V]   :           ,          ,          
+Volt Divider :           ,          ,          
+Temp [K]     :           ,          ,          
+>>>Notes:                                 
+testing a comment                         
+-----------------------------------------------

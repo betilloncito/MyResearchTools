@@ -1,0 +1,17 @@
+{ION-IMPLANTATION}
+Dose[cm^-2]	  : 1.5e-15
+Energy[keV]	  : 12
+Thermal Activation: 950 C, N2, 30s ramp, 60s steady 
+{METALLIZATION}
+Ti/Au bondingpads : IntlVac e-beam (ion milling 10 min)
+FIne gates	  : Plassys e-beam (Aluminum)
+{THICKNESSES}
+SiO2	   	  : 11 nm (average)
+HfO2	   	  : 6 nm	
+Ti/Au	   	  : 30/50 nm
+Fine gates (iso)  : 24 nm
+Fine gates (acc)  : 27 nm
+{OXIDATION}
+Equipment	  : YES-asher
+Recipe #	  : 12
+Duraiton	  : 90s
