@@ -156,7 +156,7 @@ if(folder_name~=0)
         if(strcmp(List_folders(i).name,'.')==0 && ...
                 strcmp(List_folders(i).name,'..')==0)
             List_folders_cell(i-2,1) = {List_folders(i).name};
-            folder_FLAG(i) = ~any(strfind(List_folders(i).name,'.'))
+            folder_FLAG(i) = ~any(strfind(List_folders(i).name,'.'));
         end
     end
     cd(NowDir);
@@ -273,8 +273,8 @@ function DeleteVarPushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 table = get(handles.VarTable,'Data');
-numRow = str2double(get(handles.DeleteNumEdit,'String'));
-if(~isnan(numRow))
+numRow = str2double(get(handles.DeleteNumEdit,'String'))
+if(~isnan(numRow) && numRow<=size(table,1))
     if(numRow>1 && numRow<size(table,1))
         newtable = [table(1:numRow-1,:); table(numRow+1:end,:)];
     elseif(numRow == 1)
@@ -283,6 +283,8 @@ if(~isnan(numRow))
         newtable = table(1:numRow-1,:);
     end
     set(handles.VarTable,'Data',newtable);
+elseif(numRow>size(table,1))
+    msgbox('Row number to be deleted is too HIGH', 'Error','error');
 else
     msgbox('Enter a row number to delete', 'Error','error');
 end
@@ -309,24 +311,58 @@ Listbox_Value = get(handles.FolderContents_Listbox,'Value');
 Listbox_Selection = Listbox_Folders(Listbox_Value);
 
 file_FLAG = any(strfind(cell2mat(Listbox_Selection),'.'));
+FileType_ERROR = 0;
 if(file_FLAG)
-    handles.FileDir = [handles.WorkDir,'\',Listbox_Selection];
-    set(handles.FilenameText,'String',Listbox_Selection);
+    handles.FileDir = [handles.WorkDir,'\',Listbox_Selection];        
+    NowDir = cd;
+    cd(handles.WorkDir)
+    fileID = fopen(cell2mat(Listbox_Selection),'r');
     
-    set(handles.VarTable,'Enable','on');
-    set(handles.CommentEdit,'Enable','on');
-    set(handles.AddVarPushbutton,'Enable','on');
-    set(handles.DeleteVarPushbutton,'Enable','on');
-    set(handles.DeleteNumEdit,'Enable','on');
-    set(handles.NewLoggingTogglebutton,'Enable','off');
-    set(handles.SaveLoggingTogglebutton,'Enable','on');
-    set(handles.NewLoggingTogglebutton,'Value',1.0);
-    set(handles.SaveLoggingTogglebutton,'Value',0.0);
+    Data = textscan(fileID, '%s','Delimiter','\r\n');
+    Template_Lines = Data{1};
     
-    set(handles.LogbookRadiobutton,'Enable','on');
-    set(handles.ExperimentRadiobutton,'Enable','on');
-    set(handles.EntryListPopupmenu,'Enable','on');
-    set(handles.TodayCheckbox,'Enable','on');
+    if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************')==1 ||...
+            strcmp(Template_Lines(1),'********************LOGBOOK********************')==1)        
+      
+        for i=1:length(Template_Lines)
+            Line = cell2mat(Template_Lines(i));
+            if(any(strfind(Line,':')))
+                label = strtrim(Line(1:strfind(Line,':')-1))
+                value = strtrim(Line(strfind(Line,':')+1:end))
+                switch label
+                    case 'Wafer'
+                        set(handles.WaferLabelText,'String',value);
+                    case 'Design'
+                        set(handles.DesignLabelText,'String',value);
+                    case 'Marker'
+                        set(handles.MarkerLabelText,'String',value);
+                end
+            end
+        end
+    else
+        msgbox('File selected is INVALID. Choose a correct .txt file', 'Error','error');
+        FileType_ERROR = 1;
+    end
+    cd(NowDir)
+    
+    if(~FileType_ERROR)
+        set(handles.VarTable,'Enable','on');
+        set(handles.CommentEdit,'Enable','on');
+        set(handles.AddVarPushbutton,'Enable','on');
+        set(handles.DeleteVarPushbutton,'Enable','on');
+        set(handles.DeleteNumEdit,'Enable','on');
+        set(handles.NewLoggingTogglebutton,'Enable','off');
+        set(handles.SaveLoggingTogglebutton,'Enable','on');
+        set(handles.NewLoggingTogglebutton,'Value',1.0);
+        set(handles.SaveLoggingTogglebutton,'Value',0.0);
+        
+        set(handles.LogbookRadiobutton,'Enable','on');
+        set(handles.ExperimentRadiobutton,'Enable','on');
+        set(handles.EntryListPopupmenu,'Enable','on');
+        set(handles.TodayCheckbox,'Enable','on');
+        
+        set(handles.FilenameText,'String',Listbox_Selection);
+    end
 else
     msgbox('Select a file NOT a folder', 'Error','error');    
 end
@@ -364,14 +400,19 @@ if(isnumeric(FileName)==0)
         handles.WorkDir = PathName;
         cd(handles.WorkDir);
         fileID = fopen(FileName,'w');
-        fprintf(fileID,'%-42s\r\n','********************LOGBOOK********************');
+        
+        if(get(handles.ExperimentRadiobutton,'Value'))
+            fprintf(fileID,'%s\r\n','*******************EXPERIMENT******************');
+        else
+            fprintf(fileID,'%s\r\n','********************LOGBOOK********************');
+        end          
         fprintf(fileID,'%-17s : ','Wafer');fprintf(fileID,'%1s\r\n', handles.WaferID);
         fprintf(fileID,'%-17s : ','Design');fprintf(fileID,'%1s\r\n', handles.DesignID);
         fprintf(fileID,'%-17s : ','Marker');fprintf(fileID,'%1s\r\n', handles.MarkerID);
         fprintf(fileID,'%-17s : ','Taken from QNC on');fprintf(fileID,'%1s\r\n', handles.DateQNC2RAC);
-        fprintf(fileID,'%-42s\r\n','***********************************************');
-        fprintf(fileID,'%-42s\r\n','');
-        fprintf(fileID,'%-42s\r\n','-----------------------------------------------');
+        fprintf(fileID,'%s\r\n','***********************************************');
+        fprintf(fileID,'%s\r\n','');
+        fprintf(fileID,'%s\r\n','-----------------------------------------------');
         fclose(fileID);
         cd(NowDir);
 
@@ -427,6 +468,8 @@ cd(handles.WorkDir);
 
 VarTable = get(handles.VarTable,'Data');
 VarNames_ERROR = 0;
+Entry_ERROR = 0;
+
 for i=1:size(VarTable,1)
     VarName = cell2mat(VarTable(i,1));
     m = any(strfind(VarName,':'))
@@ -443,53 +486,77 @@ end
 Comment = get(handles.CommentEdit,'String');
 
 if(VarNames_ERROR == 0)
-    fileID = fopen(FileName,'a+');
-    fprintf(fileID,'%-42s\r\n',['>>>Date: ',datestr(today)]);
-    %
-    % for i=1:size(VarTable,1)
-    %     VarNameLengths(i) = length(cell2mat(VarTable(i,1)));
-    %     if(i==1)
-    %        FirstEntry_ID = cell2mat(VarTable(i,2));
-    %     end
-    % end
-    
-    for i = 1:size(VarTable,1)
-        fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], cell2mat(VarTable(i,1)));
-        fprintf(fileID,'%10s\r\n', cell2mat(VarTable(i,2)));
+    EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
+    {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'}];
+    %Choose the correct header
+    if(get(handles.ExperimentRadiobutton,'Value'))
+        switch get(handles.EntryListPopupmenu,'Value')-1
+            case 0
+                msgbox('Select an Entry type under Log Options', 'Error','error');
+                set(handles.SaveLoggingTogglebutton,'Value',0);
+                Entry_ERROR = 1;
+            case 1
+                header = '******************77k Dipper*******************';
+            case 2
+                header = '*******************4k Dipper*******************';
+            case 3
+                header = '*********************Janis*********************';
+            otherwise
+                header = '****************Dilution Fridge****************';
+        end
+    else
+        switch get(handles.EntryListPopupmenu,'Value')-1
+            case 0
+                msgbox('Select an Entry type under Log Options', 'Error','error');
+                set(handles.SaveLoggingTogglebutton,'Value',0);
+                Entry_ERROR = 1;                
+            case 1
+                header = '*********Wafer Fabrication Description*********';
+            case 2
+                header = '***********Probe Station Measurement***********';
+            case 3
+                header = '*******************Annealing*******************';
+            case 4
+                header = '******************Wirebonding******************';
+            otherwise
+                header = '********************Storage********************';
+        end
     end
-    if(~isempty(Comment))
-        fprintf(fileID,'%-42s\r\n','>>>Notes:');
-        fprintf(fileID,'%-42s\r\n', Comment);
-    end
-    fprintf(fileID,'%-42s\r\n','-----------------------------------------------');
-    fclose(fileID);
     
-    set(handles.NewLoggingTogglebutton,'Value',0.0);
-    set(handles.SaveLoggingTogglebutton,'Value',1.0);
-    set(handles.NewLoggingTogglebutton,'Enable','on');
-    set(handles.SaveLoggingTogglebutton,'Enable','off');
-    
-    set(handles.VarTable,'Enable','off');
-    set(handles.CommentEdit,'Enable','off');
-    set(handles.AddVarPushbutton,'Enable','off');
-    set(handles.DeleteVarPushbutton,'Enable','off');
-    set(handles.DeleteNumEdit,'Enable','off');
-    
-%     SavedLogItems_list = get(handles.SavedLogItems_Listbox,'String');
-%     for i=1:length(SavedLogItems_list)-1
-%         long_Entry = SavedLogItems_list{i};
-%         m = strfind(long_Entry,'>');
-%         n = strfind(long_Entry,'<');
-%         entry = long_Entry(m(2)+1:n(3)-1);
-%         if(strcmp(entry,'empty'))
-%             New_list{i+1} = ['<HTML><FONT color="gray">',entry,'</Font></html>'];
-%         else
-%             New_list{i+1} = ['<HTML><FONT color="black">',entry,'</Font></html>'];
-%         end
-%     end
+    if(~Entry_ERROR)
+        fileID = fopen(FileName,'a+');
+        fprintf(fileID,'%s\r\n',header);
+        fprintf(fileID,'%s\r\n','-----------------------------------------------');
         
-%     New_list{1} = ['<HTML><FONT color="red">',FirstEntry_ID,'</Font></html>'];
-%     set(handles.SavedLogItems_Listbox,'String',New_list);
+        fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], '>>>Date');
+        fprintf(fileID,'%1s\r\n', get(handles.TodayEdit,'String'));
+        
+        for i = 1:size(VarTable,1)
+            if(any(strfind(cell2mat(VarTable(i,1)),'{')))
+                fprintf(fileID,'%s\r\n', cell2mat(VarTable(i,1)));
+            else
+                fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], cell2mat(VarTable(i,1)));
+                fprintf(fileID,'%1s\r\n', cell2mat(VarTable(i,2)));
+            end
+        end
+        if(~isempty(Comment))
+            fprintf(fileID,'%s\r\n','{COMMENTS}');
+            fprintf(fileID,'%s\r\n', Comment);
+        end
+        fprintf(fileID,'%s\r\n','-----------------------------------------------');
+        fclose(fileID);
+        
+        set(handles.NewLoggingTogglebutton,'Value',0.0);
+        set(handles.SaveLoggingTogglebutton,'Value',1.0);
+        set(handles.NewLoggingTogglebutton,'Enable','on');
+        set(handles.SaveLoggingTogglebutton,'Enable','off');
+        
+        set(handles.VarTable,'Enable','off');
+        set(handles.CommentEdit,'Enable','off');
+        set(handles.AddVarPushbutton,'Enable','off');
+        set(handles.DeleteVarPushbutton,'Enable','off');
+        set(handles.DeleteNumEdit,'Enable','off');
+    end
 else
     msgbox('Do NOT use : in Variable Names. Do NOT use - (repeatedly) in Variable Names.', 'Error','error');
     set(handles.SaveLoggingTogglebutton,'Value',0);

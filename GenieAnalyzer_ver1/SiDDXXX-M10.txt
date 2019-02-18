@@ -1,5 +1,5 @@
 *******************EXPERIMENT******************
-Wafer             : W2
+Wafer             : W
 Design            : SiDD
 Marker            : M
 Taken from QNC on : 17-Feb-2019

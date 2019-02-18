@@ -1,8 +1,8 @@
 *******************EXPERIMENT******************
-Wafer             : W2
-Design            : SiDD
-Marker            : M
+Wafer             : W1
+Design            : SiDDXXX
+Marker            : M1
 Taken from QNC on : 17-Feb-2019
 ***********************************************
-
+                                          
 -----------------------------------------------
