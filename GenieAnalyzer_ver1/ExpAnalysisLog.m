@@ -22,7 +22,7 @@ function varargout = ExpAnalysisLog(varargin)
 
 % Edit the above text to modify the response to help ExpAnalysisLog
 
-% Last Modified by GUIDE v2.5 17-Feb-2019 03:38:07
+% Last Modified by GUIDE v2.5 18-Feb-2019 11:06:26
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -59,6 +59,7 @@ handles.TemplateDir = cd;
 
 cd('.\Icons');
 openDir_image = imread('SelectFolder-icon.jpg');
+HomeDir_image = imread('HomeFolder-icon.jpg');
 openFile_image = imread('SelectFile-icon.jpg');
 newFile_image = imread('NewFile-icon.jpg');
 inDir_image = imread('InFolder-icon.jpg');
@@ -69,6 +70,7 @@ NewLogging_image = imread('letter-new-icon.jpg');
 SaveLogging_image = imread('letter-saved-icon.jpg');
 cd('..')
 set(handles.OpenDirectoryPushbutton,'CData',openDir_image);
+set(handles.OpenHomeDirectoryPushbutton,'CData',HomeDir_image);
 set(handles.InDirectoryPushbutton,'CData',inDir_image);
 set(handles.OutDirectoryPushbutton,'CData',outDir_image);
 set(handles.OpenFilePushbutton,'CData',openFile_image);
@@ -79,13 +81,10 @@ set(handles.NewLoggingTogglebutton,'CData',NewLogging_image);
 set(handles.SaveLoggingTogglebutton,'CData',SaveLogging_image);
 
 EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
-    {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'}];
+    {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
 set(handles.EntryListPopupmenu,'String',EntryList);
 set(handles.EntryListPopupmenu,'Value',1);
 set(handles.EntryListPopupmenu,'Enable','off');
-set(handles.LogbookRadiobutton,'Value',1);
-set(handles.LogbookRadiobutton,'Enable','off');
-set(handles.ExperimentRadiobutton,'Enable','off');
 set(handles.TodayEdit,'Enable','off');
 set(handles.TodayCheckbox,'Enable','off');
 set(handles.TodayCheckbox,'Value',1);
@@ -138,6 +137,47 @@ if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgr
     set(hObject,'BackgroundColor','white');
 end
 
+% --- Executes on button press in OpenHomeDirectoryPushbutton.
+function OpenHomeDirectoryPushbutton_Callback(hObject, eventdata, handles)
+% hObject    handle to OpenHomeDirectoryPushbutton (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+NowDir = cd;
+folder_name = 'D:\Waterloo - SeaGate\Spintronics Research\Quantum Dots\TestedDevices\SiDots\JEOL-devices';
+if(folder_name~=0)
+    cd(folder_name);
+    handles.WorkDir = folder_name;
+    
+    List_folders = dir;
+    List_folders_cell={};folder_FLAG=0;
+    for i=1:size(List_folders,1)
+        if(strcmp(List_folders(i).name,'.')==0 && ...
+                strcmp(List_folders(i).name,'..')==0)
+            List_folders_cell(i-2,1) = {List_folders(i).name};
+            folder_FLAG(i) = ~any(strfind(List_folders(i).name,'.'));
+        end
+    end
+    cd(NowDir);
+    if(isempty(List_folders_cell)==0)
+        set(handles.FolderContents_Listbox,'Value',1);
+        set(handles.FolderContents_Listbox,'String',List_folders_cell);
+    else
+        set(handles.FolderContents_Listbox,'Value',1);
+        set(handles.FolderContents_Listbox,'String',{''});
+    end
+    if(any(folder_FLAG))
+        set(handles.InDirectoryPushbutton,'Enable','on');
+    else
+        set(handles.InDirectoryPushbutton,'Enable','off');
+    end
+    set(handles.RootDirText,'String',handles.WorkDir);
+    set(handles.OutDirectoryPushbutton,'Enable','on');
+    set(handles.OpenFilePushbutton,'Enable','on');
+    set(handles.NewFilePushbutton,'Enable','on');
+end
+
+% Update handles structure
+guidata(hObject, handles);
 
 % --- Executes on button press in OpenDirectoryPushbutton.
 function OpenDirectoryPushbutton_Callback(hObject, eventdata, handles)
@@ -261,7 +301,16 @@ function AddVarPushbutton_Callback(hObject, eventdata, handles)
 table = get(handles.VarTable,'Data');
 newRow = [{'NewVar'},{''}];
 
-newtable = [table;newRow];
+numRow = str2double(get(handles.DeleteNumEdit,'String'));
+if(~isnan(numRow) && numRow<size(table,1))
+    if(numRow>1 && numRow<size(table,1))
+        newtable = [table(1:numRow-1,:); newRow; table(numRow:end,:)];
+    elseif(numRow == 1)
+        newtable = [newRow; table(1:end,:)];
+    end
+else
+    newtable = [table;newRow];
+end
 set(handles.VarTable,'Data',newtable);
 
 % Update handles structure
@@ -273,7 +322,7 @@ function DeleteVarPushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 table = get(handles.VarTable,'Data');
-numRow = str2double(get(handles.DeleteNumEdit,'String'))
+numRow = str2double(get(handles.DeleteNumEdit,'String'));
 if(~isnan(numRow) && numRow<=size(table,1))
     if(numRow>1 && numRow<size(table,1))
         newtable = [table(1:numRow-1,:); table(numRow+1:end,:)];
@@ -324,6 +373,21 @@ if(file_FLAG)
     if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************')==1 ||...
             strcmp(Template_Lines(1),'********************LOGBOOK********************')==1)        
       
+        if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************'))
+            set(handles.FileTypeText,'String','Experiment');
+            EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
+                {'Dilution Fridge'}];
+            set(handles.EntryListPopupmenu,'String',EntryList);
+            set(handles.EntryListPopupmenu,'Value',1);
+            set(handles.EntryListPopupmenu,'Enable','on');
+        else
+            set(handles.FileTypeText,'String','Logbook');
+            EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
+                {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
+            set(handles.EntryListPopupmenu,'String',EntryList);
+            set(handles.EntryListPopupmenu,'Value',1);
+            set(handles.EntryListPopupmenu,'Enable','on');
+        end
         for i=1:length(Template_Lines)
             Line = cell2mat(Template_Lines(i));
             if(any(strfind(Line,':')))
@@ -356,8 +420,6 @@ if(file_FLAG)
         set(handles.NewLoggingTogglebutton,'Value',1.0);
         set(handles.SaveLoggingTogglebutton,'Value',0.0);
         
-        set(handles.LogbookRadiobutton,'Enable','on');
-        set(handles.ExperimentRadiobutton,'Enable','on');
         set(handles.EntryListPopupmenu,'Enable','on');
         set(handles.TodayCheckbox,'Enable','on');
         
@@ -378,58 +440,94 @@ function NewFilePushbutton_Callback(hObject, eventdata, handles)
 NowDir = cd;
 cd(handles.WorkDir);
 
-[FileName,PathName,FilterIndex] = uiputfile('*.txt','Select directory and filename to save new log file');
+options.Interpreter = 'tex';
+% Include the desired Default answer
+options.Default = 'Logbook';
+% Create a TeX string for the question
+qstring = 'Which type of record file would you like to create?';
+FileType = questdlg(qstring,'Record Type','Experiment','Logbook','Cancel',options);
 
-if(isnumeric(FileName)==0)
-    prompt = {'Wafer ID:', 'Design ID:','DEVICE ID:','Taken from QNC on:'};
-    dlg_title = 'Enter IDs for sample';
-    num_lines = 1;
-    def = {'W','SiDD','M',datestr(today)};
-    answer = inputdlg(prompt,dlg_title,num_lines,def);
-
-    if(isempty(answer)==0)
-        handles.WaferID = answer{1};
-        handles.DesignID = answer{2};
-        handles.MarkerID = answer{3};
-        handles.DateQNC2RAC = answer{4};
-        set(handles.WaferLabelText,'String',handles.WaferID);
-        set(handles.DesignLabelText,'String',handles.DesignID);
-        set(handles.MarkerLabelText,'String',handles.MarkerID);
-        set(handles.FilenameText,'String',FileName);
+if(~strcmp(FileType,'Cancel'))
+   
+    [FileName,PathName,FilterIndex] = uiputfile('*.txt','Select directory and filename to save new log file');
+    
+    if(isnumeric(FileName)==0)
+        prompt = {'Wafer ID:', 'Design ID:','DEVICE ID:','Taken from QNC on:'};
+        dlg_title = 'Enter IDs for sample';
+        num_lines = 1;
+        def = {'W','SiDD','M',datestr(today)};
+        answer = inputdlg(prompt,dlg_title,num_lines,def);
         
-        handles.WorkDir = PathName;
-        cd(handles.WorkDir);
-        fileID = fopen(FileName,'w');
-        
-        if(get(handles.ExperimentRadiobutton,'Value'))
-            fprintf(fileID,'%s\r\n','*******************EXPERIMENT******************');
-        else
-            fprintf(fileID,'%s\r\n','********************LOGBOOK********************');
-        end          
-        fprintf(fileID,'%-17s : ','Wafer');fprintf(fileID,'%1s\r\n', handles.WaferID);
-        fprintf(fileID,'%-17s : ','Design');fprintf(fileID,'%1s\r\n', handles.DesignID);
-        fprintf(fileID,'%-17s : ','Marker');fprintf(fileID,'%1s\r\n', handles.MarkerID);
-        fprintf(fileID,'%-17s : ','Taken from QNC on');fprintf(fileID,'%1s\r\n', handles.DateQNC2RAC);
-        fprintf(fileID,'%s\r\n','***********************************************');
-        fprintf(fileID,'%s\r\n','');
-        fprintf(fileID,'%s\r\n','-----------------------------------------------');
-        fclose(fileID);
-        cd(NowDir);
-
-        set(handles.VarTable,'Enable','on');
-        set(handles.CommentEdit,'Enable','on');
-        set(handles.AddVarPushbutton,'Enable','on');
-        set(handles.DeleteVarPushbutton,'Enable','on');
-        set(handles.DeleteNumEdit,'Enable','on');
-        set(handles.NewLoggingTogglebutton,'Enable','off');
-        set(handles.SaveLoggingTogglebutton,'Enable','on');
-        set(handles.NewLoggingTogglebutton,'Value',1.0);
-        set(handles.SaveLoggingTogglebutton,'Value',0.0);
-        
-        set(handles.LogbookRadiobutton,'Enable','on');
-        set(handles.ExperimentRadiobutton,'Enable','on');
-        set(handles.EntryListPopupmenu,'Enable','on');
-        set(handles.TodayCheckbox,'Enable','on');
+        if(isempty(answer)==0)
+            handles.WaferID = answer{1};
+            handles.DesignID = answer{2};
+            handles.MarkerID = answer{3};
+            handles.DateQNC2RAC = answer{4};
+            set(handles.WaferLabelText,'String',handles.WaferID);
+            set(handles.DesignLabelText,'String',handles.DesignID);
+            set(handles.MarkerLabelText,'String',handles.MarkerID);
+            set(handles.FilenameText,'String',FileName);
+            
+            handles.WorkDir = PathName;
+            cd(handles.WorkDir);
+            fileID = fopen(FileName,'w');
+            
+            if(strcmp(FileType,'Experiment'))
+                fprintf(fileID,'%s\r\n','*******************EXPERIMENT******************');
+                EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
+                    {'Dilution Fridge'}];
+                set(handles.EntryListPopupmenu,'String',EntryList);
+                set(handles.EntryListPopupmenu,'Value',1);
+                set(handles.EntryListPopupmenu,'Enable','on');
+            else
+                fprintf(fileID,'%s\r\n','********************LOGBOOK********************');
+                EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
+                    {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
+                set(handles.EntryListPopupmenu,'String',EntryList);
+                set(handles.EntryListPopupmenu,'Value',1);
+                set(handles.EntryListPopupmenu,'Enable','on');
+            end
+            set(handles.FileTypeText,'String',FileType);
+            fprintf(fileID,'%-17s : ','Wafer');fprintf(fileID,'%1s\r\n', handles.WaferID);
+            fprintf(fileID,'%-17s : ','Design');fprintf(fileID,'%1s\r\n', handles.DesignID);
+            fprintf(fileID,'%-17s : ','Marker');fprintf(fileID,'%1s\r\n', handles.MarkerID);
+            fprintf(fileID,'%-17s : ','Taken from QNC on');fprintf(fileID,'%1s\r\n', handles.DateQNC2RAC);
+            fprintf(fileID,'%s\r\n','***********************************************');
+            fprintf(fileID,'%s\r\n','');
+            fprintf(fileID,'%s\r\n','-----------------------------------------------');
+            fclose(fileID);
+            
+            List_folders = dir;
+            List_folders_cell={};
+            for i=1:size(List_folders,1)
+                if(strcmp(List_folders(i).name,'.')==0 && ...
+                        strcmp(List_folders(i).name,'..')==0)
+                    List_folders_cell(i-2,1) = {List_folders(i).name};
+                end
+            end
+            cd(NowDir);
+            
+            if(isempty(List_folders_cell)==0)
+                set(handles.FolderContents_Listbox,'Value',1);
+                set(handles.FolderContents_Listbox,'String',List_folders_cell);
+            else
+                set(handles.FolderContents_Listbox,'Value',1);
+                set(handles.FolderContents_Listbox,'String',{''});
+            end
+            
+            set(handles.VarTable,'Enable','on');
+            set(handles.CommentEdit,'Enable','on');
+            set(handles.AddVarPushbutton,'Enable','on');
+            set(handles.DeleteVarPushbutton,'Enable','on');
+            set(handles.DeleteNumEdit,'Enable','on');
+            set(handles.NewLoggingTogglebutton,'Enable','off');
+            set(handles.SaveLoggingTogglebutton,'Enable','on');
+            set(handles.NewLoggingTogglebutton,'Value',1.0);
+            set(handles.SaveLoggingTogglebutton,'Value',0.0);
+            
+            set(handles.EntryListPopupmenu,'Enable','on');
+            set(handles.TodayCheckbox,'Enable','on');
+        end
     end
 end
 cd(NowDir);
@@ -487,9 +585,9 @@ Comment = get(handles.CommentEdit,'String');
 
 if(VarNames_ERROR == 0)
     EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
-    {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'}];
+    {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
     %Choose the correct header
-    if(get(handles.ExperimentRadiobutton,'Value'))
+    if(strcmp(get(handles.FileTypeText,'String'),'Experiment'))
         switch get(handles.EntryListPopupmenu,'Value')-1
             case 0
                 msgbox('Select an Entry type under Log Options', 'Error','error');
@@ -518,13 +616,20 @@ if(VarNames_ERROR == 0)
                 header = '*******************Annealing*******************';
             case 4
                 header = '******************Wirebonding******************';
-            otherwise
+            case 5
                 header = '********************Storage********************';
+            case 6
+                header = '*****************Miscellaneous*****************';
         end
     end
     
     if(~Entry_ERROR)
-        fileID = fopen(FileName,'a+');
+        if(~ischar(FileName))
+            FileName_char = cell2mat(FileName);
+        else
+            FileName_char = FileName;
+        end
+        fileID = fopen(FileName_char,'a+');
         fprintf(fileID,'%s\r\n',header);
         fprintf(fileID,'%s\r\n','-----------------------------------------------');
         
@@ -532,11 +637,13 @@ if(VarNames_ERROR == 0)
         fprintf(fileID,'%1s\r\n', get(handles.TodayEdit,'String'));
         
         for i = 1:size(VarTable,1)
-            if(any(strfind(cell2mat(VarTable(i,1)),'{')))
-                fprintf(fileID,'%s\r\n', cell2mat(VarTable(i,1)));
-            else
-                fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], cell2mat(VarTable(i,1)));
-                fprintf(fileID,'%1s\r\n', cell2mat(VarTable(i,2)));
+            if(~isempty(cell2mat(VarTable(i,1))))
+                if(any(strfind(cell2mat(VarTable(i,1)),'{')))
+                    fprintf(fileID,'%s\r\n', cell2mat(VarTable(i,1)));
+                else
+                    fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], cell2mat(VarTable(i,1)));
+                    fprintf(fileID,'%1s\r\n', cell2mat(VarTable(i,2)));
+                end
             end
         end
         if(~isempty(Comment))
@@ -567,34 +674,34 @@ cd(NowDir);
 % Update handles structure
 guidata(hObject, handles);
 
-% --- Executes on button press in ExperimentRadiobutton.
-function ExperimentRadiobutton_Callback(hObject, eventdata, handles)
-% hObject    handle to ExperimentRadiobutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
-    {'Dilution Fridge'}];
-set(handles.EntryListPopupmenu,'String',EntryList);
-set(handles.EntryListPopupmenu,'Value',1);
-set(handles.EntryListPopupmenu,'Enable','on');
+% % --- Executes on button press in ExperimentRadiobutton.
+% function ExperimentRadiobutton_Callback(hObject, eventdata, handles)
+% % hObject    handle to ExperimentRadiobutton (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    structure with handles and user data (see GUIDATA)
+% EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
+%     {'Dilution Fridge'}];
+% set(handles.EntryListPopupmenu,'String',EntryList);
+% set(handles.EntryListPopupmenu,'Value',1);
+% set(handles.EntryListPopupmenu,'Enable','on');
+% 
+% % Update handles structure
+% guidata(hObject, handles);
 
-% Update handles structure
-guidata(hObject, handles);
 
-
-% --- Executes on button press in LogbookRadiobutton.
-function LogbookRadiobutton_Callback(hObject, eventdata, handles)
-% hObject    handle to LogbookRadiobutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
-    {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'}];
-set(handles.EntryListPopupmenu,'String',EntryList);
-set(handles.EntryListPopupmenu,'Value',1);
-set(handles.EntryListPopupmenu,'Enable','on');
-
-% Update handles structure
-guidata(hObject, handles);
+% % --- Executes on button press in LogbookRadiobutton.
+% function LogbookRadiobutton_Callback(hObject, eventdata, handles)
+% % hObject    handle to LogbookRadiobutton (see GCBO)
+% % eventdata  reserved - to be defined in a future version of MATLAB
+% % handles    structure with handles and user data (see GUIDATA)
+% EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
+%     {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'}];
+% set(handles.EntryListPopupmenu,'String',EntryList);
+% set(handles.EntryListPopupmenu,'Value',1);
+% set(handles.EntryListPopupmenu,'Enable','on');
+% 
+% % Update handles structure
+% guidata(hObject, handles);
 
 % --- Executes on selection change in EntryListPopupmenu.
 function EntryListPopupmenu_Callback(hObject, eventdata, handles)
@@ -613,6 +720,28 @@ if(get(handles.TodayCheckbox,'Value'))
 else
     set(handles.TodayEdit,'Enable','on');
 end
+
+% Update handles structure
+guidata(hObject, handles);
+
+% --------------------------------------------------------------------
+function NewTemplate_Toolbar_ClickedCallback(hObject, eventdata, handles)
+% hObject    handle to NewTemplate_Toolbar (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(handles.VarTable,'Enable','on');
+set(handles.AddVarPushbutton,'Enable','on');
+set(handles.DeleteVarPushbutton,'Enable','on');
+set(handles.DeleteNumEdit,'Enable','on');
+
+set(handles.CommentEdit,'Enable','off');
+set(handles.NewLoggingTogglebutton,'Enable','off');
+set(handles.SaveLoggingTogglebutton,'Enable','off');
+set(handles.NewLoggingTogglebutton,'Value',1.0);
+set(handles.SaveLoggingTogglebutton,'Value',0.0);
+
+set(handles.EntryListPopupmenu,'Enable','off');
+set(handles.TodayCheckbox,'Enable','off');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -637,6 +766,11 @@ if(isnumeric(FileName)==0)
     Template_Lines = Data{1};
     for i=1:length(Template_Lines)
         Line = cell2mat(Template_Lines(i));
+        if(strcmp(Line,'{COMMENTS}'))
+            comment = cell2mat(Template_Lines(i+1));
+            set(handles.CommentEdit,'String',comment);
+            break;
+        end
         if(any(strfind(Line,'{')))
             VarTable_labels(i,1:2) = {strtrim(Line),''};
         else
@@ -645,6 +779,12 @@ if(isnumeric(FileName)==0)
         end
     end
     set(handles.VarTable,'Data',VarTable_labels);
+    
+    set(handles.VarTable,'Enable','on');
+    set(handles.AddVarPushbutton,'Enable','on');
+    set(handles.DeleteVarPushbutton,'Enable','on');
+    set(handles.DeleteNumEdit,'Enable','on');
+  
 end
 cd(NowDir);
 
@@ -680,6 +820,14 @@ if(isnumeric(FileName)==0)
             %         fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s\r\n'],cell2mat(VarTable(i,1)))
         end
     end
+    Comment = get(handles.CommentEdit,'String');
+    if(~isempty(Comment))
+        fprintf(fileID,'%s\r\n','{COMMENTS}');
+        fprintf(fileID,'%s\r\n', Comment);
+    end
+%     fprintf(fileID,'%s\r\n','-----------------------------------------------');
+%     fclose(fileID);
+    fclose(fileID);
 end
 
 cd(NowDir);
@@ -752,3 +900,5 @@ function pushbutton8_Callback(hObject, eventdata, handles)
 % hObject    handle to pushbutton8 (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+
