@@ -395,7 +395,7 @@ if(file_FLAG)
                 {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
                 {'Miscellaneous'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
                 {'Dilution Fridge'}];
-            set(handles.FileTypeText,'String','Main Log');
+            set(handles.FileTypeText,'String','Logbook');
             set(handles.EntryListPopupmenu,'String',EntryList);
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','on');
@@ -613,6 +613,8 @@ end
 Comment = get(handles.CommentEdit,'String');
 
 if(VarNames_ERROR == 0)
+    EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
+    {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
     %Choose the correct header
     if(strcmp(get(handles.FileTypeText,'String'),'Experiment'))
         switch get(handles.EntryListPopupmenu,'Value')-1
@@ -666,14 +668,6 @@ if(VarNames_ERROR == 0)
                 header = '********************Storage********************';
             case 6
                 header = '*****************Miscellaneous*****************';
-            case 7
-                header = '******************77k Dipper*******************';
-            case 8
-                header = '*******************4k Dipper*******************';
-            case 9
-                header = '*********************Janis*********************';
-            otherwise
-                header = '****************Dilution Fridge****************';
         end
     end
     
