@@ -143,8 +143,16 @@ function OpenHomeDirectoryPushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 NowDir = cd;
-folder_name = 'D:\Waterloo - SeaGate\Spintronics Research\Quantum Dots\TestedDevices\SiDots\JEOL-devices';
-if(folder_name~=0)
+HomeDriveLabels = [{'D'};{'E'};{'F'}];
+FolderFound = 0;
+for i=1:length(HomeDriveLabels)
+    folder_name = [cell2mat(HomeDriveLabels(i)),':\Waterloo - SeaGate\Spintronics Research\Quantum Dots\TestedDevices\SiDots\JEOL-devices'];
+    if(exist(folder_name,'dir')==7)
+        FolderFound =  1;
+        break;
+    end
+end
+if(FolderFound==1)
     cd(folder_name);
     handles.WorkDir = folder_name;
     
@@ -174,6 +182,8 @@ if(folder_name~=0)
     set(handles.OutDirectoryPushbutton,'Enable','on');
     set(handles.OpenFilePushbutton,'Enable','on');
     set(handles.NewFilePushbutton,'Enable','on');
+else
+    msgbox('HOME folder was not found! Seagate Hard Drive is not connected.', 'Error','error');
 end
 
 % Update handles structure

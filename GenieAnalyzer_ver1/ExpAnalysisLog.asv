@@ -143,8 +143,17 @@ function OpenHomeDirectoryPushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 NowDir = cd;
+<<<<<<< HEAD
 folder_name = 'D:\Waterloo - SeaGate\Spintronics Research\Quantum Dots\TestedDevices\SiDots\JEOL-devices';
 if(folder_name~=0)
+=======
+HomeDriveLabels = ['D';'E';'F'];
+folder_name = [HomeDriveLabels,':\Waterloo - SeaGate\Spintronics Research\Quantum Dots\TestedDevices\SiDots\JEOL-devices'];
+for i=1:length(HomeDriveLabels)
+    if(exist(folder_name)==7)
+end
+if(exist(folder_name)==7)
+>>>>>>> bc73dab4b5636f7f4fab93dac77aad74ba6e8d1f
     cd(folder_name);
     handles.WorkDir = folder_name;
     
@@ -371,8 +380,12 @@ if(file_FLAG)
     Template_Lines = Data{1};
     
     if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************')==1 ||...
+<<<<<<< HEAD
             strcmp(Template_Lines(1),'********************LOGBOOK********************')==1 ||...
             strcmp(Template_Lines(1),'********************MAINLOG********************')==1)        
+=======
+            strcmp(Template_Lines(1),'********************LOGBOOK********************')==1)        
+>>>>>>> bc73dab4b5636f7f4fab93dac77aad74ba6e8d1f
       
         if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************'))
             set(handles.FileTypeText,'String','Experiment');
@@ -381,14 +394,19 @@ if(file_FLAG)
             set(handles.EntryListPopupmenu,'String',EntryList);
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','on');
+<<<<<<< HEAD
             
         elseif(strcmp(Template_Lines(1),'********************LOGBOOK********************'))
+=======
+        else
+>>>>>>> bc73dab4b5636f7f4fab93dac77aad74ba6e8d1f
             set(handles.FileTypeText,'String','Logbook');
             EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
                 {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
             set(handles.EntryListPopupmenu,'String',EntryList);
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','on');
+<<<<<<< HEAD
             
         elseif(strcmp(Template_Lines(1),'********************MAINLOG********************'))
             EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
@@ -399,6 +417,8 @@ if(file_FLAG)
             set(handles.EntryListPopupmenu,'String',EntryList);
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','on');
+=======
+>>>>>>> bc73dab4b5636f7f4fab93dac77aad74ba6e8d1f
         end
         for i=1:length(Template_Lines)
             Line = cell2mat(Template_Lines(i));
@@ -457,13 +477,18 @@ options.Interpreter = 'tex';
 options.Default = 'Logbook';
 % Create a TeX string for the question
 qstring = 'Which type of record file would you like to create?';
+<<<<<<< HEAD
 FileType = questdlg(qstring,'Record Type','Experiment','Logbook','Main Log','Cancel',options);
+=======
+FileType = questdlg(qstring,'Record Type','Experiment','Logbook','Cancel',options);
+>>>>>>> bc73dab4b5636f7f4fab93dac77aad74ba6e8d1f
 
 if(~strcmp(FileType,'Cancel'))
    
     [FileName,PathName,FilterIndex] = uiputfile('*.txt','Select directory and filename to save new log file');
     
     if(isnumeric(FileName)==0)
+<<<<<<< HEAD
         if(~strcmp(FileType,'Main Log'))
             prompt = {'Wafer ID:', 'Design ID:','DEVICE ID:','Log started on:'};
             dlg_title = 'Enter IDs for sample';
@@ -477,6 +502,13 @@ if(~strcmp(FileType,'Cancel'))
             def = {'W','SiDD','M',datestr(today)};
             answer = inputdlg(prompt,dlg_title,num_lines,def);
         end
+=======
+        prompt = {'Wafer ID:', 'Design ID:','DEVICE ID:','Taken from QNC on:'};
+        dlg_title = 'Enter IDs for sample';
+        num_lines = 1;
+        def = {'W','SiDD','M',datestr(today)};
+        answer = inputdlg(prompt,dlg_title,num_lines,def);
+>>>>>>> bc73dab4b5636f7f4fab93dac77aad74ba6e8d1f
         
         if(isempty(answer)==0)
             handles.WaferID = answer{1};
@@ -499,13 +531,18 @@ if(~strcmp(FileType,'Cancel'))
                 set(handles.EntryListPopupmenu,'String',EntryList);
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','on');
+<<<<<<< HEAD
             elseif(strcmp(FileType,'Logbook'))
+=======
+            else
+>>>>>>> bc73dab4b5636f7f4fab93dac77aad74ba6e8d1f
                 fprintf(fileID,'%s\r\n','********************LOGBOOK********************');
                 EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
                     {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
                 set(handles.EntryListPopupmenu,'String',EntryList);
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','on');
+<<<<<<< HEAD
             else
                 fprintf(fileID,'%s\r\n','********************MAINLOG********************');
                 EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
@@ -515,6 +552,8 @@ if(~strcmp(FileType,'Cancel'))
                 set(handles.EntryListPopupmenu,'String',EntryList);
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','on');
+=======
+>>>>>>> bc73dab4b5636f7f4fab93dac77aad74ba6e8d1f
             end
             set(handles.FileTypeText,'String',FileType);
             fprintf(fileID,'%-17s : ','Wafer');fprintf(fileID,'%1s\r\n', handles.WaferID);
@@ -631,6 +670,7 @@ if(VarNames_ERROR == 0)
             otherwise
                 header = '****************Dilution Fridge****************';
         end
+<<<<<<< HEAD
     elseif(strcmp(get(handles.FileTypeText,'String'),'Logbook'))
         switch get(handles.EntryListPopupmenu,'Value')-1
             case 0
@@ -651,6 +691,9 @@ if(VarNames_ERROR == 0)
                 header = '*****************Miscellaneous*****************';
         end
     elseif(strcmp(get(handles.FileTypeText,'String'),'Main Log'))
+=======
+    else
+>>>>>>> bc73dab4b5636f7f4fab93dac77aad74ba6e8d1f
         switch get(handles.EntryListPopupmenu,'Value')-1
             case 0
                 msgbox('Select an Entry type under Log Options', 'Error','error');
