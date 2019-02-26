@@ -381,7 +381,8 @@ if(file_FLAG)
     Template_Lines = Data{1};
     
     if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************')==1 ||...
-            strcmp(Template_Lines(1),'********************LOGBOOK********************')==1)        
+            strcmp(Template_Lines(1),'********************LOGBOOK********************')==1 ||...
+            strcmp(Template_Lines(1),'********************MAINLOG********************')==1)        
       
         if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************'))
             set(handles.FileTypeText,'String','Experiment');
@@ -390,10 +391,21 @@ if(file_FLAG)
             set(handles.EntryListPopupmenu,'String',EntryList);
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','on');
-        else
+            
+        elseif(strcmp(Template_Lines(1),'********************LOGBOOK********************'))
             set(handles.FileTypeText,'String','Logbook');
             EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
                 {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
+            set(handles.EntryListPopupmenu,'String',EntryList);
+            set(handles.EntryListPopupmenu,'Value',1);
+            set(handles.EntryListPopupmenu,'Enable','on');
+            
+        elseif(strcmp(Template_Lines(1),'********************MAINLOG********************'))
+            EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
+                {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
+                {'Miscellaneous'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
+                {'Dilution Fridge'}];
+            set(handles.FileTypeText,'String','Main Log');
             set(handles.EntryListPopupmenu,'String',EntryList);
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','on');
@@ -455,18 +467,26 @@ options.Interpreter = 'tex';
 options.Default = 'Logbook';
 % Create a TeX string for the question
 qstring = 'Which type of record file would you like to create?';
-FileType = questdlg(qstring,'Record Type','Experiment','Logbook','Cancel',options);
+FileType = questdlg(qstring,'Record Type','Experiment','Logbook','Main Log','Cancel',options);
 
 if(~strcmp(FileType,'Cancel'))
    
     [FileName,PathName,FilterIndex] = uiputfile('*.txt','Select directory and filename to save new log file');
     
     if(isnumeric(FileName)==0)
-        prompt = {'Wafer ID:', 'Design ID:','DEVICE ID:','Taken from QNC on:'};
-        dlg_title = 'Enter IDs for sample';
-        num_lines = 1;
-        def = {'W','SiDD','M',datestr(today)};
-        answer = inputdlg(prompt,dlg_title,num_lines,def);
+        if(~strcmp(FileType,'Main Log'))
+            prompt = {'Wafer ID:', 'Design ID:','DEVICE ID:','Log started on:'};
+            dlg_title = 'Enter IDs for sample';
+            num_lines = 1;
+            def = {'W','SiDD','n/a',datestr(today)};
+            answer = inputdlg(prompt,dlg_title,num_lines,def);
+        else
+            prompt = {'Wafer ID:', 'Design ID:','DEVICE ID:','Taken from QNC on:'};
+            dlg_title = 'Enter IDs for sample';
+            num_lines = 1;
+            def = {'W','SiDD','M',datestr(today)};
+            answer = inputdlg(prompt,dlg_title,num_lines,def);
+        end
         
         if(isempty(answer)==0)
             handles.WaferID = answer{1};
@@ -489,10 +509,19 @@ if(~strcmp(FileType,'Cancel'))
                 set(handles.EntryListPopupmenu,'String',EntryList);
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','on');
-            else
+            elseif(strcmp(FileType,'Logbook'))
                 fprintf(fileID,'%s\r\n','********************LOGBOOK********************');
                 EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
                     {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
+                set(handles.EntryListPopupmenu,'String',EntryList);
+                set(handles.EntryListPopupmenu,'Value',1);
+                set(handles.EntryListPopupmenu,'Enable','on');
+            else
+                fprintf(fileID,'%s\r\n','********************MAINLOG********************');
+                EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
+                    {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
+                    {'Miscellaneous'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
+                    {'Dilution Fridge'}];
                 set(handles.EntryListPopupmenu,'String',EntryList);
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','on');
@@ -594,8 +623,6 @@ end
 Comment = get(handles.CommentEdit,'String');
 
 if(VarNames_ERROR == 0)
-    EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
-    {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
     %Choose the correct header
     if(strcmp(get(handles.FileTypeText,'String'),'Experiment'))
         switch get(handles.EntryListPopupmenu,'Value')-1
@@ -612,7 +639,7 @@ if(VarNames_ERROR == 0)
             otherwise
                 header = '****************Dilution Fridge****************';
         end
-    else
+    elseif(strcmp(get(handles.FileTypeText,'String'),'Logbook'))
         switch get(handles.EntryListPopupmenu,'Value')-1
             case 0
                 msgbox('Select an Entry type under Log Options', 'Error','error');
@@ -630,6 +657,33 @@ if(VarNames_ERROR == 0)
                 header = '********************Storage********************';
             case 6
                 header = '*****************Miscellaneous*****************';
+        end
+    elseif(strcmp(get(handles.FileTypeText,'String'),'Main Log'))
+        switch get(handles.EntryListPopupmenu,'Value')-1
+            case 0
+                msgbox('Select an Entry type under Log Options', 'Error','error');
+                set(handles.SaveLoggingTogglebutton,'Value',0);
+                Entry_ERROR = 1;                
+            case 1
+                header = '*********Wafer Fabrication Description*********';
+            case 2
+                header = '***********Probe Station Measurement***********';
+            case 3
+                header = '*******************Annealing*******************';
+            case 4
+                header = '******************Wirebonding******************';
+            case 5
+                header = '********************Storage********************';
+            case 6
+                header = '*****************Miscellaneous*****************';
+            case 7
+                header = '******************77k Dipper*******************';
+            case 8
+                header = '*******************4k Dipper*******************';
+            case 9
+                header = '*********************Janis*********************';
+            otherwise
+                header = '****************Dilution Fridge****************';
         end
     end
     
