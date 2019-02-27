@@ -22,7 +22,7 @@ function varargout = ExpAnalysisLog(varargin)
 
 % Edit the above text to modify the response to help ExpAnalysisLog
 
-% Last Modified by GUIDE v2.5 18-Feb-2019 11:06:26
+% Last Modified by GUIDE v2.5 27-Feb-2019 17:10:38
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -79,12 +79,23 @@ set(handles.AddVarPushbutton,'CData',AddVar_image);
 set(handles.DeleteVarPushbutton,'CData',DeleteVar_image);
 set(handles.NewLoggingTogglebutton,'CData',NewLogging_image);
 set(handles.SaveLoggingTogglebutton,'CData',SaveLogging_image);
+set(handles.FileViewerText,'HorizontalAlignment','left');
+set(handles.SaveLoggingTogglebutton,'Enable','off');
+set(handles.SavedLogItems_Listbox,'String',{...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>',...
+    '<HTML><FONT color="gray">empty</Font></html>'});
 
 EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
     {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
+handles.EntryList_choice = 1;
+set(handles.EntryListPopupmenu,'Value',handles.EntryList_choice);
 set(handles.EntryListPopupmenu,'String',EntryList);
 set(handles.EntryListPopupmenu,'Value',1);
 set(handles.EntryListPopupmenu,'Enable','off');
+set(handles.HeaderCheckbox,'Enable','off');
 set(handles.TodayEdit,'Enable','off');
 set(handles.TodayCheckbox,'Enable','off');
 set(handles.TodayCheckbox,'Value',1);
@@ -155,6 +166,7 @@ end
 if(FolderFound==1)
     cd(folder_name);
     handles.WorkDir = folder_name;
+    handles.TemplateDir = folder_name;
     
     List_folders = dir;
     List_folders_cell={};folder_FLAG=0;
@@ -375,53 +387,51 @@ if(file_FLAG)
     handles.FileDir = [handles.WorkDir,'\',Listbox_Selection];        
     NowDir = cd;
     cd(handles.WorkDir)
-    fileID = fopen(cell2mat(Listbox_Selection),'r');
     
-    Data = textscan(fileID, '%s','Delimiter','\r\n');
+    fileID = fopen(cell2mat(Listbox_Selection),'r');    
+    Data = textscan(fileID, '%s','Delimiter','\r\n');    
+    fclose(fileID);    
     Template_Lines = Data{1};
+    set(handles.FileViewerText,'String',Template_Lines);
     
     if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************')==1 ||...
-            strcmp(Template_Lines(1),'********************LOGBOOK********************')==1 ||...
-            strcmp(Template_Lines(1),'********************MAINLOG********************')==1)        
+            strcmp(Template_Lines(1),'********************LOGBOOK********************')==1)        
       
         if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************'))
             set(handles.FileTypeText,'String','Experiment');
-            EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
-                {'Dilution Fridge'}];
-            set(handles.EntryListPopupmenu,'String',EntryList);
+            %             EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
+            %                 {'Dilution Fridge'}];
+            %             set(handles.EntryListPopupmenu,'String',EntryList);
             set(handles.EntryListPopupmenu,'Value',1);
-            set(handles.EntryListPopupmenu,'Enable','on');
+            set(handles.EntryListPopupmenu,'Enable','off');
+            set(handles.HeaderCheckbox,'Enable','off');
             
         elseif(strcmp(Template_Lines(1),'********************LOGBOOK********************'))
-            set(handles.FileTypeText,'String','Logbook');
-            EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
-                {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
-            set(handles.EntryListPopupmenu,'String',EntryList);
-            set(handles.EntryListPopupmenu,'Value',1);
-            set(handles.EntryListPopupmenu,'Enable','on');
-            
-        elseif(strcmp(Template_Lines(1),'********************MAINLOG********************'))
             EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
                 {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
                 {'Miscellaneous'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
                 {'Dilution Fridge'}];
-            set(handles.FileTypeText,'String','Main Log');
+            set(handles.FileTypeText,'String','Logbook');
             set(handles.EntryListPopupmenu,'String',EntryList);
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','on');
+            set(handles.HeaderCheckbox,'Enable','on');
         end
+        set(handles.ExperimentLabelText,'String','N/A');
         for i=1:length(Template_Lines)
             Line = cell2mat(Template_Lines(i));
             if(any(strfind(Line,':')))
-                label = strtrim(Line(1:strfind(Line,':')-1))
-                value = strtrim(Line(strfind(Line,':')+1:end))
+                label = strtrim(Line(1:strfind(Line,':')-1));
+                value = strtrim(Line(strfind(Line,':')+1:end));
                 switch label
                     case 'Wafer'
                         set(handles.WaferLabelText,'String',value);
                     case 'Design'
                         set(handles.DesignLabelText,'String',value);
                     case 'Marker'
-                        set(handles.MarkerLabelText,'String',value);
+                        set(handles.MarkerLabelText,'String',value);                        
+                    case 'Experiment'
+                        set(handles.ExperimentLabelText,'String',value);
                 end
             end
         end
@@ -441,11 +451,16 @@ if(file_FLAG)
         set(handles.SaveLoggingTogglebutton,'Enable','on');
         set(handles.NewLoggingTogglebutton,'Value',1.0);
         set(handles.SaveLoggingTogglebutton,'Value',0.0);
-        
-        set(handles.EntryListPopupmenu,'Enable','on');
         set(handles.TodayCheckbox,'Enable','on');
         
         set(handles.FilenameText,'String',Listbox_Selection);
+        
+        set(handles.SavedLogItems_Listbox,'String',{...
+            '<HTML><FONT color="gray">empty</Font></html>',...
+            '<HTML><FONT color="gray">empty</Font></html>',...
+            '<HTML><FONT color="gray">empty</Font></html>',...
+            '<HTML><FONT color="gray">empty</Font></html>',...
+            '<HTML><FONT color="gray">empty</Font></html>'});
     end
 else
     msgbox('Select a file NOT a folder', 'Error','error');    
@@ -464,38 +479,70 @@ cd(handles.WorkDir);
 
 options.Interpreter = 'tex';
 % Include the desired Default answer
-options.Default = 'Logbook';
+options.Default = 'Logbook (Marker)';
 % Create a TeX string for the question
 qstring = 'Which type of record file would you like to create?';
-FileType = questdlg(qstring,'Record Type','Experiment','Logbook','Main Log','Cancel',options);
+FileType = questdlg(qstring,'Record Type','Experiment','Logbook (Wafer)','Logbook (Marker)',options);
 
-if(~strcmp(FileType,'Cancel'))
-   
-    [FileName,PathName,FilterIndex] = uiputfile('*.txt','Select directory and filename to save new log file');
+if(~strcmp(FileType,''))    
+    if(strcmp(FileType,'Experiment'))
+        prompt = {'Experiment ID:','Wafer ID:', 'Design ID:','Marker ID:'};
+        dlg_title = 'Enter ID for Experiment';
+        num_lines = 1;
+        def = {'77K Dipper','W','SiDD','M'};
+        answer = inputdlg(prompt,dlg_title,num_lines,def);
+    elseif(strcmp(FileType,'Logbook (Wafer)'))
+        prompt = {'Wafer ID:', 'Design(s) ID(s):','Log started on:'};
+        dlg_title = 'Enter ID for WAFER';
+        num_lines = 1;
+        def = {'W','SiDD',datestr(today)};
+        answer = inputdlg(prompt,dlg_title,num_lines,def);
+    else
+        prompt = {'Wafer ID:', 'Design ID:','Marker ID:','Taken from QNC on:'};
+        dlg_title = 'Enter IDs for sample';
+        num_lines = 1;
+        def = {'W','SiDD','M',datestr(today)};
+        answer = inputdlg(prompt,dlg_title,num_lines,def);
+    end
     
-    if(isnumeric(FileName)==0)
-        if(~strcmp(FileType,'Main Log'))
-            prompt = {'Wafer ID:', 'Design ID:','DEVICE ID:','Log started on:'};
-            dlg_title = 'Enter IDs for sample';
-            num_lines = 1;
-            def = {'W','SiDD','n/a',datestr(today)};
-            answer = inputdlg(prompt,dlg_title,num_lines,def);
+    if(~isempty(answer))
+        if(strcmp(FileType,'Experiment'))
+            handles.ExperimentID = answer{1};
+            handles.WaferID = answer{2};
+            handles.DesignID = answer{3};
+            handles.MarkerID = answer{4};
+            handles.DateQNC2RAC = 'N/A';
+        elseif(strcmp(FileType,'Logbook (Wafer)'))
+            handles.WaferID = answer{1};
+            handles.DesignID = answer{2};
+            handles.MarkerID = 'N/A';
+            handles.DateQNC2RAC = answer{3};
+            handles.ExperimentID = 'N/A';
         else
-            prompt = {'Wafer ID:', 'Design ID:','DEVICE ID:','Taken from QNC on:'};
-            dlg_title = 'Enter IDs for sample';
-            num_lines = 1;
-            def = {'W','SiDD','M',datestr(today)};
-            answer = inputdlg(prompt,dlg_title,num_lines,def);
-        end
-        
-        if(isempty(answer)==0)
             handles.WaferID = answer{1};
             handles.DesignID = answer{2};
             handles.MarkerID = answer{3};
             handles.DateQNC2RAC = answer{4};
-            set(handles.WaferLabelText,'String',handles.WaferID);
-            set(handles.DesignLabelText,'String',handles.DesignID);
-            set(handles.MarkerLabelText,'String',handles.MarkerID);
+            handles.ExperimentID = 'N/A';
+        end
+        set(handles.WaferLabelText,'String',handles.WaferID);
+        set(handles.DesignLabelText,'String',handles.DesignID);
+        set(handles.MarkerLabelText,'String',handles.MarkerID);
+        set(handles.ExperimentLabelText,'String',handles.ExperimentID);
+        
+        if(strcmp(FileType,'Experiment'))
+            default_filename = [handles.DesignID,'-',handles.MarkerID,'_',...
+                handles.ExperimentID,'_',datestr(today),'_DataLog.txt'];
+        elseif(strcmp(FileType,'Logbook (Wafer)'))
+            FileType = 'Logbook';
+            default_filename = [handles.WaferID,'_LOGBOOK.txt'];
+        else
+            FileType = 'Logbook';
+            default_filename = [handles.DesignID,'-',handles.MarkerID,'_LOGBOOK.txt'];
+        end
+        [FileName,PathName,FilterIndex] = uiputfile('*.txt','Select directory and filename to save new log file',default_filename);
+        
+        if(isnumeric(FileName)==0)
             set(handles.FilenameText,'String',FileName);
             
             handles.WorkDir = PathName;
@@ -504,20 +551,14 @@ if(~strcmp(FileType,'Cancel'))
             
             if(strcmp(FileType,'Experiment'))
                 fprintf(fileID,'%s\r\n','*******************EXPERIMENT******************');
-                EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
-                    {'Dilution Fridge'}];
-                set(handles.EntryListPopupmenu,'String',EntryList);
+                %                 EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
+                %                     {'Dilution Fridge'}];
+                %                 set(handles.EntryListPopupmenu,'String',EntryList);
                 set(handles.EntryListPopupmenu,'Value',1);
-                set(handles.EntryListPopupmenu,'Enable','on');
-            elseif(strcmp(FileType,'Logbook'))
-                fprintf(fileID,'%s\r\n','********************LOGBOOK********************');
-                EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
-                    {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
-                set(handles.EntryListPopupmenu,'String',EntryList);
-                set(handles.EntryListPopupmenu,'Value',1);
-                set(handles.EntryListPopupmenu,'Enable','on');
+                set(handles.EntryListPopupmenu,'Enable','off');
+                set(handles.HeaderCheckbox,'Enable','off');
             else
-                fprintf(fileID,'%s\r\n','********************MAINLOG********************');
+                fprintf(fileID,'%s\r\n','********************LOGBOOK********************');
                 EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
                     {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
                     {'Miscellaneous'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
@@ -525,12 +566,17 @@ if(~strcmp(FileType,'Cancel'))
                 set(handles.EntryListPopupmenu,'String',EntryList);
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','on');
+                set(handles.HeaderCheckbox,'Enable','on');
             end
             set(handles.FileTypeText,'String',FileType);
             fprintf(fileID,'%-17s : ','Wafer');fprintf(fileID,'%1s\r\n', handles.WaferID);
             fprintf(fileID,'%-17s : ','Design');fprintf(fileID,'%1s\r\n', handles.DesignID);
-            fprintf(fileID,'%-17s : ','Marker');fprintf(fileID,'%1s\r\n', handles.MarkerID);
-            fprintf(fileID,'%-17s : ','Taken from QNC on');fprintf(fileID,'%1s\r\n', handles.DateQNC2RAC);
+            fprintf(fileID,'%-17s : ','Marker');fprintf(fileID,'%1s\r\n', handles.MarkerID);            
+            if(strcmp(FileType,'Experiment'))
+                fprintf(fileID,'%-17s : ','Experiment');fprintf(fileID,'%1s\r\n', handles.ExperimentID);
+            else
+                fprintf(fileID,'%-17s : ','Taken from QNC on');fprintf(fileID,'%1s\r\n', handles.DateQNC2RAC);
+            end
             fprintf(fileID,'%s\r\n','***********************************************');
             fprintf(fileID,'%s\r\n','');
             fprintf(fileID,'%s\r\n','-----------------------------------------------');
@@ -564,8 +610,14 @@ if(~strcmp(FileType,'Cancel'))
             set(handles.NewLoggingTogglebutton,'Value',1.0);
             set(handles.SaveLoggingTogglebutton,'Value',0.0);
             
-            set(handles.EntryListPopupmenu,'Enable','on');
             set(handles.TodayCheckbox,'Enable','on');
+            
+            set(handles.SavedLogItems_Listbox,'String',{...
+                '<HTML><FONT color="gray">empty</Font></html>',...
+                '<HTML><FONT color="gray">empty</Font></html>',...
+                '<HTML><FONT color="gray">empty</Font></html>',...
+                '<HTML><FONT color="gray">empty</Font></html>',...
+                '<HTML><FONT color="gray">empty</Font></html>'});
         end
     end
 end
@@ -624,46 +676,12 @@ Comment = get(handles.CommentEdit,'String');
 
 if(VarNames_ERROR == 0)
     %Choose the correct header
-    if(strcmp(get(handles.FileTypeText,'String'),'Experiment'))
+    if(strcmp(get(handles.FileTypeText,'String'),'Logbook')==1 && get(handles.HeaderCheckbox,'Value')==1)
         switch get(handles.EntryListPopupmenu,'Value')-1
             case 0
                 msgbox('Select an Entry type under Log Options', 'Error','error');
                 set(handles.SaveLoggingTogglebutton,'Value',0);
                 Entry_ERROR = 1;
-            case 1
-                header = '******************77k Dipper*******************';
-            case 2
-                header = '*******************4k Dipper*******************';
-            case 3
-                header = '*********************Janis*********************';
-            otherwise
-                header = '****************Dilution Fridge****************';
-        end
-    elseif(strcmp(get(handles.FileTypeText,'String'),'Logbook'))
-        switch get(handles.EntryListPopupmenu,'Value')-1
-            case 0
-                msgbox('Select an Entry type under Log Options', 'Error','error');
-                set(handles.SaveLoggingTogglebutton,'Value',0);
-                Entry_ERROR = 1;                
-            case 1
-                header = '*********Wafer Fabrication Description*********';
-            case 2
-                header = '***********Probe Station Measurement***********';
-            case 3
-                header = '*******************Annealing*******************';
-            case 4
-                header = '******************Wirebonding******************';
-            case 5
-                header = '********************Storage********************';
-            case 6
-                header = '*****************Miscellaneous*****************';
-        end
-    elseif(strcmp(get(handles.FileTypeText,'String'),'Main Log'))
-        switch get(handles.EntryListPopupmenu,'Value')-1
-            case 0
-                msgbox('Select an Entry type under Log Options', 'Error','error');
-                set(handles.SaveLoggingTogglebutton,'Value',0);
-                Entry_ERROR = 1;                
             case 1
                 header = '*********Wafer Fabrication Description*********';
             case 2
@@ -694,14 +712,16 @@ if(VarNames_ERROR == 0)
             FileName_char = FileName;
         end
         fileID = fopen(FileName_char,'a+');
-        fprintf(fileID,'%s\r\n',header);
-        fprintf(fileID,'%s\r\n','-----------------------------------------------');
-        
+                
+        if(strcmp(get(handles.FileTypeText,'String'),'Logbook')==1 && get(handles.HeaderCheckbox,'Value')==1)
+            fprintf(fileID,'%s\r\n',header);
+            fprintf(fileID,'%s\r\n','-----------------------------------------------');
+        end
         fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], '>>>Date');
         fprintf(fileID,'%1s\r\n', get(handles.TodayEdit,'String'));
         
         for i = 1:size(VarTable,1)
-            if(~isempty(cell2mat(VarTable(i,1))))
+            if(~isempty(cell2mat(VarTable(i,1))))          
                 if(any(strfind(cell2mat(VarTable(i,1)),'{')))
                     fprintf(fileID,'%s\r\n', cell2mat(VarTable(i,1)));
                 else
@@ -717,6 +737,11 @@ if(VarNames_ERROR == 0)
         fprintf(fileID,'%s\r\n','-----------------------------------------------');
         fclose(fileID);
         
+        fileID = fopen(FileName_char,'r');
+        Data = textscan(fileID, '%s','Delimiter','\r\n');
+        fclose(fileID);
+        set(handles.FileViewerText,'String',Data{1});
+        
         set(handles.NewLoggingTogglebutton,'Value',0.0);
         set(handles.SaveLoggingTogglebutton,'Value',1.0);
         set(handles.NewLoggingTogglebutton,'Enable','on');
@@ -727,6 +752,22 @@ if(VarNames_ERROR == 0)
         set(handles.AddVarPushbutton,'Enable','off');
         set(handles.DeleteVarPushbutton,'Enable','off');
         set(handles.DeleteNumEdit,'Enable','off');
+        
+        SavedLogItems_list = get(handles.SavedLogItems_Listbox,'String');
+        for i=1:length(SavedLogItems_list)-1
+            long_Entry = SavedLogItems_list{i};
+            m = strfind(long_Entry,'>');
+            n = strfind(long_Entry,'<');
+            entry = long_Entry(m(2)+1:n(3)-1);
+            if(strcmp(entry,'empty'))
+                New_list{i+1} = ['<HTML><FONT color="gray">',entry,'</Font></html>'];
+            else
+                New_list{i+1} = ['<HTML><FONT color="black">',entry,'</Font></html>'];
+            end
+        end
+        New_list{1} = ['<HTML><FONT color="red">',FirstEntry_ID,'</Font></html>'];
+        set(handles.SavedLogItems_Listbox,'String',New_list);
+        
     end
 else
     msgbox('Do NOT use : in Variable Names. Do NOT use - (repeatedly) in Variable Names.', 'Error','error');
@@ -772,6 +813,18 @@ function EntryListPopupmenu_Callback(hObject, eventdata, handles)
 % hObject    handle to EntryListPopupmenu (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+
+if(get(handles.HeaderCheckbox,'Value')==1)
+    handles.EntryList_choice = get(handles.EntryListPopupmenu,'Value');
+else
+    if(handles.EntryList_choice ~= get(handles.EntryListPopupmenu,'Value'))
+       set(handles.HeaderCheckbox,'Value',1);
+       msgbox('The "Include Header" option was enabled.', 'Warning','warn');
+    end
+end
+
+% Update handles structure
+guidata(hObject, handles);
 
 % --- Executes on button press in TodayCheckbox.
 function TodayCheckbox_Callback(hObject, eventdata, handles)
@@ -899,6 +952,7 @@ cd(NowDir);
 % Update handles structure
 guidata(hObject, handles);
 
+
 %-------------------------------------------------------------------------%
 %-------------------------------------------------------------------------%
 %-------------------------------------------------------------------------%
@@ -966,3 +1020,70 @@ function pushbutton8_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 
+
+
+% --- Executes on button press in HeaderCheckbox.
+function HeaderCheckbox_Callback(hObject, eventdata, handles)
+% hObject    handle to HeaderCheckbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hint: get(hObject,'Value') returns toggle state of HeaderCheckbox
+
+
+% --- Executes on selection change in SavedLogItems_Listbox.
+function SavedLogItems_Listbox_Callback(hObject, eventdata, handles)
+% hObject    handle to SavedLogItems_Listbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns SavedLogItems_Listbox contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from SavedLogItems_Listbox
+
+
+% --- Executes during object creation, after setting all properties.
+function SavedLogItems_Listbox_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to SavedLogItems_Listbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes during object creation, after setting all properties.
+function FileViewerSlider_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to FileViewerSlider (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: slider controls usually have a light gray background.
+if isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor',[.9 .9 .9]);
+end
+
+
+% --- Executes on selection change in FileViewerText.
+function FileViewerText_Callback(hObject, eventdata, handles)
+% hObject    handle to FileViewerText (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: contents = cellstr(get(hObject,'String')) returns FileViewerText contents as cell array
+%        contents{get(hObject,'Value')} returns selected item from FileViewerText
+
+
+% --- Executes during object creation, after setting all properties.
+function FileViewerText_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to FileViewerText (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: listbox controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
