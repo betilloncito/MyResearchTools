@@ -281,37 +281,44 @@ function InDirectoryPushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 NowDir = cd;
-cd(handles.WorkDir);
 Listbox_Folders = get(handles.FolderContents_Listbox,'String');
 Listbox_Value = get(handles.FolderContents_Listbox,'Value');
-Listbox_Selection = Listbox_Folders(Listbox_Value)
-cd(['.\',cell2mat(Listbox_Selection)])
-handles.WorkDir = cd;
+Listbox_Selection = Listbox_Folders(Listbox_Value);
 
-List_folders = dir;
-List_folders_cell={};folder_FLAG=0;
-for i=1:size(List_folders,1)
-    if(strcmp(List_folders(i).name,'.')==0 && ...
-            strcmp(List_folders(i).name,'..')==0)
-        List_folders_cell(i-2,1) = {List_folders(i).name};
-        folder_FLAG(i) = ~any(strfind(List_folders(i).name,'.'));
+cd(handles.WorkDir);
+exist(['.\',cell2mat(Listbox_Selection)],'dir')
+
+if(exist(['.\',cell2mat(Listbox_Selection)],'dir'))
+    cd(['.\',cell2mat(Listbox_Selection)])
+    handles.WorkDir = cd;
+    
+    List_folders = dir;
+    List_folders_cell={};folder_FLAG=0;
+    for i=1:size(List_folders,1)
+        if(strcmp(List_folders(i).name,'.')==0 && ...
+                strcmp(List_folders(i).name,'..')==0)
+            List_folders_cell(i-2,1) = {List_folders(i).name};
+            folder_FLAG(i) = ~any(strfind(List_folders(i).name,'.'));
+        end
     end
-end
-cd(NowDir);
-if(isempty(List_folders_cell)==0)
-    set(handles.FolderContents_Listbox,'Value',1);
-    set(handles.FolderContents_Listbox,'String',List_folders_cell);
+    cd(NowDir);
+    if(isempty(List_folders_cell)==0)
+        set(handles.FolderContents_Listbox,'Value',1);
+        set(handles.FolderContents_Listbox,'String',List_folders_cell);
+    else
+        set(handles.FolderContents_Listbox,'Value',1);
+        set(handles.FolderContents_Listbox,'String',{''});
+    end
+    if(any(folder_FLAG))
+        set(handles.InDirectoryPushbutton,'Enable','on');
+    else
+        set(handles.InDirectoryPushbutton,'Enable','off');
+    end
+    set(handles.RootDirText,'String',handles.WorkDir);
 else
-    set(handles.FolderContents_Listbox,'Value',1);
-    set(handles.FolderContents_Listbox,'String',{''});    
+    msgbox('A file was selected, you must select a folder to open.', 'Error','error');
+    cd(NowDir);
 end
-if(any(folder_FLAG))
-    set(handles.InDirectoryPushbutton,'Enable','on');
-else
-    set(handles.InDirectoryPushbutton,'Enable','off');
-end
-set(handles.RootDirText,'String',handles.WorkDir);
-
 % Update handles structure
 guidata(hObject, handles);
 
