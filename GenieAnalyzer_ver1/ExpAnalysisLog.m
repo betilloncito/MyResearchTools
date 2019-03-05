@@ -400,6 +400,7 @@ if(file_FLAG)
     fclose(fileID);    
     Template_Lines = Data{1};
     set(handles.FileViewerText,'String',Template_Lines);
+    set(handles.FileViewerText,'Value',1);
     
     if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************')==1 ||...
             strcmp(Template_Lines(1),'********************LOGBOOK********************')==1)        
@@ -748,6 +749,7 @@ if(VarNames_ERROR == 0)
         Data = textscan(fileID, '%s','Delimiter','\r\n');
         fclose(fileID);
         set(handles.FileViewerText,'String',Data{1});
+        set(handles.FileViewerText,'Value',1);
         
         set(handles.NewLoggingTogglebutton,'Value',0.0);
         set(handles.SaveLoggingTogglebutton,'Value',1.0);
