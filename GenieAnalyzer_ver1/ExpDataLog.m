@@ -22,7 +22,7 @@ function varargout = ExpDataLog(varargin)
 
 % Edit the above text to modify the response to help ExpDataLog
 
-% Last Modified by GUIDE v2.5 15-Feb-2019 04:43:39
+% Last Modified by GUIDE v2.5 11-Mar-2019 20:04:34
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -59,7 +59,7 @@ set(handles.VarTable,'Enable','off');
 set(handles.NoteEdit,'Enable','off');
 set(handles.AddVarPushbutton,'Enable','off');
 set(handles.DeleteVarPushbutton,'Enable','off');
-set(handles.NumEdit,'Enable','off');
+set(handles.DeleteNumEdit,'Enable','off');
 set(handles.NewLoggingTogglebutton,'Enable','off');
 set(handles.SaveLoggingTogglebutton,'Enable','off');
 % set(handles.SavedLogItems_Listbox,'String',{'<<empty>>','<<empty>>',...
@@ -213,7 +213,7 @@ if(VarNames_ERROR == 0)
     set(handles.NoteEdit,'Enable','off');
     set(handles.AddVarPushbutton,'Enable','off');
     set(handles.DeleteVarPushbutton,'Enable','off');
-    set(handles.NumEdit,'Enable','off');
+    set(handles.DeleteNumEdit,'Enable','off');
     
     SavedLogItems_list = get(handles.SavedLogItems_Listbox,'String');
     for i=1:length(SavedLogItems_list)-1
@@ -261,23 +261,23 @@ set(handles.VarTable,'Enable','on');
 set(handles.NoteEdit,'Enable','on');
 set(handles.AddVarPushbutton,'Enable','on');
 set(handles.DeleteVarPushbutton,'Enable','on');
-set(handles.NumEdit,'Enable','on');
+set(handles.DeleteNumEdit,'Enable','on');
 
 % Update handles structure
 guidata(hObject, handles);
 
-function NumEdit_Callback(hObject, eventdata, handles)
-% hObject    handle to NumEdit (see GCBO)
+function DeleteNumEdit_Callback(hObject, eventdata, handles)
+% hObject    handle to DeleteNumEdit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of NumEdit as text
-%        str2double(get(hObject,'String')) returns contents of NumEdit as a double
+% Hints: get(hObject,'String') returns contents of DeleteNumEdit as text
+%        str2double(get(hObject,'String')) returns contents of DeleteNumEdit as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function NumEdit_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to NumEdit (see GCBO)
+function DeleteNumEdit_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to DeleteNumEdit (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -324,7 +324,7 @@ if(isnumeric(FileName)==0)
         set(handles.NoteEdit,'Enable','on');
         set(handles.AddVarPushbutton,'Enable','on');
         set(handles.DeleteVarPushbutton,'Enable','on');
-        set(handles.NumEdit,'Enable','on');
+        set(handles.DeleteNumEdit,'Enable','on');
         set(handles.NewLoggingTogglebutton,'Enable','off');
         set(handles.SaveLoggingTogglebutton,'Enable','on');
         set(handles.NewLoggingTogglebutton,'Value',1.0);
@@ -393,7 +393,7 @@ if(isnumeric(FileName)==0)
     set(handles.NoteEdit,'Enable','on');
     set(handles.AddVarPushbutton,'Enable','on');
     set(handles.DeleteVarPushbutton,'Enable','on');
-    set(handles.NumEdit,'Enable','on');
+    set(handles.DeleteNumEdit,'Enable','on');
     set(handles.NewLoggingTogglebutton,'Enable','off');
     set(handles.SaveLoggingTogglebutton,'Enable','on');
     set(handles.NewLoggingTogglebutton,'Value',1.0);
