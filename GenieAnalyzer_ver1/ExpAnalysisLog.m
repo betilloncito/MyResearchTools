@@ -22,7 +22,7 @@ function varargout = ExpAnalysisLog(varargin)
 
 % Edit the above text to modify the response to help ExpAnalysisLog
 
-% Last Modified by GUIDE v2.5 27-Feb-2019 17:10:38
+% Last Modified by GUIDE v2.5 18-Mar-2019 17:29:04
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -107,6 +107,13 @@ set(handles.DeleteNumEdit,'Enable','off');
 set(handles.InDirectoryPushbutton,'Enable','off');
 set(handles.OutDirectoryPushbutton,'Enable','off');
 set(handles.OpenFilePushbutton,'Enable','off');
+
+set(handles.VarTable,'Data',{'',''});
+set(handles.VarTable,'ColumnEditable',[true true true true]);
+set(handles.VarTable,'ColumnName',{'<empty>'; '<empty>'});
+set(handles.VarTable,'ColumnWidth',{130 280});
+set(handles.VarTable,'ColumnFormat',{'char','char'});
+set(handles.VarTable,'RowName','numbered');
 
 % Update handles structure
 guidata(hObject, handles);
@@ -328,7 +335,13 @@ function AddVarPushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 table = get(handles.VarTable,'Data');
-newRow = [{'NewVar'},{''}];
+colNum = size(table,2);
+ 
+if(colNum==2)
+    newRow = [{'NewVar'},{''}];
+elseif(colNum==4)
+    newRow = [{'NewVar'},{''},{''},{''}];
+end
 
 numRow = str2double(get(handles.DeleteNumEdit,'String'));
 if(~isnan(numRow) && numRow<size(table,1))
@@ -341,7 +354,7 @@ else
     newtable = [table;newRow];
 end
 set(handles.VarTable,'Data',newtable);
-
+    
 % Update handles structure
 guidata(hObject, handles);
 
@@ -351,6 +364,7 @@ function DeleteVarPushbutton_Callback(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 table = get(handles.VarTable,'Data');
+
 numRow = str2double(get(handles.DeleteNumEdit,'String'));
 if(~isnan(numRow) && numRow<=size(table,1))
     if(numRow>1 && numRow<size(table,1))
@@ -364,7 +378,9 @@ if(~isnan(numRow) && numRow<=size(table,1))
 elseif(numRow>size(table,1))
     msgbox('Row number to be deleted is too HIGH', 'Error','error');
 else
-    msgbox('Enter a row number to delete', 'Error','error');
+    numRow = size(table,1);
+    newtable = table(1:numRow-1,:);
+    set(handles.VarTable,'Data',newtable);
 end
 % Update handles structure
 guidata(hObject, handles);
@@ -414,6 +430,13 @@ if(file_FLAG)
             set(handles.EntryListPopupmenu,'Enable','off');
             set(handles.HeaderCheckbox,'Enable','off');
             
+            set(handles.VarTable,'Data',{'','','',''});
+            set(handles.VarTable,'ColumnEditable',[true true true true]);
+            set(handles.VarTable,'ColumnName',{'Variable Name'; 'Start'; 'End'; 'Num. Pts'});
+            set(handles.VarTable,'ColumnWidth',{130 95 95 95});
+            set(handles.VarTable,'ColumnFormat',{'char','char','char','char'});
+            set(handles.VarTable,'RowName','numbered');
+            
         elseif(strcmp(Template_Lines(1),'********************LOGBOOK********************'))
             EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
                 {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
@@ -424,7 +447,15 @@ if(file_FLAG)
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','on');
             set(handles.HeaderCheckbox,'Enable','on');
+            
+            set(handles.VarTable,'Data',{'',''});
+            set(handles.VarTable,'ColumnEditable',[true true]);
+            set(handles.VarTable,'ColumnName',{'Variable Name'; 'Value'});
+            set(handles.VarTable,'ColumnWidth',{130 280});
+            set(handles.VarTable,'ColumnFormat',{'char','char'});
+            set(handles.VarTable,'RowName','numbered');
         end
+        
         set(handles.ExperimentLabelText,'String','N/A');
         for i=1:length(Template_Lines)
             Line = cell2mat(Template_Lines(i));
@@ -565,6 +596,14 @@ if(~strcmp(FileType,''))
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','off');
                 set(handles.HeaderCheckbox,'Enable','off');
+                
+                set(handles.VarTable,'Data',{'','','',''});
+                set(handles.VarTable,'ColumnName',{'Variable Name'; 'Start'; 'End'; 'Num. Pts'});
+                set(handles.VarTable,'ColumnEditable',[true true true true]);
+                set(handles.VarTable,'ColumnWidth',{130 95 95 95});
+                set(handles.VarTable,'ColumnFormat',{'char','char','char','char'});
+                set(handles.VarTable,'RowName','numbered');
+              
             else
                 fprintf(fileID,'%s\r\n','********************LOGBOOK********************');
                 EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
@@ -575,6 +614,13 @@ if(~strcmp(FileType,''))
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','on');
                 set(handles.HeaderCheckbox,'Enable','on');
+                
+                set(handles.VarTable,'Data',{'',''});
+                set(handles.VarTable,'ColumnEditable',[true true]);
+                set(handles.VarTable,'ColumnName',{'Variable Name'; 'Value'});
+                set(handles.VarTable,'ColumnWidth',{130 280});
+                set(handles.VarTable,'ColumnFormat',{'char','char'});
+                set(handles.VarTable,'RowName','numbered');
             end
             set(handles.FileTypeText,'String',FileType);
             fprintf(fileID,'%-17s : ','Wafer');fprintf(fileID,'%1s\r\n', handles.WaferID);
@@ -669,13 +715,18 @@ Entry_ERROR = 0;
 
 for i=1:size(VarTable,1)
     VarName = cell2mat(VarTable(i,1));
-    m = any(strfind(VarName,':'))
-    n = strcmp(VarName,'-----------------------------------------------')
+    m = any(strfind(VarName,':'));
+    n = strcmp(VarName,'-----------------------------------------------');
     if(m==1 || n==1)
         VarNames_ERROR = 1;
         break;
     end
     VarNameLengths(i) = length(cell2mat(VarTable(i,1)));
+    for j=2:size(VarTable,2)
+        Value_Lengths(j) = length(cell2mat(VarTable(i,j)));
+    end
+    max_Value_Lengths(i) = max(Value_Lengths);
+    
     if(i==1)
        FirstEntry_ID = cell2mat(VarTable(i,2));
     end
@@ -727,14 +778,25 @@ if(VarNames_ERROR == 0)
         end
         fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], '>>>Date');
         fprintf(fileID,'%1s\r\n', get(handles.TodayEdit,'String'));
-        
+                
+        colNum = size(VarTable,2);
         for i = 1:size(VarTable,1)
             if(~isempty(cell2mat(VarTable(i,1))))          
                 if(any(strfind(cell2mat(VarTable(i,1)),'{')))
                     fprintf(fileID,'%s\r\n', cell2mat(VarTable(i,1)));
                 else
                     fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], cell2mat(VarTable(i,1)));
-                    fprintf(fileID,'%1s\r\n', cell2mat(VarTable(i,2)));
+                    if(colNum==2)
+                        fprintf(fileID,'%1s\r\n', cell2mat(VarTable(i,2)));
+                    else
+                        for ii=2:colNum
+                            if(ii==colNum)                                
+                                fprintf(fileID,['%',num2str(max(max_Value_Lengths)),'s\r\n'], cell2mat(VarTable(i,ii)));
+                            else
+                                fprintf(fileID,['%',num2str(max(max_Value_Lengths)),'s,'], cell2mat(VarTable(i,ii)));
+                            end
+                        end
+                    end
                 end
             end
         end
@@ -886,6 +948,9 @@ if(isnumeric(FileName)==0)
     handles.TemplateDir = PathName;
     cd(handles.TemplateDir);
     
+    table = get(handles.VarTable,'Data');
+    colNum = size(table,2);
+     
     fileID = fopen(FileName,'r');
     
     Data = textscan(fileID, '%s','Delimiter','\r\n');
@@ -897,11 +962,19 @@ if(isnumeric(FileName)==0)
             set(handles.CommentEdit,'String',comment);
             break;
         end
-        if(any(strfind(Line,'{')))
-            VarTable_labels(i,1:2) = {strtrim(Line),''};
+        if(any(strfind(Line,'{')))           
+            if(colNum==2)
+                VarTable_labels(i,1:2) = {strtrim(Line),''};
+            else
+                VarTable_labels(i,1:4) = {strtrim(Line),'','',''};            
+            end
         else
             m = strfind(Line,':');
-            VarTable_labels(i,1:2) = {strtrim(Line(1:m-1)),strtrim(Line(m+1:end))};
+            if(colNum==2)
+                VarTable_labels(i,1:2) = {strtrim(Line(1:m(1)-1)),strtrim(Line(m+1:end))};
+            else
+                VarTable_labels(i,1:4) = {strtrim(Line(1:m(1)-1)),strtrim(Line(m+1:end)),'',''};
+            end
         end
     end
     set(handles.VarTable,'Data',VarTable_labels);
@@ -909,8 +982,7 @@ if(isnumeric(FileName)==0)
     set(handles.VarTable,'Enable','on');
     set(handles.AddVarPushbutton,'Enable','on');
     set(handles.DeleteVarPushbutton,'Enable','on');
-    set(handles.DeleteNumEdit,'Enable','on');
-  
+    set(handles.DeleteNumEdit,'Enable','on');  
 end
 cd(NowDir);
 
@@ -1096,3 +1168,13 @@ function FileViewerText_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+% --- Executes when user attempts to close figure1.
+function figure1_CloseRequestFcn(hObject, eventdata, handles)
+% hObject    handle to figure1 (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+fclose('all');
+% Hint: delete(hObject) closes the figure
+delete(hObject);
