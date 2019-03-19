@@ -79,6 +79,8 @@ set(handles.AddVarPushbutton,'CData',AddVar_image);
 set(handles.DeleteVarPushbutton,'CData',DeleteVar_image);
 set(handles.NewLoggingTogglebutton,'CData',NewLogging_image);
 set(handles.SaveLoggingTogglebutton,'CData',SaveLogging_image);
+set(handles.OverwriteCheckbox,'Value',0);
+set(handles.OverwriteCheckbox,'Enable','off');
 set(handles.FileViewerText,'HorizontalAlignment','left');
 set(handles.SaveLoggingTogglebutton,'Enable','off');
 set(handles.SavedLogItems_Listbox,'String',{...
@@ -114,6 +116,9 @@ set(handles.VarTable,'ColumnName',{'<empty>'; '<empty>'});
 set(handles.VarTable,'ColumnWidth',{130 280});
 set(handles.VarTable,'ColumnFormat',{'char','char'});
 set(handles.VarTable,'RowName','numbered');
+
+handles.VarTable_ColumnFormat.SampleStatusRecord = {'char',{'Currently Testing', 'Defective (Useless)',...
+                    'Defective (Useful)', 'Good Device'},'char',{'None', '77K', '4K', 'Janis', 'Fridge'}};
 
 % Update handles structure
 guidata(hObject, handles);
@@ -430,6 +435,8 @@ if(file_FLAG)
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','off');
             set(handles.HeaderCheckbox,'Enable','off');
+            set(handles.OverwriteCheckbox,'Enable','on');
+            set(handles.OverwriteCheckbox,'Value',0);
             
             set(handles.VarTable,'Data',{'','','',''});
             set(handles.VarTable,'ColumnEditable',[true true true true]);
@@ -448,6 +455,8 @@ if(file_FLAG)
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','on');
             set(handles.HeaderCheckbox,'Enable','on');
+            set(handles.OverwriteCheckbox,'Enable','on');
+            set(handles.OverwriteCheckbox,'Value',0);
             
             set(handles.VarTable,'Data',{'',''});
             set(handles.VarTable,'ColumnEditable',[true true]);
@@ -465,13 +474,14 @@ if(file_FLAG)
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','off');
             set(handles.HeaderCheckbox,'Enable','off');
+            set(handles.OverwriteCheckbox,'Enable','on');
+            set(handles.OverwriteCheckbox,'Value',1);
                        
             set(handles.VarTable,'Data',{'','','',''});
             set(handles.VarTable,'ColumnName',{'Marker Label'; 'Status'; 'Exp. Completed'; 'Next Exp.'});
             set(handles.VarTable,'ColumnEditable',[true true true true]);
             set(handles.VarTable,'ColumnWidth',{95 120 135 75});
-            set(handles.VarTable,'ColumnFormat',{'char',{'Currently Testing', 'Defective (Useless)',...
-                'Defective (Useful)', 'Good Device'},'char',{'77K', '4K', 'Janis', 'Fridge'}});
+            set(handles.VarTable,'ColumnFormat',handles.VarTable_ColumnFormat.SampleStatusRecord);
             set(handles.VarTable,'RowName','numbered');
         end
         
@@ -637,6 +647,8 @@ if(ItemChosen_FLAG==1)
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','off');
                 set(handles.HeaderCheckbox,'Enable','off');
+                set(handles.OverwriteCheckbox,'Enable','on');
+                set(handles.OverwriteCheckbox,'Value',0);
                 
                 set(handles.VarTable,'Data',{'','','',''});
                 set(handles.VarTable,'ColumnName',{'Variable Name'; 'Start'; 'End'; 'Num. Pts'});
@@ -654,7 +666,9 @@ if(ItemChosen_FLAG==1)
                 set(handles.EntryListPopupmenu,'String',EntryList);
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','on');
-                set(handles.HeaderCheckbox,'Enable','on');
+                set(handles.HeaderCheckbox,'Enable','on');                
+                set(handles.OverwriteCheckbox,'Enable','on');
+                set(handles.OverwriteCheckbox,'Value',0);
                 
                 set(handles.VarTable,'Data',{'',''});
                 set(handles.VarTable,'ColumnEditable',[true true]);
@@ -668,13 +682,14 @@ if(ItemChosen_FLAG==1)
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','off');
                 set(handles.HeaderCheckbox,'Enable','off');
+                set(handles.OverwriteCheckbox,'Enable','on');
+                set(handles.OverwriteCheckbox,'Value',1);
                 
                 set(handles.VarTable,'Data',{'','','',''});
                 set(handles.VarTable,'ColumnName',{'Marker Label'; 'Status'; 'Exp. Completed'; 'Next Exp.'});
                 set(handles.VarTable,'ColumnEditable',[true true true true]);
                 set(handles.VarTable,'ColumnWidth',{95 120 135 75});
-                set(handles.VarTable,'ColumnFormat',{'char',{'Currently Testing', 'Defective (Useless)',...
-                    'Defective (Useful)', 'Good Device'},'char',{'77K', '4K', 'Janis', 'Fridge'}});
+                set(handles.VarTable,'ColumnFormat',handles.VarTable_ColumnFormat.SampleStatusRecord);
                 set(handles.VarTable,'RowName','numbered');
             end
             
@@ -829,22 +844,26 @@ if(VarNames_ERROR == 0)
             FileName_char = FileName;
         end
         
-        fileID = fopen(FileName_char,'r');
-        Data = textscan(fileID, '%s','Delimiter','\r\n');
-        cnt = 1;
         if(get(handles.OverwriteCheckbox,'Value'))
-            for i=1:size(Data,1)
-                line_str = Data(i)
+            fileID = fopen(FileName_char,'r');
+            Data = textscan(fileID, '%s','Delimiter','\r\n');
+            DataLines = Data{1}
+            cnt = 1;
+            size(DataLines,1)
+            for i=1:size(DataLines,1)
+                DataLines(i)
+                line_str = cell2mat(DataLines(i))
                 if(any(line_str=='-'))
-                    dashLine_FLAG = 1;
+                    dashLine_FLAG = 1
+                    length(line_str)
                     for ii=1:length(line_str)
                         if(any(line_str(ii)~='-'))
-                            dashLine_FLAG = 0;
+                            dashLine_FLAG = 0
                             break;
                         end
                     end
                     if(dashLine_FLAG==1)
-                        DashLine_INDEX(cnt) = i;
+                        DashLine_INDEX(cnt) = i
                         cnt = cnt+1;
                     end
                 end
@@ -853,13 +872,17 @@ if(VarNames_ERROR == 0)
             
             fileID = fopen(FileName_char,'w');
             FileType = get(handles.FileTypeText,'String')
-            if(strcmp(FileType,'Logbook')==1)
-                index = length(DashLine_INDEX)-2
-            elseif(strcmp(FileType,'Experiment')==1)
-                index = length(DashLine_INDEX)-1
+            if(length(DashLine_INDEX)>1)
+                if(strcmp(FileType,'Logbook')==1)
+                    StartAppend_Index = DashLine_INDEX(end-2)
+                elseif(strcmp(FileType,'Experiment')==1 || strcmp(FileType,'Sample Status Record')==1)
+                    StartAppend_Index = DashLine_INDEX(end-1)
+                end
+            else
+                StartAppend_Index = DashLine_INDEX(end);
             end
-            for i=1:DashLine_INDEX(index)
-                fprintf(fileID,'%s\r\n', Data(i));
+            for i=1:StartAppend_Index
+                fprintf(fileID,'%s\r\n', cell2mat(DataLines(i)));
             end
             fclose(fileID);
         end
@@ -901,9 +924,9 @@ if(VarNames_ERROR == 0)
         fprintf(fileID,'%s\r\n','-----------------------------------------------');
         fclose(fileID);
         
-%         fileID = fopen(FileName_char,'r');
-%         Data = textscan(fileID, '%s','Delimiter','\r\n');
-%         fclose(fileID);
+        fileID = fopen(FileName_char,'r');
+        Data = textscan(fileID, '%s','Delimiter','\r\n');
+        fclose(fileID);
         set(handles.FileViewerText,'String',Data{1});
         set(handles.FileViewerText,'Value',1);
         
