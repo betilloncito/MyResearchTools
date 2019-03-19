@@ -47,7 +47,7 @@ else
            Z_new(i,:) = ReduceNoise(ZData(i,:),3,10,0);
         end
         if(strcmp(Plot2D_Der,'log'))
-            ZData_new = log(abs(Z_new));            
+            ZData_new = log10(abs(Z_new));            
         elseif(strcmp(Plot2D_Der,'log'))
             ZData_new = abs(Z_new);
         else
