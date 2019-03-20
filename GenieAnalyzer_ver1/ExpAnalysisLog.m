@@ -484,23 +484,45 @@ if(file_FLAG)
             set(handles.VarTable,'ColumnFormat',handles.VarTable_ColumnFormat.SampleStatusRecord);
             set(handles.VarTable,'RowName','numbered');
             %%%%%%%%%%%%%
-%             fileID = fopen(FileName,'r');
-%             Data = textscan(fileID, '%s','Delimiter','\r\n');
-%             Template_Lines = Data{1};
-            for i=1:length(Template_Lines)
-                Line = cell2mat(Template_Lines(i));
+            %             fileID = fopen(FileName,'r');
+            %             Data = textscan(fileID, '%s','Delimiter','\r\n');
+            %             Template_Lines = Data{1};
+            cnt=1;
+            for i=1:size(Template_Lines,1)
+                line_str = cell2mat(Template_Lines(i));
+                if(any(line_str=='-'))
+                    dashLine_FLAG = 1
+                    length(line_str)
+                    for ii=1:length(line_str)
+                        if(any(line_str(ii)~='-'))
+                            dashLine_FLAG = 0
+                            break;
+                        end
+                    end
+                    if(dashLine_FLAG==1)
+                        DashLine_INDEX(cnt) = i
+                        cnt = cnt+1;
+                    end
+                end
+            end
+            
+            cnt = 1;
+            for i=DashLine_INDEX(1)+2:DashLine_INDEX(2)-1
+                Line = cell2mat(Template_Lines(i))
                 if(strcmp(Line,'{COMMENTS}'))
                     comment = cell2mat(Template_Lines(i+1));
                     set(handles.CommentEdit,'String',comment);
                     break;
                 end
-                if(any(strfind(Line,'{')))                    
-                    VarTable_labels(i,1:4) = {strtrim(Line),'','',''};
+                if(any(strfind(Line,'{')))
+                    VarTable_labels(cnt,1:4) = {strtrim(Line),'','',''};
+                    cnt=cnt+1;
                 else
                     m = strfind(Line,':')
                     n = strfind(Line,',')
-                    VarTable_labels(i,1:4) = {strtrim(Line(1:m(1)-1)),strtrim(Line(m(1)+1:n(1)-1)),...
+                    VarTable_labels(cnt,1:4) = {strtrim(Line(1:m(1)-1)),strtrim(Line(m(1)+1:n(1)-1)),...
                         strtrim(Line(n(1)+1:n(2)-1)),strtrim(Line(n(2)+1:end))};
+                    cnt = cnt+1;
                 end
             end
             set(handles.VarTable,'Data',VarTable_labels);
@@ -871,7 +893,6 @@ if(VarNames_ERROR == 0)
             Data = textscan(fileID, '%s','Delimiter','\r\n');
             DataLines = Data{1}
             cnt = 1;
-            size(DataLines,1)
             for i=1:size(DataLines,1)
                 DataLines(i)
                 line_str = cell2mat(DataLines(i))
