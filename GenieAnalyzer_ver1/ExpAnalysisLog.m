@@ -473,6 +473,28 @@ if(file_FLAG)
             set(handles.VarTable,'ColumnFormat',{'char',{'Currently Testing', 'Defective (Useless)',...
                 'Defective (Useful)', 'Good Device'},'char',{'77K', '4K', 'Janis', 'Fridge'}});
             set(handles.VarTable,'RowName','numbered');
+            %%%%%%%%%%%%%
+%             fileID = fopen(FileName,'r');
+%             Data = textscan(fileID, '%s','Delimiter','\r\n');
+%             Template_Lines = Data{1};
+            for i=1:length(Template_Lines)
+                Line = cell2mat(Template_Lines(i));
+                if(strcmp(Line,'{COMMENTS}'))
+                    comment = cell2mat(Template_Lines(i+1));
+                    set(handles.CommentEdit,'String',comment);
+                    break;
+                end
+                if(any(strfind(Line,'{')))                    
+                    VarTable_labels(i,1:4) = {strtrim(Line),'','',''};
+                else
+                    m = strfind(Line,':')
+                    n = strfind(Line,',')
+                    VarTable_labels(i,1:4) = {strtrim(Line(1:m(1)-1)),strtrim(Line(m(1)+1:n(1)-1)),...
+                        strtrim(Line(n(1)+1:n(2)-1)),strtrim(Line(n(2)+1:end))};
+                end
+            end
+            set(handles.VarTable,'Data',VarTable_labels);
+            %%%%%%%%%%%%%%%%%%
         end
         
         set(handles.ExperimentLabelText,'String','N/A');
