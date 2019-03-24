@@ -423,15 +423,57 @@ if(file_FLAG)
     set(handles.FileViewerText,'String',Template_Lines);
     set(handles.FileViewerText,'Value',1);
     
-    if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************')==1 ||...
-            strcmp(Template_Lines(1),'********************LOGBOOK********************')==1 ||...
-            strcmp(Template_Lines(1),'**************SAMPLE-STATUS-RECORD*************')==1)        
+    experiment_FileType = strcmp(Template_Lines(1),'*******************EXPERIMENT******************');
+    logbook_FileType = strcmp(Template_Lines(1),'********************LOGBOOK********************');
+    SampleStatus_FileType = strcmp(Template_Lines(1),'**************SAMPLE-STATUS-RECORD*************');
+    
+    if(experiment_FileType==1 || SampleStatus_FileType==1)
+        cnt=1;
+        for i=1:size(Template_Lines,1)
+            line_str = cell2mat(Template_Lines(i));
+            if(any(line_str=='-'))
+                dashLine_FLAG = 1;
+                length(line_str)
+                for ii=1:length(line_str)
+                    if(any(line_str(ii)~='-'))
+                        dashLine_FLAG = 0;
+                        break;
+                    end
+                end
+                if(dashLine_FLAG==1)
+                    DashLine_INDEX(cnt) = i;
+                    cnt = cnt+1;
+                end
+            end
+        end
+        %%%%%%%%%%%%%%%%
+        cnt = 1;
+        for i=DashLine_INDEX(1)+2:DashLine_INDEX(2)-1
+            Line = cell2mat(Template_Lines(i));
+            if(strcmp(Line,'{COMMENTS}'))
+                comment = cell2mat(Template_Lines(i+1));
+                set(handles.CommentEdit,'String',comment);
+                break;
+            end
+            if(any(strfind(Line,'{')))
+                VarTable_labels(cnt,1:4) = {strtrim(Line),'','',''};
+                cnt=cnt+1;
+            else
+                m = strfind(Line,':');
+                n = strfind(Line,',');
+                VarTable_labels(cnt,1:4) = {strtrim(Line(1:m(1)-1)),strtrim(Line(m(1)+1:n(1)-1)),...
+                    strtrim(Line(n(1)+1:n(2)-1)),strtrim(Line(n(2)+1:end))};
+                cnt = cnt+1;
+            end
+        end
+        set(handles.VarTable,'Data',VarTable_labels);
+        %%%%%%%%%%%%%%%%%%
+    end
+    
+    if(experiment_FileType==1 || logbook_FileType==1 || SampleStatus_FileType==1)        
       
-        if(strcmp(Template_Lines(1),'*******************EXPERIMENT******************'))
+        if(experiment_FileType==1)
             set(handles.FileTypeText,'String','Experiment');
-            %             EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
-            %                 {'Dilution Fridge'}];
-            %             set(handles.EntryListPopupmenu,'String',EntryList);
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','off');
             set(handles.HeaderCheckbox,'Enable','off');
@@ -445,7 +487,7 @@ if(file_FLAG)
             set(handles.VarTable,'ColumnFormat',{'char','char','char','char'});
             set(handles.VarTable,'RowName','numbered');
             
-        elseif(strcmp(Template_Lines(1),'********************LOGBOOK********************'))
+        elseif(logbook_FileType==1)
             EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
                 {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
                 {'Miscellaneous'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
@@ -465,12 +507,8 @@ if(file_FLAG)
             set(handles.VarTable,'ColumnFormat',{'char','char'});
             set(handles.VarTable,'RowName','numbered');
             
-        elseif(strcmp(Template_Lines(1),'**************SAMPLE-STATUS-RECORD*************'))
+        elseif(SampleStatus_FileType==1)
             set(handles.FileTypeText,'String','Sample Status Record');       
-            %             EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
-            %                 {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
-            %                 {'Miscellaneous'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
-            %                 {'Dilution Fridge'}];
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','off');
             set(handles.HeaderCheckbox,'Enable','off');
@@ -483,50 +521,7 @@ if(file_FLAG)
             set(handles.VarTable,'ColumnWidth',{95 120 135 75});
             set(handles.VarTable,'ColumnFormat',handles.VarTable_ColumnFormat.SampleStatusRecord);
             set(handles.VarTable,'RowName','numbered');
-            %%%%%%%%%%%%%
-            %             fileID = fopen(FileName,'r');
-            %             Data = textscan(fileID, '%s','Delimiter','\r\n');
-            %             Template_Lines = Data{1};
-            cnt=1;
-            for i=1:size(Template_Lines,1)
-                line_str = cell2mat(Template_Lines(i));
-                if(any(line_str=='-'))
-                    dashLine_FLAG = 1
-                    length(line_str)
-                    for ii=1:length(line_str)
-                        if(any(line_str(ii)~='-'))
-                            dashLine_FLAG = 0
-                            break;
-                        end
-                    end
-                    if(dashLine_FLAG==1)
-                        DashLine_INDEX(cnt) = i
-                        cnt = cnt+1;
-                    end
-                end
-            end
-            
-            cnt = 1;
-            for i=DashLine_INDEX(1)+2:DashLine_INDEX(2)-1
-                Line = cell2mat(Template_Lines(i))
-                if(strcmp(Line,'{COMMENTS}'))
-                    comment = cell2mat(Template_Lines(i+1));
-                    set(handles.CommentEdit,'String',comment);
-                    break;
-                end
-                if(any(strfind(Line,'{')))
-                    VarTable_labels(cnt,1:4) = {strtrim(Line),'','',''};
-                    cnt=cnt+1;
-                else
-                    m = strfind(Line,':')
-                    n = strfind(Line,',')
-                    VarTable_labels(cnt,1:4) = {strtrim(Line(1:m(1)-1)),strtrim(Line(m(1)+1:n(1)-1)),...
-                        strtrim(Line(n(1)+1:n(2)-1)),strtrim(Line(n(2)+1:end))};
-                    cnt = cnt+1;
-                end
-            end
-            set(handles.VarTable,'Data',VarTable_labels);
-            %%%%%%%%%%%%%%%%%%
+
         end
         
         set(handles.ExperimentLabelText,'String','N/A');
