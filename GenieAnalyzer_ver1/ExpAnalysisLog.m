@@ -57,6 +57,7 @@ handles.output = hObject;
 handles.WorkDir = cd;
 handles.TemplateDir = cd;
 
+%Loads all the button icons jpg and saves the images
 cd('.\Icons');
 openDir_image = imread('SelectFolder-icon.jpg');
 HomeDir_image = imread('HomeFolder-icon.jpg');
@@ -69,6 +70,8 @@ DeleteVar_image = imread('Delete-icon.jpg');
 NewLogging_image = imread('letter-new-icon.jpg');
 SaveLogging_image = imread('letter-saved-icon.jpg');
 cd('..')
+
+%Initializes the images for all the buttons
 set(handles.OpenDirectoryPushbutton,'CData',openDir_image);
 set(handles.OpenHomeDirectoryPushbutton,'CData',HomeDir_image);
 set(handles.InDirectoryPushbutton,'CData',inDir_image);
@@ -79,6 +82,8 @@ set(handles.AddVarPushbutton,'CData',AddVar_image);
 set(handles.DeleteVarPushbutton,'CData',DeleteVar_image);
 set(handles.NewLoggingTogglebutton,'CData',NewLogging_image);
 set(handles.SaveLoggingTogglebutton,'CData',SaveLogging_image);
+
+%Initialization of uicontrols and global variables
 set(handles.OverwriteCheckbox,'Value',0);
 set(handles.OverwriteCheckbox,'Enable','off');
 set(handles.FileViewerText,'HorizontalAlignment','left');
@@ -89,7 +94,6 @@ set(handles.SavedLogItems_Listbox,'String',{...
     '<HTML><FONT color="gray">empty</Font></html>',...
     '<HTML><FONT color="gray">empty</Font></html>',...
     '<HTML><FONT color="gray">empty</Font></html>'});
-
 EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
     {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},{'Miscellaneous'}];
 handles.EntryList_choice = 1;
@@ -110,6 +114,7 @@ set(handles.InDirectoryPushbutton,'Enable','off');
 set(handles.OutDirectoryPushbutton,'Enable','off');
 set(handles.OpenFilePushbutton,'Enable','off');
 
+%Reset the table to be empty and have only 2 columns
 set(handles.VarTable,'Data',{'',''});
 set(handles.VarTable,'ColumnEditable',[true true true true]);
 set(handles.VarTable,'ColumnName',{'<empty>'; '<empty>'});
@@ -117,6 +122,7 @@ set(handles.VarTable,'ColumnWidth',{130 280});
 set(handles.VarTable,'ColumnFormat',{'char','char'});
 set(handles.VarTable,'RowName','numbered');
 
+%Global variable for the column labels for Sample Status Record mode
 handles.VarTable_ColumnFormat.SampleStatusRecord = {'char',{'Currently Testing', 'Defective (Useless)',...
                     'Defective (Useful)', 'Good Device'},'char',{'None', '77K', '4K', 'Janis', 'Fridge'}};
 
@@ -150,9 +156,6 @@ function FolderContents_Listbox_Callback(hObject, eventdata, handles)
 
 % --- Executes during object creation, after setting all properties.
 function FolderContents_Listbox_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to FolderContents_Listbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    empty - handles not created until after all CreateFcns called
 
 % Hint: listbox controls usually have a white background on Windows.
 %       See ISPC and COMPUTER.
@@ -162,19 +165,23 @@ end
 
 % --- Executes on button press in OpenHomeDirectoryPushbutton.
 function OpenHomeDirectoryPushbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to OpenHomeDirectoryPushbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+
+%Saves working directory
 NowDir = cd;
+%Possible Drive labels for SeaGate hard drive. Add more labels is needed
 HomeDriveLabels = [{'D'};{'E'};{'F'}];
-FolderFound = 0;
+FolderFound = 0;%flag
+%Searches to see if the hard drive is connected
 for i=1:length(HomeDriveLabels)
+    %Home directory. Location of the folder within the hard drive is hard
+    %coded. Need to edit the folder location accordingly
     folder_name = [cell2mat(HomeDriveLabels(i)),':\Waterloo - SeaGate\Spintronics Research\Quantum Dots\TestedDevices\SiDots\JEOL-devices'];
     if(exist(folder_name,'dir')==7)
         FolderFound =  1;
         break;
     end
 end
+%Executes if the seagate hard drive was found
 if(FolderFound==1)
     cd(folder_name);
     handles.WorkDir = folder_name;
@@ -182,6 +189,7 @@ if(FolderFound==1)
     
     List_folders = dir;
     List_folders_cell={};folder_FLAG=0;
+    %Extracts the contents of the home directory
     for i=1:size(List_folders,1)
         if(strcmp(List_folders(i).name,'.')==0 && ...
                 strcmp(List_folders(i).name,'..')==0)
@@ -190,6 +198,8 @@ if(FolderFound==1)
         end
     end
     cd(NowDir);
+    
+    %Displays the home directory contents in the FolderContents_Listbox 
     if(isempty(List_folders_cell)==0)
         set(handles.FolderContents_Listbox,'Value',1);
         set(handles.FolderContents_Listbox,'String',List_folders_cell);
@@ -197,6 +207,9 @@ if(FolderFound==1)
         set(handles.FolderContents_Listbox,'Value',1);
         set(handles.FolderContents_Listbox,'String',{''});
     end
+    
+    %Enables the In directory button if there are any folders in the home
+    %directory
     if(any(folder_FLAG))
         set(handles.InDirectoryPushbutton,'Enable','on');
     else
@@ -215,15 +228,17 @@ guidata(hObject, handles);
 
 % --- Executes on button press in OpenDirectoryPushbutton.
 function OpenDirectoryPushbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to OpenDirectoryPushbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+
+%Asks user for a directory to open
 NowDir = cd;
 folder_name = uigetdir(handles.WorkDir, 'Select directory and filename to save new dta log file');
+
+%Executes if the user chose a directory
 if(folder_name~=0)
     cd(folder_name);
     handles.WorkDir = folder_name;
     
+    %Extracts the contents of the chosen directory
     List_folders = dir;
     List_folders_cell={};folder_FLAG=0;
     for i=1:size(List_folders,1)
@@ -234,6 +249,8 @@ if(folder_name~=0)
         end
     end
     cd(NowDir);
+    
+    %Displays the chosen directory contents in the FolderContents_Listbox
     if(isempty(List_folders_cell)==0)
         set(handles.FolderContents_Listbox,'Value',1);
         set(handles.FolderContents_Listbox,'String',List_folders_cell);
@@ -241,6 +258,8 @@ if(folder_name~=0)
         set(handles.FolderContents_Listbox,'Value',1);
         set(handles.FolderContents_Listbox,'String',{''});
     end
+    %Enables the In directory button if there are any folders in the home
+    %directory
     if(any(folder_FLAG))
         set(handles.InDirectoryPushbutton,'Enable','on');
     else
@@ -257,14 +276,14 @@ guidata(hObject, handles);
 
 % --- Executes on button press in OutDirectoryPushbutton.
 function OutDirectoryPushbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to OutDirectoryPushbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+
+%Moves out of the current directory
 NowDir = cd;
 cd(handles.WorkDir);
 cd('..')
 handles.WorkDir = cd;
 
+%Extracts the contents of the new directory
 List_folders = dir;
 List_folders_cell={};
 for i=1:size(List_folders,1)
@@ -274,6 +293,8 @@ for i=1:size(List_folders,1)
     end
 end
 cd(NowDir);
+
+%Displays the chosen directory contents in the FolderContents_Listbox
 if(isempty(List_folders_cell)==0)
     set(handles.FolderContents_Listbox,'Value',1);
     set(handles.FolderContents_Listbox,'String',List_folders_cell);
@@ -289,21 +310,21 @@ guidata(hObject, handles);
 
 % --- Executes on button press in InDirectoryPushbutton.
 function InDirectoryPushbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to InDirectoryPushbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+
 NowDir = cd;
+%Extracts the chosen folder by the user
 Listbox_Folders = get(handles.FolderContents_Listbox,'String');
 Listbox_Value = get(handles.FolderContents_Listbox,'Value');
 Listbox_Selection = Listbox_Folders(Listbox_Value);
-
 cd(handles.WorkDir);
+%Determines if the chosen directory is a folder
 exist(['.\',cell2mat(Listbox_Selection)],'dir')
-
+%Executes if the chosen directory is a folder
 if(exist(['.\',cell2mat(Listbox_Selection)],'dir'))
     cd(['.\',cell2mat(Listbox_Selection)])
     handles.WorkDir = cd;
     
+    %Extracts the contents of the new directory
     List_folders = dir;
     List_folders_cell={};folder_FLAG=0;
     for i=1:size(List_folders,1)
@@ -314,6 +335,8 @@ if(exist(['.\',cell2mat(Listbox_Selection)],'dir'))
         end
     end
     cd(NowDir);
+    
+    %Displays the chosen directory contents in the FolderContents_Listbox
     if(isempty(List_folders_cell)==0)
         set(handles.FolderContents_Listbox,'Value',1);
         set(handles.FolderContents_Listbox,'String',List_folders_cell);
@@ -321,6 +344,9 @@ if(exist(['.\',cell2mat(Listbox_Selection)],'dir'))
         set(handles.FolderContents_Listbox,'Value',1);
         set(handles.FolderContents_Listbox,'String',{''});
     end
+    
+    %Enables the In directory button if there are any folders in the home
+    %directory
     if(any(folder_FLAG))
         set(handles.InDirectoryPushbutton,'Enable','on');
     else
@@ -336,19 +362,21 @@ guidata(hObject, handles);
 
 % --- Executes on button press in AddVarPushbutton.
 function AddVarPushbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to AddVarPushbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+
+%Determines the number of columns
 table = get(handles.VarTable,'Data');
 colNum = size(table,2);
- 
+
+%Choses the correct rwo to add based on the number of columns
 if(colNum==2)
     newRow = [{'NewVar'},{''}];
 elseif(colNum==4)
     newRow = [{'NewVar'},{''},{''},{''}];
 end
-
+%The row number chosen by user
 numRow = str2double(get(handles.DeleteNumEdit,'String'));
+%Determines how to add a row depending on whether the user provided a row
+%number and if so it adds the row in its correct location
 if(~isnan(numRow) && numRow<size(table,1))
     if(numRow>1 && numRow<size(table,1))
         newtable = [table(1:numRow-1,:); newRow; table(numRow:end,:)];
@@ -365,12 +393,12 @@ guidata(hObject, handles);
 
 % --- Executes on button press in DeleteVarPushbutton.
 function DeleteVarPushbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to DeleteVarPushbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-table = get(handles.VarTable,'Data');
 
+table = get(handles.VarTable,'Data');
+%The row number chosen by user
 numRow = str2double(get(handles.DeleteNumEdit,'String'));
+%Determines how to delete a row depending on whether the user provided a row
+%number and if so it deletes the row in its correct location
 if(~isnan(numRow) && numRow<=size(table,1))
     if(numRow>1 && numRow<size(table,1))
         newtable = [table(1:numRow-1,:); table(numRow+1:end,:)];
@@ -380,8 +408,10 @@ if(~isnan(numRow) && numRow<=size(table,1))
         newtable = table(1:numRow-1,:);
     end
     set(handles.VarTable,'Data',newtable);
+%In case the user row number is higher than the number of rows
 elseif(numRow>size(table,1))
     msgbox('Row number to be deleted is too HIGH', 'Error','error');
+%If the user did not specify a row number to delete then it deletes the last    
 else
     numRow = size(table,1);
     newtable = table(1:numRow-1,:);
@@ -391,20 +421,12 @@ end
 guidata(hObject, handles);
 
 function DeleteNumEdit_Callback(hObject, eventdata, handles)
-% hObject    handle to DeleteNumEdit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
 function CommentEdit_Callback(hObject, eventdata, handles)
-% hObject    handle to CommentEdit (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
 % --- Executes on button press in OpenFilePushbutton.
 function OpenFilePushbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to OpenFilePushbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+
 Listbox_Folders = get(handles.FolderContents_Listbox,'String');
 Listbox_Value = get(handles.FolderContents_Listbox,'Value');
 Listbox_Selection = Listbox_Folders(Listbox_Value);
@@ -466,11 +488,7 @@ if(file_FLAG)
             set(handles.VarTable,'RowName','numbered');
             
         elseif(strcmp(Template_Lines(1),'**************SAMPLE-STATUS-RECORD*************'))
-            set(handles.FileTypeText,'String','Sample Status Record');       
-            %             EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
-            %                 {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
-            %                 {'Miscellaneous'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
-            %                 {'Dilution Fridge'}];
+            set(handles.FileTypeText,'String','Sample Status Record');    
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','off');
             set(handles.HeaderCheckbox,'Enable','off');
@@ -484,9 +502,7 @@ if(file_FLAG)
             set(handles.VarTable,'ColumnFormat',handles.VarTable_ColumnFormat.SampleStatusRecord);
             set(handles.VarTable,'RowName','numbered');
             %%%%%%%%%%%%%
-            %             fileID = fopen(FileName,'r');
-            %             Data = textscan(fileID, '%s','Delimiter','\r\n');
-            %             Template_Lines = Data{1};
+            % Reads the last entry and populates the variable table
             cnt=1;
             for i=1:size(Template_Lines,1)
                 line_str = cell2mat(Template_Lines(i));
