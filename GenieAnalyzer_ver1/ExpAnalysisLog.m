@@ -122,9 +122,16 @@ set(handles.VarTable,'ColumnWidth',{130 280});
 set(handles.VarTable,'ColumnFormat',{'char','char'});
 set(handles.VarTable,'RowName','numbered');
 
-%Global variable for the column labels for Sample Status Record mode
+%Global variables
 handles.VarTable_ColumnFormat.SampleStatusRecord = {'char',{'Currently Testing', 'Defective (Useless)',...
                     'Defective (Useful)', 'Good Device'},'char',{'None', '77K', '4K', 'Janis', 'Fridge'}};
+handles.FileTypeList = {'Experiment Data', 'Experiment Analysis', 'Logbook (Wafer)', 'Logbook (Marker)',...
+    'Sample Status Record'};
+handles.FileType_Headings = {'****************EXPERIMENT-DATA****************',...
+                '****************EXPERIMENT-DATA****************',...
+                '*****************LOGBOOK-WAFER*****************',...
+                '****************LOGBOOK-MARKERS****************',...
+                '**************SAMPLE-STATUS-RECORD*************'};
 
 % Update handles structure
 guidata(hObject, handles);
@@ -426,82 +433,44 @@ function CommentEdit_Callback(hObject, eventdata, handles)
 
 % --- Executes on button press in OpenFilePushbutton.
 function OpenFilePushbutton_Callback(hObject, eventdata, handles)
-
 Listbox_Folders = get(handles.FolderContents_Listbox,'String');
 Listbox_Value = get(handles.FolderContents_Listbox,'Value');
 Listbox_Selection = Listbox_Folders(Listbox_Value);
-
+%Determines whether the chosen item is a file 
 file_FLAG = any(strfind(cell2mat(Listbox_Selection),'.'));
 FileType_ERROR = 0;
+%Exceutes if the chosen item was a file
 if(file_FLAG)
+    %directory for the chosen file
     handles.FileDir = [handles.WorkDir,'\',Listbox_Selection];        
     NowDir = cd;
     cd(handles.WorkDir)
-    
+    %Opens the chosen file and saves the data into "Data"
     fileID = fopen(cell2mat(Listbox_Selection),'r');    
-    Data = textscan(fileID, '%s','Delimiter','\r\n');    
-    fclose(fileID);    
-    Template_Lines = Data{1};
+    Data = textscan(fileID, '%s','Delimiter','\r\n');%cell  
+    fclose(fileID);%close file ID
+    Template_Lines = Data{1};%Turns the data into a non-cell
+    %Displays the contents of the FileViewerText field
     set(handles.FileViewerText,'String',Template_Lines);
-    set(handles.FileViewerText,'Value',1);
-    
-    experiment_FileType = strcmp(Template_Lines(1),'*******************EXPERIMENT******************');
-    logbook_FileType = strcmp(Template_Lines(1),'********************LOGBOOK********************');
-    SampleStatus_FileType = strcmp(Template_Lines(1),'**************SAMPLE-STATUS-RECORD*************');
-    
-    if(experiment_FileType==1 || SampleStatus_FileType==1)
-        cnt=1;
-        for i=1:size(Template_Lines,1)
-            line_str = cell2mat(Template_Lines(i));
-            if(any(line_str=='-'))
-                dashLine_FLAG = 1;
-                length(line_str)
-                for ii=1:length(line_str)
-                    if(any(line_str(ii)~='-'))
-                        dashLine_FLAG = 0;
-                        break;
-                    end
-                end
-                if(dashLine_FLAG==1)
-                    DashLine_INDEX(cnt) = i;
-                    cnt = cnt+1;
-                end
-            end
-        end
-        %%%%%%%%%%%%%%%%
-        cnt = 1;
-        for i=DashLine_INDEX(1)+2:DashLine_INDEX(2)-1
-            Line = cell2mat(Template_Lines(i));
-            if(strcmp(Line,'{COMMENTS}'))
-                comment = cell2mat(Template_Lines(i+1));
-                set(handles.CommentEdit,'String',comment);
-                break;
-            end
-            if(any(strfind(Line,'{')))
-                VarTable_labels(cnt,1:4) = {strtrim(Line),'','',''};
-                cnt=cnt+1;
-            else
-                m = strfind(Line,':');
-                n = strfind(Line,',');
-                VarTable_labels(cnt,1:4) = {strtrim(Line(1:m(1)-1)),strtrim(Line(m(1)+1:n(1)-1)),...
-                    strtrim(Line(n(1)+1:n(2)-1)),strtrim(Line(n(2)+1:end))};
-                cnt = cnt+1;
-            end
-        end
-        set(handles.VarTable,'Data',VarTable_labels);
-        %%%%%%%%%%%%%%%%%%
-    end
-    
-    if(experiment_FileType==1 || logbook_FileType==1 || SampleStatus_FileType==1)        
-      
-        if(experiment_FileType==1)
-            set(handles.FileTypeText,'String','Experiment');
+    set(handles.FileViewerText,'Value',1);%Always sets to 1 to avoid errors
+    %headings that determines which type of file is opened
+    experimentData_FileType = strcmp(Template_Lines(1),handles.FileType_Headings(1));
+    experimentAnalysis_FileType = strcmp(Template_Lines(1),handles.FileType_Headings(2));
+    logbookWafer_FileType = strcmp(Template_Lines(1),handles.FileType_Headings(3));
+    logbookMarker_FileType = strcmp(Template_Lines(1),handles.FileType_Headings(4));
+    SampleStatus_FileType = strcmp(Template_Lines(1),handles.FileType_Headings(5));
+
+    %Makes sure that the chosen file has the only '3'  correct headings
+    if(experimentData_FileType==1 || experimentAnalysis_FileType==1 || logbookWafer_FileType==1 || logbookMarker_FileType==1 || SampleStatus_FileType==1)
+        %Executes if the heading is 'Experiment Data'
+        if(experimentData_FileType==1)
+            set(handles.FileTypeText,'String',handles.FileTypeList(1));
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','off');
             set(handles.HeaderCheckbox,'Enable','off');
             set(handles.OverwriteCheckbox,'Enable','on');
             set(handles.OverwriteCheckbox,'Value',0);
-            
+            %settings for the table
             set(handles.VarTable,'Data',{'','','',''});
             set(handles.VarTable,'ColumnEditable',[true true true true]);
             set(handles.VarTable,'ColumnName',{'Variable Name'; 'Start'; 'End'; 'Num. Pts'});
@@ -509,19 +478,18 @@ if(file_FLAG)
             set(handles.VarTable,'ColumnFormat',{'char','char','char','char'});
             set(handles.VarTable,'RowName','numbered');
             
-        elseif(logbook_FileType==1)
-            EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
-                {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
-                {'Miscellaneous'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
+            %Executes if the heading is Experiment Analysis
+        elseif(experimentAnalysis_FileType==1)
+            set(handles.FileTypeText,'String',handles.FileTypeList(2));
+            EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
                 {'Dilution Fridge'}];
-            set(handles.FileTypeText,'String','Logbook');
             set(handles.EntryListPopupmenu,'String',EntryList);
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','on');
             set(handles.HeaderCheckbox,'Enable','on');
             set(handles.OverwriteCheckbox,'Enable','on');
             set(handles.OverwriteCheckbox,'Value',0);
-            
+            %settings for the table
             set(handles.VarTable,'Data',{'',''});
             set(handles.VarTable,'ColumnEditable',[true true]);
             set(handles.VarTable,'ColumnName',{'Variable Name'; 'Value'});
@@ -529,43 +497,72 @@ if(file_FLAG)
             set(handles.VarTable,'ColumnFormat',{'char','char'});
             set(handles.VarTable,'RowName','numbered');
             
+            %Executes if the heading is Logbook
+        elseif(logbookWafer_FileType==1 || logbookMarker_FileType==1)
+            if(logbookWafer_FileType==1)
+                set(handles.FileTypeText,'String',handles.FileTypeList(3));
+            elseif(logbookMarker_FileType==1)
+                set(handles.FileTypeText,'String',handles.FileTypeList(4));
+            end
+            EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
+                {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
+                {'Miscellaneous'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
+                {'Dilution Fridge'}];
+            set(handles.EntryListPopupmenu,'String',EntryList);
+            set(handles.EntryListPopupmenu,'Value',1);
+            set(handles.EntryListPopupmenu,'Enable','on');
+            set(handles.HeaderCheckbox,'Enable','on');
+            set(handles.OverwriteCheckbox,'Enable','on');
+            set(handles.OverwriteCheckbox,'Value',0);
+            %settings for the table
+            set(handles.VarTable,'Data',{'',''});
+            set(handles.VarTable,'ColumnEditable',[true true]);
+            set(handles.VarTable,'ColumnName',{'Variable Name'; 'Value'});
+            set(handles.VarTable,'ColumnWidth',{130 280});
+            set(handles.VarTable,'ColumnFormat',{'char','char'});
+            set(handles.VarTable,'RowName','numbered');
+        %Executes if the heading is Sample Status Record
         elseif(SampleStatus_FileType==1)
-            set(handles.FileTypeText,'String','Sample Status Record');       
-        elseif(strcmp(Template_Lines(1),'**************SAMPLE-STATUS-RECORD*************'))
-            set(handles.FileTypeText,'String','Sample Status Record');    
+            set(handles.FileTypeText,'String',handles.FileTypeList(5));       
             set(handles.EntryListPopupmenu,'Value',1);
             set(handles.EntryListPopupmenu,'Enable','off');
             set(handles.HeaderCheckbox,'Enable','off');
             set(handles.OverwriteCheckbox,'Enable','on');
             set(handles.OverwriteCheckbox,'Value',1);
-                       
+            %settings for the table
             set(handles.VarTable,'Data',{'','','',''});
             set(handles.VarTable,'ColumnName',{'Marker Label'; 'Status'; 'Exp. Completed'; 'Next Exp.'});
             set(handles.VarTable,'ColumnEditable',[true true true true]);
             set(handles.VarTable,'ColumnWidth',{95 120 135 75});
             set(handles.VarTable,'ColumnFormat',handles.VarTable_ColumnFormat.SampleStatusRecord);
             set(handles.VarTable,'RowName','numbered');
-            %%%%%%%%%%%%%
-            % Reads the last entry and populates the variable table
+        end
+        %Executes only of the file to open is an Experiment or Sample Status
+        if(experimentData_FileType==1 || SampleStatus_FileType==1)
+            %Searches through the file and finds lines that separates the
+            %entries, i.e. '------'
             cnt=1;
             for i=1:size(Template_Lines,1)
                 line_str = cell2mat(Template_Lines(i));
-                if(any(line_str=='-'))
-                    dashLine_FLAG = 1
+                if(any(line_str=='-'))%if the line contains '-'
+                    dashLine_FLAG = 1;
                     length(line_str)
                     for ii=1:length(line_str)
+                        %searches to see if there are any non '-' entries in the
+                        %line. If so we reject that line
                         if(any(line_str(ii)~='-'))
-                            dashLine_FLAG = 0
+                            dashLine_FLAG = 0;
                             break;
                         end
                     end
+                    %Saves all the indices for the '----' lines
                     if(dashLine_FLAG==1)
-                        DashLine_INDEX(cnt) = i
+                        DashLine_INDEX(cnt) = i;
                         cnt = cnt+1;
                     end
                 end
             end
-            
+            %displays the contents of the last entry in the file in the table
             cnt = 1;
             for i=DashLine_INDEX(1)+2:DashLine_INDEX(2)-1
                 Line = cell2mat(Template_Lines(i))
@@ -586,10 +583,9 @@ if(file_FLAG)
                 end
             end
             set(handles.VarTable,'Data',VarTable_labels);
-            %%%%%%%%%%%%%%%%%%
         end
-        
         set(handles.ExperimentLabelText,'String','N/A');
+        %Populates the Wafer, Design, Marker and Experiment fields
         for i=1:length(Template_Lines)
             Line = cell2mat(Template_Lines(i));
             if(any(strfind(Line,':')))
@@ -607,12 +603,13 @@ if(file_FLAG)
                 end
             end
         end
+        
     else
         msgbox('File selected is INVALID. Choose a correct .txt file', 'Error','error');
         FileType_ERROR = 1;
     end
     cd(NowDir)
-    
+    %Executes if the open file does not have the correct headings
     if(~FileType_ERROR)
         set(handles.VarTable,'Enable','on');
         set(handles.CommentEdit,'Enable','on');
@@ -643,111 +640,114 @@ guidata(hObject, handles);
 
 % --- Executes on button press in NewFilePushbutton.
 function NewFilePushbutton_Callback(hObject, eventdata, handles)
-% hObject    handle to NewFilePushbutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 NowDir = cd;
 cd(handles.WorkDir);
 
-% options.Interpreter = 'tex';
-% % Include the desired Default answer
-% options.Default = 'Logbook (Marker)';
-% % Create a TeX string for the question
-% qstring = 'Which type of record file would you like to create?';
-% FileType = questdlg(qstring,'Record Type','Experiment','Logbook (Wafer)','Logbook (Marker)',options);
-
-FileTypeList = {'Experiment', 'Logbook (Wafer)', 'Logbook (Marker)',...
-    'Sample Status Record'};
+%Asks user to choose a type of file
 [FileTypeChoice, ItemChosen_FLAG] = listdlg('PromptString','Select a type of file:',...
                 'SelectionMode','single',...
-                'ListString',FileTypeList);
-            
+                'ListString',handles.FileTypeList);
+%If user makes a choise it executes
 if(ItemChosen_FLAG==1)    
-    FileType = FileTypeList(FileTypeChoice);
-    if(strcmp(FileType,'Experiment'))
+%     FileType = handles.FileTypeList(FileTypeChoice); DELETE
+    %Based on the chosen file type, it chooses which type of user dialogue
+    %questions to ask the user
+    if(FileTypeChoice==1)%Experiment Data
         prompt = {'Experiment ID:','Wafer ID:', 'Design ID:','Marker ID:'};
         dlg_title = 'Enter ID for Experiment';
         num_lines = 1;
         def = {'77K Dipper','W','SiDD','M'};
         answer = inputdlg(prompt,dlg_title,num_lines,def);
-    elseif(strcmp(FileType,'Logbook (Wafer)'))
+    elseif(FileTypeChoice==2)%Experiment Analysis
+        prompt = {'Wafer ID:', 'Design ID:','Marker ID:','Log started on:'};
+        dlg_title = 'Enter ID for Experiment';
+        num_lines = 1;
+        def = {'W','SiDD','M',datestr(today)};
+        answer = inputdlg(prompt,dlg_title,num_lines,def);
+    elseif(FileTypeChoice==3)%Logbook (wafer)
         prompt = {'Wafer ID:', 'Design(s) ID(s):','Log started on:'};
         dlg_title = 'Enter ID for WAFER';
         num_lines = 1;
         def = {'W','SiDD',datestr(today)};
         answer = inputdlg(prompt,dlg_title,num_lines,def);
-    elseif(strcmp(FileType,'Logbook (Marker)'))
+    elseif(FileTypeChoice==4)%Logbook (Marker)
         prompt = {'Wafer ID:', 'Design ID:','Marker ID:','Taken from QNC on:'};
         dlg_title = 'Enter IDs for sample';
         num_lines = 1;
         def = {'W','SiDD','M',datestr(today)};
         answer = inputdlg(prompt,dlg_title,num_lines,def);
-    elseif(strcmp(FileType,'Sample Status Record'))
+    elseif(FileTypeChoice==5)%Sample Status Record
         prompt = {'Wafer ID:', 'Design(s) ID(s):','Log started on:'};
         dlg_title = 'Enter ID for Sample Status Record';
         num_lines = 1;
         def = {'W','SiDD',datestr(today)};
         answer = inputdlg(prompt,dlg_title,num_lines,def);
     end
-    
+    %Executes if the user has given all the answers
     if(~isempty(answer))
-        if(strcmp(FileType,'Experiment'))
+        %Determines how to populate the wafer, design, marker, etc. fields
+        %based on the file type
+        if(FileTypeChoice==1)%Experiment Data
             handles.ExperimentID = answer{1};
             handles.WaferID = answer{2};
             handles.DesignID = answer{3};
             handles.MarkerID = answer{4};
             handles.UserDate = 'N/A';
-        elseif(strcmp(FileType,'Logbook (Wafer)'))
+        elseif(FileTypeChoice==2)%Experiment Analysis
+            handles.ExperimentID = 'N/A';
+            handles.WaferID = answer{1};
+            handles.DesignID = answer{2};
+            handles.MarkerID = answer{3};
+            handles.UserDate = answer{3};
+        elseif(FileTypeChoice==3)%Logbook (wafer)
+            handles.ExperimentID = 'N/A';
             handles.WaferID = answer{1};
             handles.DesignID = answer{2};
             handles.MarkerID = 'N/A';
             handles.UserDate = answer{3};
+        elseif(FileTypeChoice==4)%Logbook (marker)
             handles.ExperimentID = 'N/A';
-        elseif(strcmp(FileType,'Logbook (Marker)'))
             handles.WaferID = answer{1};
             handles.DesignID = answer{2};
             handles.MarkerID = answer{3};
             handles.UserDate = answer{4};
+        elseif(FileTypeChoice==5)%Sample Status Record
             handles.ExperimentID = 'N/A';
-        elseif(strcmp(FileType,'Sample Status Record'))
             handles.WaferID = answer{1};
             handles.DesignID = answer{2};
             handles.MarkerID = 'N/A';
             handles.UserDate = answer{3};
-            handles.ExperimentID = 'N/A';
         end
+        %Populates the fields
         set(handles.WaferLabelText,'String',handles.WaferID);
         set(handles.DesignLabelText,'String',handles.DesignID);
         set(handles.MarkerLabelText,'String',handles.MarkerID);
         set(handles.ExperimentLabelText,'String',handles.ExperimentID);
-        
-        if(strcmp(FileType,'Experiment'))
+        %Determines how to properly label the filename
+        if(FileTypeChoice==1)%Experiment Data
             default_filename = [handles.DesignID,'-',handles.MarkerID,'_',...
                 handles.ExperimentID,'_',datestr(today),'_DataLog.txt'];
-        elseif(strcmp(FileType,'Logbook (Wafer)'))
-            FileType = 'Logbook';
+        elseif(FileTypeChoice==2)%Experiment Analysis
+            default_filename = [handles.WaferID,'_Analysis.txt'];
+        elseif(FileTypeChoice==3)%Logbook (wafer)
             default_filename = [handles.WaferID,'_LOGBOOK.txt'];
-        elseif(strcmp(FileType,'Logbook (Marker)'))
-            FileType = 'Logbook';
+        elseif(FileTypeChoice==4)%Logbook (marker)
             default_filename = [handles.DesignID,'-',handles.MarkerID,'_LOGBOOK.txt'];
-        elseif(strcmp(FileType,'Sample Status Record'))
-            FileType = 'Sample Status Record';
+        elseif(FileTypeChoice==5)%Sample Status Record
             default_filename = [handles.WaferID,'_Status-Record.txt'];
         end
         [FileName,PathName,FilterIndex] = uiputfile('*.txt','Select directory and filename to save new log file',default_filename);
-        
+        %If the filename is given then it executes
         if(isnumeric(FileName)==0)
             set(handles.FilenameText,'String',FileName);
-            
+            %Opens the chosen file to write
             handles.WorkDir = PathName;
             cd(handles.WorkDir);
             fileID = fopen(FileName,'w');
-            
-            if(strcmp(FileType,'Experiment'))
-                fprintf(fileID,'%s\r\n','*******************EXPERIMENT******************');
-                %                 EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
-                %                     {'Dilution Fridge'}];
-                %                 set(handles.EntryListPopupmenu,'String',EntryList);
+            %Based on the file type chosen for the new file, it writes the
+            %correct heading and sets the table to the correct size
+            fprintf(fileID,'%s\r\n',cell2mat(handles.FileType_Headings(FileTypeChoice)));
+            if(FileTypeChoice==1)
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','off');
                 set(handles.HeaderCheckbox,'Enable','off');
@@ -760,9 +760,31 @@ if(ItemChosen_FLAG==1)
                 set(handles.VarTable,'ColumnWidth',{130 95 95 95});
                 set(handles.VarTable,'ColumnFormat',{'char','char','char','char'});
                 set(handles.VarTable,'RowName','numbered');
+                
+            elseif(FileTypeChoice==2)
+%                 fprintf(fileID,'%s\r\n',handles.FileType_Headings(FileTypeChoice));
+                EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
+                    {'Dilution Fridge'}];
+                set(handles.EntryListPopupmenu,'String',EntryList);
+                set(handles.EntryListPopupmenu,'Value',1);
+                set(handles.EntryListPopupmenu,'Enable','on');
+                set(handles.HeaderCheckbox,'Enable','on');
+                set(handles.OverwriteCheckbox,'Enable','on');
+                set(handles.OverwriteCheckbox,'Value',0);
+                
+                set(handles.VarTable,'Data',{'',''});
+                set(handles.VarTable,'ColumnEditable',[true true]);
+                set(handles.VarTable,'ColumnName',{'Variable Name'; 'Value'});
+                set(handles.VarTable,'ColumnWidth',{130 280});
+                set(handles.VarTable,'ColumnFormat',{'char','char'});
+                set(handles.VarTable,'RowName','numbered');
               
-            elseif(strcmp(FileType,'Logbook'))
-                fprintf(fileID,'%s\r\n','********************LOGBOOK********************');
+            elseif(FileTypeChoice==3 || FileTypeChoice==4)
+%                 if(FileTypeChoice==3)
+%                     fprintf(fileID,'%s\r\n',handles.FileType_Headings(FileTypeChoice));
+%                 elseif(FileTypeChoice==4)
+%                     fprintf(fileID,'%s\r\n',handles.FileType_Headings(FileTypeChoice));
+%                 end
                 EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
                     {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'},...
                     {'Miscellaneous'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
@@ -781,8 +803,8 @@ if(ItemChosen_FLAG==1)
                 set(handles.VarTable,'ColumnFormat',{'char','char'});
                 set(handles.VarTable,'RowName','numbered');
                 
-            elseif(strcmp(FileType,'Sample Status Record'))
-                fprintf(fileID,'%s\r\n','**************SAMPLE-STATUS-RECORD*************');
+            elseif(FileTypeChoice==5)
+%                 fprintf(fileID,'%s\r\n',handles.FileType_Headings(FileTypeChoice));
                 set(handles.EntryListPopupmenu,'Value',1);
                 set(handles.EntryListPopupmenu,'Enable','off');
                 set(handles.HeaderCheckbox,'Enable','off');
@@ -796,23 +818,24 @@ if(ItemChosen_FLAG==1)
                 set(handles.VarTable,'ColumnFormat',handles.VarTable_ColumnFormat.SampleStatusRecord);
                 set(handles.VarTable,'RowName','numbered');
             end
-            
-            set(handles.FileTypeText,'String',FileType);
+            %Writes the data for wafer, design, marker, etc.
+            set(handles.FileTypeText,'String',handles.FileTypeList(FileTypeChoice));
             fprintf(fileID,'%-17s : ','Wafer');fprintf(fileID,'%1s\r\n', handles.WaferID);
             fprintf(fileID,'%-17s : ','Design');fprintf(fileID,'%1s\r\n', handles.DesignID);
             fprintf(fileID,'%-17s : ','Marker');fprintf(fileID,'%1s\r\n', handles.MarkerID);            
-            if(strcmp(FileType,'Experiment'))
+            if(FileTypeChoice==1)
                 fprintf(fileID,'%-17s : ','Experiment');fprintf(fileID,'%1s\r\n', handles.ExperimentID);
-            elseif(strcmp(FileType,'Logbook'))
+            elseif(FileTypeChoice==3 || FileTypeChoice==4)
                 fprintf(fileID,'%-17s : ','Taken from QNC on');fprintf(fileID,'%1s\r\n', handles.UserDate);
-            elseif(strcmp(FileType,'Sample Status Record'))
+            elseif(FileTypeChoice==4 || FileTypeChoice==2)
                 fprintf(fileID,'%-17s : ','Record started on');fprintf(fileID,'%1s\r\n', handles.UserDate);
             end
             fprintf(fileID,'%s\r\n','***********************************************');
             fprintf(fileID,'%s\r\n','');
             fprintf(fileID,'%s\r\n','-----------------------------------------------');
             fclose(fileID);
-            
+            %Determines the contents of the current folder to repopulates
+            %the folder list
             List_folders = dir;
             List_folders_cell={};
             for i=1:size(List_folders,1)
@@ -822,7 +845,7 @@ if(ItemChosen_FLAG==1)
                 end
             end
             cd(NowDir);
-            
+            %Populates folder list
             if(isempty(List_folders_cell)==0)
                 set(handles.FolderContents_Listbox,'Value',1);
                 set(handles.FolderContents_Listbox,'String',List_folders_cell);
@@ -859,9 +882,6 @@ guidata(hObject, handles);
 
 % --- Executes on button press in NewLoggingTogglebutton.
 function NewLoggingTogglebutton_Callback(hObject, eventdata, handles)
-% hObject    handle to NewLoggingTogglebutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
 set(handles.NewLoggingTogglebutton,'Value',1.0);
 set(handles.SaveLoggingTogglebutton,'Value',0.0);
@@ -879,21 +899,19 @@ guidata(hObject, handles);
 
 % --- Executes on button press in SaveLoggingTogglebutton.
 function SaveLoggingTogglebutton_Callback(hObject, eventdata, handles)
-% hObject    handle to SaveLoggingTogglebutton (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 FileName = get(handles.FilenameText,'String');
 NowDir = cd;
 cd(handles.WorkDir);
-
+%Stores all the variables from the table
 VarTable = get(handles.VarTable,'Data');
 VarNames_ERROR = 0;
 Entry_ERROR = 0;
-
+%Loops over all the variables from the table
 for i=1:size(VarTable,1)
     VarName = cell2mat(VarTable(i,1));
     m = any(strfind(VarName,':'));
     n = strcmp(VarName,'-----------------------------------------------');
+    %Makes sure that the variables name does not contain ':' or '----'
     if(m==1 || n==1)
         VarNames_ERROR = 1;
         break;
@@ -902,14 +920,15 @@ for i=1:size(VarTable,1)
     for j=2:size(VarTable,2)
         Value_Lengths(j) = length(cell2mat(VarTable(i,j)));
     end
-    max_Value_Lengths(i) = max(Value_Lengths);
-    
+    max_Value_Lengths(i) = max(Value_Lengths);%determines the maximum size for the variabels names
+    %Stores the first variable name to be used for the keeping track of
+    %entries saved in the log file
     if(i==1)
        FirstEntry_ID = cell2mat(VarTable(i,2));
     end
 end
 Comment = get(handles.CommentEdit,'String');
-
+%Executes only if the variable names do not contain ':' or '----'
 if(VarNames_ERROR == 0)
     %Choose the correct header
     if(strcmp(get(handles.FileTypeText,'String'),'Logbook')==1 && get(handles.HeaderCheckbox,'Value')==1)
@@ -947,12 +966,15 @@ if(VarNames_ERROR == 0)
         else
             FileName_char = FileName;
         end
-        
+        %Executes in the overwrite option is chosen
         if(get(handles.OverwriteCheckbox,'Value'))
+            %opens file to read
             fileID = fopen(FileName_char,'r');
             Data = textscan(fileID, '%s','Delimiter','\r\n');
-            DataLines = Data{1}
+            DataLines = Data{1};
             cnt = 1;
+            %Searches for the '----' lines which define the bounds for file
+            %entries
             for i=1:size(DataLines,1)
                 DataLines(i)
                 line_str = cell2mat(DataLines(i))
@@ -966,31 +988,33 @@ if(VarNames_ERROR == 0)
                         end
                     end
                     if(dashLine_FLAG==1)
-                        DashLine_INDEX(cnt) = i
+                        DashLine_INDEX(cnt) = i;
                         cnt = cnt+1;
                     end
                 end
             end
-            fclose(fileID);
-            
+            fclose(fileID);%close file ID
+            %Reopens file to overwrite in the file except for the last entry
             fileID = fopen(FileName_char,'w');
-            FileType = get(handles.FileTypeText,'String')
+            FileType = get(handles.FileTypeText,'String');
             if(length(DashLine_INDEX)>1)
                 if(strcmp(FileType,'Logbook')==1)
-                    StartAppend_Index = DashLine_INDEX(end-2)
+                    StartAppend_Index = DashLine_INDEX(end-2);
                 elseif(strcmp(FileType,'Experiment')==1 || strcmp(FileType,'Sample Status Record')==1)
-                    StartAppend_Index = DashLine_INDEX(end-1)
+                    StartAppend_Index = DashLine_INDEX(end-1);
                 end
             else
                 StartAppend_Index = DashLine_INDEX(end);
             end
+            %Loops over all the contents of the file to rewrite them except
+            %for the last entry
             for i=1:StartAppend_Index
                 fprintf(fileID,'%s\r\n', cell2mat(DataLines(i)));
             end
-            fclose(fileID);
+            fclose(fileID);%close file ID
         end
 
-        
+        %Reopends file but only to append (not overwrite)
         fileID = fopen(FileName_char,'a+');   
         if(strcmp(get(handles.FileTypeText,'String'),'Logbook')==1 && get(handles.HeaderCheckbox,'Value')==1)
             fprintf(fileID,'%s\r\n',header);
@@ -998,7 +1022,8 @@ if(VarNames_ERROR == 0)
         end
         fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], '>>>Date');
         fprintf(fileID,'%1s\r\n', get(handles.TodayEdit,'String'));
-                
+        %Loops over all the variables and properly writes the data into the
+        %file
         colNum = size(VarTable,2);
         for i = 1:size(VarTable,1)
             if(~isempty(cell2mat(VarTable(i,1))))          
@@ -1020,13 +1045,15 @@ if(VarNames_ERROR == 0)
                 end
             end
         end
+        %Includes the comment if not emtpy
         if(~isempty(Comment))
             fprintf(fileID,'%s\r\n','{COMMENTS}');
             fprintf(fileID,'%s\r\n', Comment);
         end
         fprintf(fileID,'%s\r\n','-----------------------------------------------');
-        fclose(fileID);
-        
+        fclose(fileID);%close file ID
+        %Reopens file to read contents afer appending the current entry and
+        %be able to refresh the FileViewerText
         fileID = fopen(FileName_char,'r');
         Data = textscan(fileID, '%s','Delimiter','\r\n');
         fclose(fileID);
@@ -1043,7 +1070,7 @@ if(VarNames_ERROR == 0)
         set(handles.AddVarPushbutton,'Enable','off');
         set(handles.DeleteVarPushbutton,'Enable','off');
         set(handles.DeleteNumEdit,'Enable','off');
-        
+        %Refreshes the file list to keep track of saved loggings
         SavedLogItems_list = get(handles.SavedLogItems_Listbox,'String');
         for i=1:length(SavedLogItems_list)-1
             long_Entry = SavedLogItems_list{i};
@@ -1070,40 +1097,8 @@ cd(NowDir);
 % Update handles structure
 guidata(hObject, handles);
 
-% % --- Executes on button press in ExperimentRadiobutton.
-% function ExperimentRadiobutton_Callback(hObject, eventdata, handles)
-% % hObject    handle to ExperimentRadiobutton (see GCBO)
-% % eventdata  reserved - to be defined in a future version of MATLAB
-% % handles    structure with handles and user data (see GUIDATA)
-% EntryList = [{'Select an Entry...'},{'77k Dipper'},{'4k Dipper'},{'Janis'},...
-%     {'Dilution Fridge'}];
-% set(handles.EntryListPopupmenu,'String',EntryList);
-% set(handles.EntryListPopupmenu,'Value',1);
-% set(handles.EntryListPopupmenu,'Enable','on');
-% 
-% % Update handles structure
-% guidata(hObject, handles);
-
-
-% % --- Executes on button press in LogbookRadiobutton.
-% function LogbookRadiobutton_Callback(hObject, eventdata, handles)
-% % hObject    handle to LogbookRadiobutton (see GCBO)
-% % eventdata  reserved - to be defined in a future version of MATLAB
-% % handles    structure with handles and user data (see GUIDATA)
-% EntryList = [{'Select an Entry...'},{'Wafer Fabrication Description'},...
-%     {'Probe Station Measurement'},{'Annealing'},{'Wirebonding'},{'Storage'}];
-% set(handles.EntryListPopupmenu,'String',EntryList);
-% set(handles.EntryListPopupmenu,'Value',1);
-% set(handles.EntryListPopupmenu,'Enable','on');
-% 
-% % Update handles structure
-% guidata(hObject, handles);
-
 % --- Executes on selection change in EntryListPopupmenu.
 function EntryListPopupmenu_Callback(hObject, eventdata, handles)
-% hObject    handle to EntryListPopupmenu (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 
 if(get(handles.HeaderCheckbox,'Value')==1)
     handles.EntryList_choice = get(handles.EntryListPopupmenu,'Value');
@@ -1119,9 +1114,6 @@ guidata(hObject, handles);
 
 % --- Executes on button press in TodayCheckbox.
 function TodayCheckbox_Callback(hObject, eventdata, handles)
-% hObject    handle to TodayCheckbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 if(get(handles.TodayCheckbox,'Value'))
     set(handles.TodayEdit,'Enable','off');
     set(handles.TodayEdit,'String',datestr(today));
@@ -1134,9 +1126,7 @@ guidata(hObject, handles);
 
 % --------------------------------------------------------------------
 function NewTemplate_Toolbar_ClickedCallback(hObject, eventdata, handles)
-% hObject    handle to NewTemplate_Toolbar (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
+
 set(handles.VarTable,'Enable','on');
 set(handles.AddVarPushbutton,'Enable','on');
 set(handles.DeleteVarPushbutton,'Enable','on');
@@ -1156,25 +1146,23 @@ guidata(hObject, handles);
 
 % --------------------------------------------------------------------
 function OpenTemplate_Toolbar_ClickedCallback(hObject, eventdata, handles)
-% hObject    handle to OpenTemplate_Toolbar (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
 NowDir = cd;
 cd(handles.TemplateDir);
 
 [FileName,PathName,FilterIndex] = uigetfile('*.txt','Select template file to open');
-
+%If user chooses a file template
 if(isnumeric(FileName)==0)
     handles.TemplateDir = PathName;
     cd(handles.TemplateDir);
-    
+    %determines the number of columns
     table = get(handles.VarTable,'Data');
     colNum = size(table,2);
-     
+    %opens file to read contents
     fileID = fopen(FileName,'r');
-    
+    %Reads contents
     Data = textscan(fileID, '%s','Delimiter','\r\n');
     Template_Lines = Data{1};
+    %Populates table with template contents
     for i=1:length(Template_Lines)
         Line = cell2mat(Template_Lines(i));
         if(strcmp(Line,'{COMMENTS}'))
@@ -1235,7 +1223,6 @@ if(isnumeric(FileName)==0)
         else
             fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s : '], cell2mat(VarTable(i,1)));
             fprintf(fileID,'%1s\r\n', cell2mat(VarTable(i,2)));
-            %         fprintf(fileID,['%-',num2str(max(VarNameLengths)),'s\r\n'],cell2mat(VarTable(i,1)))
         end
     end
     Comment = get(handles.CommentEdit,'String');
@@ -1243,11 +1230,8 @@ if(isnumeric(FileName)==0)
         fprintf(fileID,'%s\r\n','{COMMENTS}');
         fprintf(fileID,'%s\r\n', Comment);
     end
-%     fprintf(fileID,'%s\r\n','-----------------------------------------------');
-%     fclose(fileID);
     fclose(fileID);
 end
-
 cd(NowDir);
 
 % Update handles structure

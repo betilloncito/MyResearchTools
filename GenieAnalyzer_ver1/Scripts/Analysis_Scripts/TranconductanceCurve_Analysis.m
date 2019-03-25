@@ -23,7 +23,7 @@ else
     %CURRENT
     name{1} = 'Current';
     %GATE
-    name{2} = 'VBIAS';
+    name{2} = 'Vplg_T';
     
     %Initializes MatrixData and Variables from the input varargin
     MatrixData_All = varargin{1};

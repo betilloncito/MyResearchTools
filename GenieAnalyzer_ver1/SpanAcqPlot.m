@@ -1146,6 +1146,7 @@ if(isempty(axs_surf)==0)
     set(handles.MinValColorEdit,'String',min(min(ZData)));
     
 elseif(isempty(axs_line_unflipped)==0)
+    set(handles.SpanAcqPlotFigure,'CurrentAxes',handles.axes1);
     axs_line = flipud(axs_line_unflipped);
     disp('here');
     size(axs_line_unflipped)
@@ -1170,7 +1171,7 @@ elseif(isempty(axs_line_unflipped)==0)
 
         line(XData{k},YData{k},'Color',plot_color{k},'LineStyle',linestyle{k},'LineWidth',linewidth{k},...
             'Marker',marker{k},'MarkerEdgeColor',markeredgecolor{k},'MarkerFaceColor',markerfacecolor{k},...
-            'MarkerSize',markersize{k});
+            'MarkerSize',markersize{k},'Parent',handles.axes1);
 %         pause;
     end    
     xlabel(x_label);ylabel(y_label);
