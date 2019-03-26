@@ -22,7 +22,7 @@ function varargout = ExpAnalysisLog(varargin)
 
 % Edit the above text to modify the response to help ExpAnalysisLog
 
-% Last Modified by GUIDE v2.5 19-Mar-2019 02:10:46
+% Last Modified by GUIDE v2.5 26-Mar-2019 13:02:04
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -128,7 +128,7 @@ handles.VarTable_ColumnFormat.SampleStatusRecord = {'char',{'Currently Testing',
 handles.FileTypeList = {'Experiment Data', 'Experiment Analysis', 'Logbook (Wafer)', 'Logbook (Marker)',...
     'Sample Status Record'};
 handles.FileType_Headings = {'****************EXPERIMENT-DATA****************',...
-                '****************EXPERIMENT-DATA****************',...
+                '**************EXPERIMENT-ANALYSIS**************',...
                 '*****************LOGBOOK-WAFER*****************',...
                 '****************LOGBOOK-MARKERS****************',...
                 '**************SAMPLE-STATUS-RECORD*************'};
@@ -493,7 +493,7 @@ if(file_FLAG)
             set(handles.VarTable,'Data',{'',''});
             set(handles.VarTable,'ColumnEditable',[true true]);
             set(handles.VarTable,'ColumnName',{'Variable Name'; 'Value'});
-            set(handles.VarTable,'ColumnWidth',{130 280});
+            set(handles.VarTable,'ColumnWidth',{150 260});
             set(handles.VarTable,'ColumnFormat',{'char','char'});
             set(handles.VarTable,'RowName','numbered');
             
@@ -728,7 +728,8 @@ if(ItemChosen_FLAG==1)
             default_filename = [handles.DesignID,'-',handles.MarkerID,'_',...
                 handles.ExperimentID,'_',datestr(today),'_DataLog.txt'];
         elseif(FileTypeChoice==2)%Experiment Analysis
-            default_filename = [handles.WaferID,'_Analysis.txt'];
+            default_filename = [handles.DesignID,'-',handles.MarkerID,...
+                '_Analysis.txt'];
         elseif(FileTypeChoice==3)%Logbook (wafer)
             default_filename = [handles.WaferID,'_LOGBOOK.txt'];
         elseif(FileTypeChoice==4)%Logbook (marker)
@@ -775,7 +776,7 @@ if(ItemChosen_FLAG==1)
                 set(handles.VarTable,'Data',{'',''});
                 set(handles.VarTable,'ColumnEditable',[true true]);
                 set(handles.VarTable,'ColumnName',{'Variable Name'; 'Value'});
-                set(handles.VarTable,'ColumnWidth',{130 280});
+                set(handles.VarTable,'ColumnWidth',{150 260});
                 set(handles.VarTable,'ColumnFormat',{'char','char'});
                 set(handles.VarTable,'RowName','numbered');
               
@@ -1161,6 +1162,7 @@ if(isnumeric(FileName)==0)
     fileID = fopen(FileName,'r');
     %Reads contents
     Data = textscan(fileID, '%s','Delimiter','\r\n');
+    fclose(fileID);
     Template_Lines = Data{1};
     %Populates table with template contents
     for i=1:length(Template_Lines)
@@ -1237,6 +1239,52 @@ cd(NowDir);
 % Update handles structure
 guidata(hObject, handles);
 
+% --- Executes on button press in BackUpPushbutton.
+function BackUpPushbutton_Callback(hObject, eventdata, handles)
+%Asks user for a directory to open
+NowDir = cd;
+folder_name = uigetdir(handles.WorkDir, 'Select directory and filename to save new dta log file');
+
+%Executes if the user chose a directory
+if(folder_name~=0)
+    cd(folder_name);
+    handles.WorkDir = folder_name;
+    
+    %Extracts the contents of the chosen directory
+    List_folders = dir;
+    List_folders_cell={};folder_FLAG=0;
+    for i=1:size(List_folders,1)
+        if(strcmp(List_folders(i).name,'.')==0 && ...
+                strcmp(List_folders(i).name,'..')==0)
+            List_folders_cell(i-2,1) = {List_folders(i).name};
+            folder_FLAG(i) = ~any(strfind(List_folders(i).name,'.'));
+        end
+    end
+    cd(NowDir);
+    
+    %Displays the chosen directory contents in the FolderContents_Listbox
+    if(isempty(List_folders_cell)==0)
+        set(handles.FolderContents_Listbox,'Value',1);
+        set(handles.FolderContents_Listbox,'String',List_folders_cell);
+    else
+        set(handles.FolderContents_Listbox,'Value',1);
+        set(handles.FolderContents_Listbox,'String',{''});
+    end
+    %Enables the In directory button if there are any folders in the home
+    %directory
+    if(any(folder_FLAG))
+        set(handles.InDirectoryPushbutton,'Enable','on');
+    else
+        set(handles.InDirectoryPushbutton,'Enable','off');
+    end
+    set(handles.RootDirText,'String',handles.WorkDir);
+    set(handles.OutDirectoryPushbutton,'Enable','on');
+    set(handles.OpenFilePushbutton,'Enable','on');
+    set(handles.NewFilePushbutton,'Enable','on');
+end
+
+% Update handles structure
+guidata(hObject, handles);
 
 %-------------------------------------------------------------------------%
 %-------------------------------------------------------------------------%
