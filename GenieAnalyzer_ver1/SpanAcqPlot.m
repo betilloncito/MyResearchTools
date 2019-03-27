@@ -1134,9 +1134,9 @@ if(isempty(axs_surf)==0)
     delete(axs_children);
     
     set(handles.SpanAcqPlotFigure,'CurrentAxes',handles.axes1);
-    surf(XData,YData,ZData,'EdgeColor','none');
-    XY_plane = [0 90];view(XY_plane);grid on;
-    xlabel(x_label);ylabel(y_label);
+    surf(XData,YData,ZData,'EdgeColor','none','Parent',handles.axes1);
+    XY_plane = [0 90];view(handles.axes1,XY_plane);grid on;
+    xlabel(handles.axes1,x_label);ylabel(handles.axes1,y_label);
     colormap_List = get(handles.ColorMapPopupmenu,'String');
     colormap_index = get(handles.ColorMapPopupmenu,'Value');
     colormap_choice = strtrim(cell2mat(colormap_List(colormap_index)));
@@ -1174,7 +1174,7 @@ elseif(isempty(axs_line_unflipped)==0)
             'MarkerSize',markersize{k},'Parent',handles.axes1);
 %         pause;
     end    
-    xlabel(x_label);ylabel(y_label);
+    xlabel(handles.axes1,x_label);ylabel(handles.axes1,y_label);
     
 else
     set(handles.MathResultText,'String',[num2str(answer),'%']);

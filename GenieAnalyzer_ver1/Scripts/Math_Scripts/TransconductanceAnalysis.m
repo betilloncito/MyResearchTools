@@ -36,7 +36,7 @@ else
     axs_children = get(HandleAxes,'Children');
     axs_surf = findall(axs_children,'Type','Surface');    
     if(isempty(axs_surf)==0)
-        [XData,YData,ZData] = getDataFigure(HandleAxes,LineIndex);       
+        [XData,YData,ZData] = getDataFigure(HandleAxes);       
     else
         [XData,YData] = getDataFigure(HandleAxes,LineIndex);
     end
