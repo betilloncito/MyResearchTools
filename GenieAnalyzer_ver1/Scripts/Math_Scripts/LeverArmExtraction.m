@@ -57,7 +57,7 @@ else
         Labels_Y = get(HandleAxes,'YLabel');
         
         axis_Number_Size = 20;
-        title_Size = 22;
+        title_Size = 10;
         axis_label_Size = 20;
         
         Data_2D_ERROR = 0;
@@ -106,10 +106,13 @@ else
         
         HandleAxes = CustomizeFigures;
         Cluster_X = {};Cluster_Y = {};
+        Cluster_X_FULL = {};
+        Cluster_Y_FULL = {};
+        UserContinue = 'Yes';
         if(strcmp(PeakFindingAxis,'X'))
             Delta = floor(length(YData(startY_index:endY_index))/kclustering_sections);
             ITER = 1;
-            while(ITER <= kclustering_sections)
+            while(ITER <= kclustering_sections && strcmp(UserContinue,'Yes')==1)
                 Peaks_z = {};Peaks_y = {};Peaks_x = {};
                 for i=startY_index+Delta*(ITER-1):startY_index+Delta*(ITER)
 %                     start_index = startY_index+Delta*(ITER-1);
@@ -150,63 +153,106 @@ else
                 end
                 idx = kmeans([Peaks_x_vec,Peaks_y_vec],kcluster_num);
                 color_set = varycolor(kcluster_num);
-               
-                cnt=1;
-                if(~isempty(Cluster_X))
+                
+                if(isempty(Cluster_X))
+                    cnt=1;
                     for i=1:kcluster_num
-                        vec_x = Peaks_x_vec(idx==i);
-                        vec_y = Peaks_y_vec(idx==i);
-                        for ii=1:size(Cluster_X,1)
-                            
-                            if(length(vec_x) > length(Cluster_X{ii,ITER-1}))
-                                disp('fd');
-                                PadVec = -999*ones(length(vec_x),1);
-                                PadVec(1:length(Cluster_X{ii,ITER-1}),1) = Cluster_X{ii,ITER-1};
-                                size(PadVec)
-                                size(vec_x)
-                                Cluster_match = any(PadVec == vec_x);
-                            elseif(length(vec_x) < length(Cluster_X{ii,ITER-1}))
-                                PadVec = -999*ones(length(Cluster_X{ii,ITER-1}),1);
-                                PadVec(1:length(vec_x),1) = vec_x;
-                                size(PadVec)
-                                size(Cluster_X{ii,ITER-1})
-                                Cluster_match = any(PadVec == Cluster_X{ii,ITER-1});
-                            else
-                                Cluster_match = any(vec_x == Cluster_X{ii,ITER-1});
-                            end
-                            
-                            if(Cluster_match == 1)
-                                Cluster_X{cnt,ITER} = vec_x;
-                                Cluster_Y{cnt,ITER} = vec_y;
-                                line(Cluster_X{cnt,ITER},Cluster_Y{cnt,ITER}*Scaling_PeakFindingAxes,...
-                                    max(max(ZData))*ones(1,length(Cluster_X{cnt,ITER})),...
-                                    'LineStyle','none','Marker','o','MarkerEdgeColor','k',...
-                                    'MarkerFaceColor',color_set(i,:),'Parent',HandleAxes);
-                                pause;
-                                cnt = cnt+1;
+                        temp_Cluster_X = Peaks_x_vec(idx==i);
+                        temp_Cluster_Y = Peaks_y_vec(idx==i);
+                        line(temp_Cluster_X,temp_Cluster_Y*Scaling_PeakFindingAxes,...
+                            max(max(ZData))*ones(1,length(temp_Cluster_X)),...
+                            'LineStyle','none','Marker','o','MarkerEdgeColor','k',...
+                            'MarkerFaceColor','none','Parent',HandleAxes);
+                        pause;
+                        cnt = cnt+1;
+                    end
+                    UserContinue = questdlg('Contiue?','Input','Yes','No','Yes');
+                    if(strcmp(UserContinue,'Yes'))
+                        for i=1:kcluster_num
+                            X_pos(i) = mean(Peaks_x_vec(idx==i));
+                        end
+                        X_pos_sorted = sort(X_pos,'ascend')
+                        n = ceil(length(X_pos_sorted)/2)-floor(ChosenPks_num/2);
+                        nn = ceil(length(X_pos_sorted)/2)+(ChosenPks_num-floor(ChosenPks_num/2)-1);
+                        Chosen_X_pos_sorted = X_pos_sorted(n:nn)
+%                         cnt = 1;
+                        for i=1:length(Chosen_X_pos_sorted)
+                            for ii=1:kcluster_num
+                                if(Chosen_X_pos_sorted(i) == X_pos(ii))
+                                    Cluster_X{i,ITER} = Peaks_x_vec(idx==ii);
+                                    Cluster_Y{i,ITER} = Peaks_y_vec(idx==ii);
+                                    Cluster_X_FULL{i} = Peaks_x_vec(idx==ii);
+                                    Cluster_Y_FULL{i} = Peaks_y_vec(idx==ii);
+                                    line(Cluster_X{i,ITER},Cluster_Y{i,ITER}*Scaling_PeakFindingAxes,...
+                                        max(max(ZData))*ones(1,length(Cluster_X{i,ITER})),...
+                                        'LineStyle','none','Marker','o','MarkerEdgeColor','k',...
+                                        'MarkerFaceColor',color_set(i,:),'Parent',HandleAxes);
+                                    pause;
+                                    break;
+%                                     cnt = cnt+1;
+                                end
                             end
                         end
                     end
                     
-                elseif(isempty(Cluster_X))
-                    
+                elseif(~isempty(Cluster_X))
+                    cnt=1;
                     for i=1:kcluster_num
-                        X_pos(i) = mean(Peaks_x_vec(idx==i));
+                        temp_Cluster_X = Peaks_x_vec(idx==i);
+                        temp_Cluster_Y = Peaks_y_vec(idx==i);
+                        line(temp_Cluster_X,temp_Cluster_Y*Scaling_PeakFindingAxes,...
+                            max(max(ZData))*ones(1,length(temp_Cluster_X)),...
+                            'LineStyle','none','Marker','o','MarkerEdgeColor','k',...
+                            'MarkerFaceColor','none','Parent',HandleAxes);
+                        pause;
+                        cnt = cnt+1;
                     end
-                    X_pos_sorted = sort(X_pos,'ascend');
-                    n = round(abs(ChosenPks_num - kcluster_num)/2);
-                    nn = kcluster_num - (ChosenPks_num - n);
-                    Chosen_X_pos_sorted = X_pos_sorted(n+1:nn);
-                    for i=1:kcluster_num
-                        if(any(Chosen_X_pos_sorted == X_pos(i)))
-                            Cluster_X{cnt,ITER} = Peaks_x_vec(idx==i);
-                            Cluster_Y{cnt,ITER} = Peaks_y_vec(idx==i);
-                            line(Cluster_X{cnt,ITER},Cluster_Y{cnt,ITER}*Scaling_PeakFindingAxes,...
-                                max(max(ZData))*ones(1,length(Cluster_X{cnt,ITER})),...
-                                'LineStyle','none','Marker','o','MarkerEdgeColor','k',...
-                                'MarkerFaceColor',color_set(i,:),'Parent',HandleAxes);
-                            pause;
-                            cnt = cnt+1;
+                    UserContinue = questdlg('Contiue?','Input','Yes','No','Yes');
+                    if(strcmp(UserContinue,'Yes'))
+                        for ii=1:size(Cluster_Y,1)                            
+                            for i=1:kcluster_num
+                                vec_x = Peaks_x_vec(idx==i);
+                                vec_y = Peaks_y_vec(idx==i);
+                                
+                                if(length(vec_y) > length(Cluster_Y{ii,ITER-1}))
+                                    %                                 disp('padding 1');
+                                    PadVecY = -999*ones(length(vec_y),1);
+                                    PadVecX = -999*ones(length(vec_x),1);
+                                    PadVecY(1:length(Cluster_Y{ii,ITER-1}),1) = Cluster_Y{ii,ITER-1};
+                                    PadVecX(1:length(Cluster_X{ii,ITER-1}),1) = Cluster_X{ii,ITER-1};
+                                    %                                 [PadVecX,PadVecY]
+                                    %                                 [vec_x,vec_y]
+                                    Cluster_match = intersect([PadVecX,PadVecY], [vec_x,vec_y],'rows');
+                                elseif(length(vec_y) < length(Cluster_Y{ii,ITER-1}))
+                                    %                                 disp('padding 2');
+                                    PadVecY = -999*ones(length(Cluster_Y{ii,ITER-1}),1);
+                                    PadVecX = -999*ones(length(Cluster_X{ii,ITER-1}),1);
+                                    PadVecY(1:length(vec_y),1) = vec_y;
+                                    PadVecX(1:length(vec_x),1) = vec_x;
+                                    %                                 [PadVecX,PadVecY]
+                                    %                                 [Cluster_X{ii,ITER-1},Cluster_Y{ii,ITER-1}]
+                                    Cluster_match = intersect([PadVecX,PadVecY],[Cluster_X{ii,ITER-1},Cluster_Y{ii,ITER-1}],'rows');
+                                else
+                                    %                                 disp('no padding ');
+                                    %                                 vec_y
+                                    %                                 Cluster_Y{ii,ITER-1}
+                                    %                                 [vec_x,vec_y]
+                                    %                                 [Cluster_X{ii,ITER-1},Cluster_Y{ii,ITER-1}]
+                                    Cluster_match = intersect([vec_x,vec_y],[Cluster_X{ii,ITER-1},Cluster_Y{ii,ITER-1}],'rows');
+                                end
+                                
+                                if(~isempty(Cluster_match))
+                                    Cluster_X{ii,ITER} = vec_x;
+                                    Cluster_Y{ii,ITER} = vec_y;
+                                    Cluster_X_FULL{ii} = [Cluster_X_FULL{ii};Cluster_X{ii,ITER}]
+                                    Cluster_Y_FULL{ii} = [Cluster_Y_FULL{ii};Cluster_Y{ii,ITER}]
+                                    line(Cluster_X{ii,ITER},Cluster_Y{ii,ITER}*Scaling_PeakFindingAxes,...
+                                        max(max(ZData))*ones(1,length(Cluster_X{ii,ITER})),...
+                                        'LineStyle','none','Marker','o','MarkerEdgeColor','k',...
+                                        'MarkerFaceColor',color_set(ii,:),'Parent',HandleAxes);
+                                    pause;
+                                end
+                            end
                         end
                     end
                 end
@@ -279,6 +325,52 @@ else
             msgbox('Invalid axis to find peaks. Enter either X or Y','Error','error');
         end
         
+        %         isempty(Cluster_X_FULL)
+        %         UserContinue
+        length(Cluster_X_FULL)
+        if(isempty(Cluster_X_FULL)==0 && strcmp(UserContinue,'Yes')==1)
+            child = get(HandleAxes,'Children');delete(child);
+            
+            surf(XData,YData,ZData,'EdgeColor','none','Parent',HandleAxes);
+            XY_plane = [0 90];view(HandleAxes, XY_plane);
+            set(HandleAxes,'XLim',sort([XData(startX_index),XData(endX_index)],'ascend'));
+            set(HandleAxes,'YLim',sort([YData(startY_index),YData(endY_index)],'ascend'));
+            xlabel(HandleAxes, Labels_X.String);ylabel(HandleAxes, Labels_Y.String);
+            set(HandleAxes,'FontSize',axis_Number_Size);
+            %             title(HandleAxes, title_label,'FontSize',title_Size);
+            xlabel(HandleAxes, Labels_X.String,'fontsize',axis_label_Size);
+            ylabel(HandleAxes, Labels_Y.String,'fontsize',axis_label_Size);
+            
+            color_set = varycolor(length(Cluster_X_FULL));
+            for cnt=1:length(Cluster_X_FULL)
+                coeff = polyfit(Cluster_X_FULL{cnt},Cluster_Y_FULL{cnt}*Scaling_PeakFindingAxes,1);
+                slope(cnt) = coeff(1);%y_inter(cnt) = coeff(2);
+            end
+            slope_avg = mean(slope)
+            for cnt=1:length(Cluster_X_FULL)
+                X_line = Cluster_X_FULL{cnt};
+                Y_line = Cluster_Y_FULL{cnt};
+                sizeMidpt = round(length(Y_line));
+                y_inter(cnt) = Y_line(sizeMidpt)*Scaling_PeakFindingAxes - slope_avg*X_line(sizeMidpt); 
+            
+                line(Cluster_X_FULL{cnt},Cluster_Y_FULL{cnt}*Scaling_PeakFindingAxes,...
+                    max(max(ZData))*ones(1,length(Cluster_X_FULL{cnt})),...
+                    'LineStyle','none','Marker','o','MarkerEdgeColor','k',...
+                    'MarkerFaceColor',color_set(cnt,:),'MarkerSize',2,...
+                    'Parent',HandleAxes);
+                line([X_line(1),X_line(end)],slope_avg*[X_line(1),X_line(end)]+y_inter(cnt),...
+                    max(max(ZData))*ones(1,2),'LineStyle','-','Color','r',...
+                    'LineWidth',3,'Parent',HandleAxes);
+                pause;
+            end
+            
+            leverArm_Y = mean(diff(y_inter))
+            leverArm_X = mean(diff(-y_inter./slope_avg))
+            title(HandleAxes, {['Lever-Arm (GateX): ',num2str(leverArm_X),' [V/e]']},...
+                {['Lever-Arm (GateY): ',num2str(leverArm_Y),' [V/e]']},...
+                {['Lever-Arm Ratio (X/Y): ',num2str(leverArm_X/leverArm_Y)]},...
+                'FontSize',title_Size);
+        end
         
         varargout = {XData,YData,ZData};
     end

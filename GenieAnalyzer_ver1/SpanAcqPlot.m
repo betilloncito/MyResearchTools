@@ -59,6 +59,9 @@ handles.ColorRGB = {[1 0 0],[0 0 1],[0 0 0],[0 0.75 0],[0 1 1],[1 0 1],[1 0.75 0
 set(handles.LineStylePopupmenu,'String',{'-','--',':','-.','none'});
 set(handles.MarkerPopupmenu,'String',{'none','.','o','*','x','d','v','^','s'});
 set(handles.MarkerColorPopupmenu,'String',{'r','b','k','g','c','m','y'});
+set(handles.GUIPopupmenu,'String',{'NONE','Tunnel Rate Analysis','Electron Temperature Analysis',...
+    'Zeeman Splitting Analysis','Electron Counting Analysis','Pulsed Experiment Analysis',...
+    'Lever Arm Extraction Analysis'});
 
 %Sets buttons OFF as initialization
 % set(handles.PlotDataPushbutton,'Enable','off');
@@ -301,11 +304,15 @@ function OrganizePushbutton_Callback(hObject, eventdata, handles)
 handles.MatrixData = {};
 Data = handles.Data.data;
 
+%NOTE: the user should input the first variable swept followed by a comma
+%and then the next variable swept, etc. i.e. the inner-most nested loop is
+%the last index to be typed in
+
 %Extracts the indices entered by user and stores them in an array
 IndicesStr = get(handles.SweepIndicesEdit,'String');
 if(isempty(IndicesStr))
     msgbox(['Must enter indices for the sweep variables in Sweep Indices textbox ',...
-    'to begin organization of data']);
+    'to begin organization of data.']);
 else
     handles.Header_Vector{length(handles.Header_Vector)+1} = {handles.Header_Vector_temp};
     IndicesStr = strtrim(IndicesStr);
@@ -361,7 +368,6 @@ else
     end
     %Stores the sweep variable indices in a global var.
     handles.SweepVar_Index{length(handles.SweepVar_Index)+1} = {index_array};
-    index_array
     
     %Determines the number of points swept for each sweep variable. It creates
     %a variable with the dimensions of sweeping. The first two dimensions are
@@ -666,8 +672,9 @@ else
     %Structure that contains all the above variables to be sent to the GUI
     GUI_Data.OrgMatrixData = handles.Stored_OrgMatrixData;
     GUI_Data.Header_Vector = handles.Header_Vector;
+    GUI_Data.SweepVar_Index = handles.SweepVar_Index;
     if(iscell(get(handles.ListFilesOrganizedPopupmenu,'String')))
-    GUI_Data.Filenames_String = get(handles.ListFilesOrganizedPopupmenu,'String');
+        GUI_Data.Filenames_String = get(handles.ListFilesOrganizedPopupmenu,'String');
     else
         GUI_Data.Filenames_String = {get(handles.ListFilesOrganizedPopupmenu,'String')};
     end
@@ -698,6 +705,9 @@ else
             
         case 5
             PulsedExperimentAnalysis_GUI(handles.SpanAcqPlotFigure);
+            
+        case 6
+            LeverArmExtraction_GUI(handles.SpanAcqPlotFigure);
 
     end
 %     cd(NowDir);
