@@ -113,6 +113,7 @@ set(handles.DeleteNumEdit,'Enable','off');
 set(handles.InDirectoryPushbutton,'Enable','off');
 set(handles.OutDirectoryPushbutton,'Enable','off');
 set(handles.OpenFilePushbutton,'Enable','off');
+set(handles.SavedLogItems_Listbox,'Enable','on');
 
 %Reset the table to be empty and have only 2 columns
 set(handles.VarTable,'Data',{'',''});
@@ -182,17 +183,17 @@ FolderFound = 0;%flag
 for i=1:length(HomeDriveLabels)
     %Home directory. Location of the folder within the hard drive is hard
     %coded. Need to edit the folder location accordingly
-    folder_name = [cell2mat(HomeDriveLabels(i)),':\Waterloo - SeaGate\Spintronics Research\Quantum Dots\TestedDevices\SiDots\JEOL-devices'];
-    if(exist(folder_name,'dir')==7)
+    handles.HOME_folder_name = [cell2mat(HomeDriveLabels(i)),':\Waterloo - SeaGate\Spintronics Research\Quantum Dots\TestedDevices\SiDots\JEOL-devices'];
+    if(exist(handles.HOME_folder_name,'dir')==7)
         FolderFound =  1;
         break;
     end
 end
 %Executes if the seagate hard drive was found
 if(FolderFound==1)
-    cd(folder_name);
-    handles.WorkDir = folder_name;
-    handles.TemplateDir = folder_name;
+    cd(handles.HOME_folder_name);
+    handles.WorkDir = handles.HOME_folder_name;
+    handles.TemplateDir = handles.HOME_folder_name;
     
     List_folders = dir;
     List_folders_cell={};folder_FLAG=0;
@@ -564,8 +565,8 @@ if(file_FLAG)
             end
             %displays the contents of the last entry in the file in the table
             cnt = 1;
-            for i=DashLine_INDEX(1)+2:DashLine_INDEX(2)-1
-                Line = cell2mat(Template_Lines(i))
+            for i=DashLine_INDEX(end-1)+2:DashLine_INDEX(end)-1
+                Line = cell2mat(Template_Lines(i));
                 if(strcmp(Line,'{COMMENTS}'))
                     comment = cell2mat(Template_Lines(i+1));
                     set(handles.CommentEdit,'String',comment);
@@ -575,8 +576,8 @@ if(file_FLAG)
                     VarTable_labels(cnt,1:4) = {strtrim(Line),'','',''};
                     cnt=cnt+1;
                 else
-                    m = strfind(Line,':')
-                    n = strfind(Line,',')
+                    m = strfind(Line,':');
+                    n = strfind(Line,',');
                     VarTable_labels(cnt,1:4) = {strtrim(Line(1:m(1)-1)),strtrim(Line(m(1)+1:n(1)-1)),...
                         strtrim(Line(n(1)+1:n(2)-1)),strtrim(Line(n(2)+1:end))};
                     cnt = cnt+1;
@@ -967,6 +968,12 @@ if(VarNames_ERROR == 0)
         else
             FileName_char = FileName;
         end
+        %Makes a temporary copy of the file, in case there is any issue and
+        %the data is lost
+        ind = strfind(FileName_char,'.');
+        backup_dir = [handles.HOME_folder_name,'\BACKUP\Temporary\'];
+        copyfile(FileName_char,[backup_dir,FileName_char(1:ind-1),'_temp',FileName_char(ind:end)]);
+        
         %Executes in the overwrite option is chosen
         if(get(handles.OverwriteCheckbox,'Value'))
             %opens file to read
@@ -978,13 +985,13 @@ if(VarNames_ERROR == 0)
             %entries
             for i=1:size(DataLines,1)
                 DataLines(i)
-                line_str = cell2mat(DataLines(i))
+                line_str = cell2mat(DataLines(i));
                 if(any(line_str=='-'))
-                    dashLine_FLAG = 1
+                    dashLine_FLAG = 1;
                     length(line_str)
                     for ii=1:length(line_str)
                         if(any(line_str(ii)~='-'))
-                            dashLine_FLAG = 0
+                            dashLine_FLAG = 0;
                             break;
                         end
                     end
@@ -1084,7 +1091,7 @@ if(VarNames_ERROR == 0)
                 New_list{i+1} = ['<HTML><FONT color="black">',entry,'</Font></html>'];
             end
         end
-        New_list{1} = ['<HTML><FONT color="red">',FirstEntry_ID,'</Font></html>'];
+        New_list{1} = ['<HTML><FONT color="white">',FirstEntry_ID,'</Font></html>'];
         set(handles.SavedLogItems_Listbox,'String',New_list);
         
     end
@@ -1286,6 +1293,16 @@ end
 % Update handles structure
 guidata(hObject, handles);
 
+% --- Executes on selection change in SavedLogItems_Listbox.
+function SavedLogItems_Listbox_Callback(hObject, eventdata, handles)
+% hObject    handle to SavedLogItems_Listbox (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+set(handles.SavedLogItems_Listbox,'Value',1);
+% Update handles structure
+guidata(hObject, handles);
+
+
 %-------------------------------------------------------------------------%
 %-------------------------------------------------------------------------%
 %-------------------------------------------------------------------------%
@@ -1362,17 +1379,6 @@ function HeaderCheckbox_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
 
 % Hint: get(hObject,'Value') returns toggle state of HeaderCheckbox
-
-
-% --- Executes on selection change in SavedLogItems_Listbox.
-function SavedLogItems_Listbox_Callback(hObject, eventdata, handles)
-% hObject    handle to SavedLogItems_Listbox (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-
-% Hints: contents = cellstr(get(hObject,'String')) returns SavedLogItems_Listbox contents as cell array
-%        contents{get(hObject,'Value')} returns selected item from SavedLogItems_Listbox
-
 
 % --- Executes during object creation, after setting all properties.
 function SavedLogItems_Listbox_CreateFcn(hObject, eventdata, handles)
